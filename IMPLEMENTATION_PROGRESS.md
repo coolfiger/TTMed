@@ -419,7 +419,16 @@ None — all architectural decisions resolved.
 
 ## Phase 8 — Appointments
 
-**Status: NOT STARTED**
+**Status: COMPLETE** — 14/14 tests passing
+
+### Deliverables
+- Migration: `doctor_schedules`, `doctor_schedule_breaks`, `doctor_unavailability`, `appointments`, `appointment_number_sequences`, `follow_ups`, `appointment_reminders`
+- Models: `Appointment`, `DoctorSchedule`, `DoctorScheduleBreak`, `DoctorUnavailability`, `FollowUp`, `AppointmentReminder`
+- `AppointmentService`: schedule management, slot generation, booking with `lockForUpdate` double-booking prevention, per-day cap enforcement, cancel, reschedule (self-FK linking), markArrived, markNoShow, follow-up scheduling, appointment number sequences (`APT-{Ymd}-{0001}`)
+- `SendAppointmentReminderJob`: queued, 3 retries, SMTP credentials from `CentreSettingsService`
+- Livewire: `AppointmentCalendar`, `DoctorScheduleConfig`, `FollowUpDashboard`
+- Routes: `/appointments`, `/appointments/follow-ups`, `/appointments/schedule/{doctorId}`
+- Permissions: `appointments.view`, `appointments.create`, `appointments.edit`, `appointments.cancel`, `appointments.manage` added to seeder and role assignments
 
 ---
 

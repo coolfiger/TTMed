@@ -29,6 +29,9 @@ use App\Http\Controllers\Tenant\PrescriptionDownloadController;
 use App\Http\Controllers\Tenant\Smtp2goWebhookController;
 use App\Livewire\Tenant\Prescriptions\PrescriptionForm;
 use App\Livewire\Tenant\Documents\PatientDocuments;
+use App\Livewire\Tenant\Appointments\AppointmentCalendar;
+use App\Livewire\Tenant\Appointments\DoctorScheduleConfig;
+use App\Livewire\Tenant\Appointments\FollowUpDashboard;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -152,6 +155,16 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::middleware('permission:prescriptions.view')->group(function () {
             Route::get('/prescriptions/{id}/download', PrescriptionDownloadController::class)
                 ->name('tenant.prescriptions.download');
+        });
+
+        // Appointments
+        Route::middleware('permission:appointments.view')->group(function () {
+            Route::get('/appointments',              AppointmentCalendar::class)->name('tenant.appointments.calendar');
+            Route::get('/appointments/follow-ups',  FollowUpDashboard::class)->name('tenant.appointments.follow-ups');
+        });
+        Route::middleware('permission:appointments.manage')->group(function () {
+            Route::get('/appointments/schedule/{doctorId}', DoctorScheduleConfig::class)
+                ->name('tenant.appointments.schedule');
         });
 
         // Patient documents

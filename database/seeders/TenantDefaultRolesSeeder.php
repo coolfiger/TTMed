@@ -112,6 +112,7 @@ class TenantDefaultRolesSeeder extends Seeder
             ['slug' => 'appointments.create',       'module' => 'appointments',  'name' => 'Book appointments'],
             ['slug' => 'appointments.edit',         'module' => 'appointments',  'name' => 'Edit appointments'],
             ['slug' => 'appointments.cancel',       'module' => 'appointments',  'name' => 'Cancel appointments'],
+            ['slug' => 'appointments.manage',       'module' => 'appointments',  'name' => 'Manage doctor schedules'],
             // Billing
             ['slug' => 'billing.view',              'module' => 'billing',       'name' => 'View invoices'],
             ['slug' => 'billing.create',            'module' => 'billing',       'name' => 'Create invoices'],
@@ -170,7 +171,7 @@ class TenantDefaultRolesSeeder extends Seeder
             'documents.view', 'documents.upload', 'documents.download',
             'referrals.create', 'certificates.create',
             'lab.orders.create', 'lab.results.acknowledge',
-            'appointments.view', 'appointments.create', 'appointments.edit', 'appointments.cancel',
+            'appointments.view', 'appointments.create', 'appointments.edit', 'appointments.cancel', 'appointments.manage',
             'billing.view', 'reports.clinical',
         ];
 
@@ -186,7 +187,7 @@ class TenantDefaultRolesSeeder extends Seeder
         $receptionistPerms = [
             'patients.view', 'patients.create', 'patients.edit', 'patients.search',
             'queue.view', 'queue.manage', 'queue.checkin',
-            'appointments.view', 'appointments.create', 'appointments.edit', 'appointments.cancel',
+            'appointments.view', 'appointments.create', 'appointments.edit', 'appointments.cancel', 'appointments.manage',
             'billing.view', 'billing.create',
             'payments.collect', 'payments.view',
             'shifts.open', 'shifts.close', 'shifts.view',
