@@ -218,9 +218,73 @@ None — all architectural decisions resolved.
 
 ---
 
-## Phase 5 — Nursing and Triage
+## Phase 5 — Nursing, Lab, and Imaging
 
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Completed:** 2026-11-18
+
+### Migrations
+- [x] `vital_signs` — cardiovascular, respiratory, anthropometrics, blood glucose, pain score
+- [x] `nursing_assessments` — per-encounter, allergies/medications reviewed flags, status enum
+- [x] `nursing_procedures` — typed procedure log per encounter
+- [x] `lab_test_categories`, `lab_tests` (LOINC codes), `lab_panels`, `lab_panel_tests` — lab catalogue
+- [x] `lab_orders` — LIS placer/filler order numbers, integration_type, ordered_at / sent / collected / received timestamps
+- [x] `lab_order_items` — denormalized test name for history
+- [x] `lab_results` — flag enum, is_critical, source (manual/hl7_v2/fhir_r4), raw_message audit column
+- [x] `lab_result_attachments` — private storage_path, never public URL
+- [x] `lab_order_number_sequences` — per-day sequential number lock
+- [x] `imaging_orders` — DICOM modality enum, accession_number UNIQUE, ris_order_id, hl7_placer_order_number, priority
+- [x] `imaging_studies` — study_instance_uid UNIQUE (DICOM), pacs_study_url (internal), pacs_system (vepro/dcm4chee)
+- [x] `imaging_reports` — report_status (preliminary/final/amended), report_pdf_path (private), source (manual/hl7_v2/vepro/fhir), is_critical
+- [x] `imaging_order_number_sequences`
+- [x] `integration_configs` — HMAC signing secrets encrypted at rest, api_key_encrypted, mllp_host/port, HL7 app/facility identifiers
+
+### Models
+- [x] `VitalSign` — auto-calculates BMI on save, bmi_category and bp_display accessors
+- [x] `NursingAssessment` — isComplete() check, procedures() relationship
+- [x] `NursingProcedure` — TYPES const, type_label accessor
+- [x] `LabOrder` — STATUS_* constants, hasResults(), hasCriticalResults()
+- [x] `LabOrderItem`, `LabResult` (flag_label, flag_color, isAbnormal()), `LabResultAttachment`
+- [x] `LabTest` (loinc_code), `LabTestCategory`, `LabPanel`
+- [x] `ImagingOrder` — MODALITIES const, modality_label/status_label accessors
+- [x] `ImagingStudy`, `ImagingReport` — isFinal()
+- [x] `IntegrationConfig` — setApiKey/getApiKey/setInboundSecret/getInboundSecret (Crypt), verifyHmac (hash_equals), labLis()/imagingRis()/imagingPacs() scoped finders
+
+### Services
+- [x] `Hl7MessageService` — ORU^R01 parser, ORM^O01 builder, ACK builder; handles both LOINC-first and local-code-with-alternate-LOINC CWE formats
+- [x] `LabOrderService` — createOrder, markSpecimenCollected, cancelOrder, receiveHl7Result (ORU^R01), receiveFhirDiagnosticReport (R4 DiagnosticReport with contained Observations), storeManualResult; outbound via MLLP or HTTP; sequential order numbers with lockForUpdate
+- [x] `ImagingOrderService` — createOrder, cancelOrder, receiveHl7Report (ORU^R01), receiveVeproReport (VEPRO JSON), storeManualReport; outbound to RIS via HL7 MLLP or VEPRO REST API; accession number generation
+- [x] `NursingService` — recordVitals, getOrCreateAssessment, updateAssessment, addProcedure, completeNursingAndTransition (wraps QueueService::transition)
+
+### API Controllers (inbound integration — HMAC-verified, no session auth)
+- [x] `LabInboundController` — POST /api/lab/inbound/hl7, POST /api/lab/inbound/fhir
+- [x] `ImagingInboundController` — POST /api/imaging/inbound/hl7, POST /api/imaging/inbound/vepro
+
+### Livewire
+- [x] `NurseDashboard` — queue panel, patient selection, tabbed form (Vitals / Assessment / Procedures), live BMI calculation as weight/height typed, "Complete & Send to Doctor" triggers QueueService transition
+
+### Blade Views
+- [x] `livewire/tenant/nursing/nurse-dashboard.blade.php`
+
+### Routes
+- [x] GET `/nursing` — `NurseDashboard`, behind `nursing.assess` permission
+- [x] POST `/api/lab/inbound/hl7` and `/api/lab/inbound/fhir`
+- [x] POST `/api/imaging/inbound/hl7` and `/api/imaging/inbound/vepro`
+
+### AppServiceProvider
+- [x] `Hl7MessageService`, `LabOrderService`, `ImagingOrderService`, `NursingService` registered as singletons
+
+### Tests — 32 passing
+- [x] `Hl7MessageServiceTest` — parsing (patient, order, results, LOINC both CWE formats, critical flags), building (ORM^O01, ACK AA/AE), edge cases (empty message, no results, 5-OBX)
+- [x] `VitalSignModelTest` — BMI calculation (all categories), zero-weight/height guards, BP display
+- [x] `LabOrderServiceTest` — order creation, sequential numbering, item creation, HL7 result ingestion, unknown order returns false, status update, cancel validation
+
+### Notes
+- VEPRO integration type documented; real VEPRO credentials go in `integration_configs` as encrypted values, never hardcoded
+- All inbound webhook endpoints verify HMAC signature with `hash_equals` before processing
+- Raw HL7/FHIR/VEPRO messages stored in `raw_message` for audit trail
+- `pacs_study_url` is internal-only — never exposed via public URL
+- `report_pdf_path` is private — served only through authenticated file controller (Phase 7)
 
 ---
 

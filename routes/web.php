@@ -20,6 +20,9 @@ use App\Livewire\Tenant\Insurance\InsuranceList;
 use App\Livewire\Tenant\Insurance\InsuranceForm;
 use App\Livewire\Tenant\Reception\ReceptionDashboard;
 use App\Livewire\Tenant\Reception\QueueManager;
+use App\Livewire\Tenant\Nursing\NurseDashboard;
+use App\Http\Controllers\Tenant\LabInboundController;
+use App\Http\Controllers\Tenant\ImagingInboundController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -124,5 +127,18 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
             Route::get('/reception',      ReceptionDashboard::class)->name('tenant.reception.dashboard');
             Route::get('/queue',          QueueManager::class)->name('tenant.queue.manage');
         });
+
+        // Nursing station
+        Route::middleware('permission:nursing.assess')->group(function () {
+            Route::get('/nursing', NurseDashboard::class)->name('tenant.nursing.dashboard');
+        });
+    });
+
+    // Integration inbound webhooks (no session auth — HMAC-verified)
+    Route::prefix('api')->group(function () {
+        Route::post('/lab/inbound/hl7',      [LabInboundController::class,     'receiveHl7'])->name('tenant.lab.inbound.hl7');
+        Route::post('/lab/inbound/fhir',     [LabInboundController::class,     'receiveFhir'])->name('tenant.lab.inbound.fhir');
+        Route::post('/imaging/inbound/hl7',  [ImagingInboundController::class, 'receiveHl7'])->name('tenant.imaging.inbound.hl7');
+        Route::post('/imaging/inbound/vepro',[ImagingInboundController::class, 'receiveVepro'])->name('tenant.imaging.inbound.vepro');
     });
 });
