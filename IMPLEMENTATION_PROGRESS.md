@@ -149,7 +149,34 @@ None — all architectural decisions resolved.
 
 ## Phase 3 — Patient Management
 
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Completed:** 2026-11-18
+
+### Completed
+
+- [x] Migration: patients (demographics, insurance, clinical assignment, SoftDeletes)
+- [x] Migration: patient_contacts (emergency contacts, next of kin)
+- [x] Migration: patient_allergies, patient_conditions, patient_medications, patient_medical_histories
+- [x] Migration: patient_consents
+- [x] Migration: patient_physical_files, patient_file_movements, patient_number_sequences
+- [x] Model: Patient (full_name/display_name/age accessors, search scope, all relationships)
+- [x] Model: PatientContact, PatientAllergy (severity_label), PatientCondition, PatientMedication
+- [x] Model: PatientMedicalHistory, PatientConsent
+- [x] Model: PatientPhysicalFile (location_summary accessor), PatientFileMovement
+- [x] PatientNumberService: sequential numbers in DB transaction, configurable prefix + pad, never reused
+- [x] PatientDuplicateDetector: DOB+name, phone, fuzzy name; excludes self on edit
+- [x] Services registered as singletons
+- [x] Livewire: PatientSearch (paginated, search, DOB filter, branch filter)
+- [x] Livewire: PatientForm (full registration/edit, duplicate detection with confirm-bypass)
+- [x] Livewire: PatientProfile (tabbed: personal + allergies + contacts, medical history, consents, physical file + movement log)
+- [x] Routes: patients.index, patients.show, patients.create, patients.edit with permission middleware
+- [x] Tests: 57 passing (PatientModelTest, PatientNumberServiceTest, PatientDuplicateDetectorTest)
+
+### Notes
+
+- Patient numbers are tenant-scoped, sequential, and never reused (locked DB transaction)
+- Duplicate detection runs before registration; user must explicitly confirm to proceed
+- Physical file movement history is append-only (no deletes)
 
 ---
 
