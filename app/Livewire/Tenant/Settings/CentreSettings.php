@@ -2,8 +2,11 @@
 
 namespace App\Livewire\Tenant\Settings;
 
+use App\Jobs\RunTenantBackupJob;
 use App\Services\AuditService;
+use App\Services\BackupService;
 use App\Services\CentreSettingsService;
+use App\Tenancy\TenantContext;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -30,13 +33,26 @@ class CentreSettings extends Component
     public string $smtpFromAddress = '';
     public string $smtpFromName = '';
 
-    public string $activeTab = 'general';
-    public string $testEmailTo = '';
-    public ?string $testEmailStatus = null;
+    // Backup schedule
+    public string $backupFrequency = 'daily';
+    public int    $backupHour      = 2;
+    public int    $backupDay       = 0;
+    public int    $backupRetain    = 7;
 
-    public function mount(): void
+    public string  $activeTab       = 'general';
+    public string  $testEmailTo     = '';
+    public ?string $testEmailStatus = null;
+    public ?string $backupStatus    = null;
+
+    public function mount(TenantContext $tenantContext): void
     {
         $settings = app(CentreSettingsService::class);
+
+        $tenant              = $tenantContext->get();
+        $this->backupFrequency = $tenant->backup_frequency ?? 'daily';
+        $this->backupHour    = (int) ($tenant->backup_hour ?? 2);
+        $this->backupDay     = (int) ($tenant->backup_day ?? 0);
+        $this->backupRetain  = (int) ($tenant->backup_retain ?? 7);
 
         $this->centreName    = $settings->get('centre_name', '');
         $this->centreAddress = $settings->get('centre_address', '');
@@ -147,10 +163,48 @@ class CentreSettings extends Component
         }
     }
 
-    public function render(): \Illuminate\View\View
+    public function saveBackupSchedule(TenantContext $tenantContext): void
     {
+        $this->checkPermission('settings.manage');
+
+        $this->validate([
+            'backupFrequency' => 'required|in:disabled,daily,weekly',
+            'backupHour'      => 'required|integer|between:0,23',
+            'backupDay'       => 'required|integer|between:0,6',
+            'backupRetain'    => 'required|integer|between:1,30',
+        ]);
+
+        $tenantContext->get()->update([
+            'backup_frequency' => $this->backupFrequency,
+            'backup_hour'      => $this->backupHour,
+            'backup_day'       => $this->backupDay,
+            'backup_retain'    => $this->backupRetain,
+        ]);
+
+        app(AuditService::class)->logTenant('settings.backup.schedule_updated', 'Tenant', $tenantContext->get()->id);
+
+        session()->flash('message', 'Backup schedule saved.');
+    }
+
+    public function triggerBackup(TenantContext $tenantContext): void
+    {
+        $this->checkPermission('settings.manage');
+
+        RunTenantBackupJob::dispatch($tenantContext->get())->onQueue('backups');
+
+        $this->backupStatus = 'queued';
+    }
+
+    public function render(TenantContext $tenantContext, BackupService $backupService): \Illuminate\View\View
+    {
+        $backups = $this->activeTab === 'backups'
+            ? $backupService->listBackups($tenantContext->get())
+            : [];
+
         return view('livewire.tenant.settings.centre-settings', [
-            'timezones' => \DateTimeZone::listIdentifiers(\DateTimeZone::AMERICA),
+            'timezones'      => \DateTimeZone::listIdentifiers(\DateTimeZone::AMERICA),
+            'backups'        => $backups,
+            'backupLastRun'  => $tenantContext->get()->backup_last_run_at,
         ]);
     }
 }

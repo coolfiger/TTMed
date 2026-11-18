@@ -42,6 +42,7 @@ use App\Livewire\Tenant\Lab\LabResultsViewer;
 use App\Livewire\Tenant\Inventory\InventoryManager;
 use App\Livewire\Tenant\Reports\ReportDashboard;
 use App\Http\Controllers\Tenant\ReportExportController;
+use App\Http\Controllers\Tenant\BackupDownloadController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -220,6 +221,11 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::middleware('permission:reports.export')->group(function () {
             Route::get('/reports/export/{report}', ReportExportController::class)->name('tenant.reports.export');
         });
+
+        // Backup download — permission enforced inside the controller
+        Route::get('/settings/backups/{filename}', BackupDownloadController::class)
+            ->where('filename', 'db_[0-9A-Za-z_\-]+\.sql\.gz')
+            ->name('tenant.settings.backup.download');
 
         // Patient documents
         Route::middleware('permission:documents.view')->group(function () {

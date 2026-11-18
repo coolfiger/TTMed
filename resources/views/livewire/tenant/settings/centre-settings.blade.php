@@ -5,7 +5,7 @@
 
     {{-- Tab navigation --}}
     <div class="flex border-b border-slate-200 mb-6 gap-1">
-        @foreach(['general' => 'General', 'email' => 'Email'] as $tab => $label)
+        @foreach(['general' => 'General', 'email' => 'Email', 'backups' => 'Backups'] as $tab => $label)
         <button wire:click="$set('activeTab', '{{ $tab }}')"
             class="px-4 py-2 text-sm font-medium rounded-t-md -mb-px
                 {{ $activeTab === $tab
@@ -162,6 +162,127 @@
                 <p class="mt-2 text-sm text-red-600">{{ substr($testEmailStatus, 6) }}</p>
             @endif
         </div>
+    </div>
+    @endif
+
+    {{-- Backups --}}
+    @if($activeTab === 'backups')
+    <div class="space-y-6">
+
+        {{-- Schedule --}}
+        <div class="bg-white rounded-lg border border-slate-200 p-6">
+            <h3 class="text-sm font-semibold text-slate-800 mb-4">Automatic Backup Schedule</h3>
+            <form wire:submit="saveBackupSchedule" class="space-y-4">
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Frequency</label>
+                        <select wire:model.live="backupFrequency"
+                            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                    @if($backupFrequency !== 'disabled')
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Hour (server time)</label>
+                        <select wire:model="backupHour"
+                            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                            @for($h = 0; $h < 24; $h++)
+                            <option value="{{ $h }}" @selected($backupHour === $h)>{{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:00</option>
+                            @endfor
+                        </select>
+                    </div>
+                    @if($backupFrequency === 'weekly')
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Day of week</label>
+                        <select wire:model="backupDay"
+                            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                            @foreach(['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] as $i => $day)
+                            <option value="{{ $i }}" @selected($backupDay === $i)>{{ $day }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Keep last N backups</label>
+                        <input wire:model="backupRetain" type="number" min="1" max="30"
+                            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                    </div>
+                    @endif
+                </div>
+                <button type="submit"
+                    class="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                    Save Schedule
+                </button>
+            </form>
+        </div>
+
+        {{-- Manual backup --}}
+        <div class="bg-white rounded-lg border border-slate-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-800">Back Up Now</h3>
+                    @if($backupLastRun)
+                        <p class="text-xs text-slate-500 mt-0.5">Last backup: {{ $backupLastRun->diffForHumans() }}</p>
+                    @else
+                        <p class="text-xs text-slate-500 mt-0.5">No backup has been run yet.</p>
+                    @endif
+                </div>
+                <button wire:click="triggerBackup"
+                    wire:loading.attr="disabled"
+                    wire:target="triggerBackup"
+                    wire:loading.class="opacity-60 cursor-not-allowed"
+                    class="rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                    <span wire:loading.remove wire:target="triggerBackup">Start Backup</span>
+                    <span wire:loading wire:target="triggerBackup">Queuing…</span>
+                </button>
+            </div>
+            @if($backupStatus === 'queued')
+                <p class="mt-3 text-sm text-green-700 bg-green-50 rounded-md px-3 py-2">
+                    Backup has been queued and will run shortly.
+                </p>
+            @endif
+        </div>
+
+        {{-- Backup file list --}}
+        @if(count($backups) > 0)
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100">
+                <h3 class="text-sm font-semibold text-slate-800">Existing Backups</h3>
+            </div>
+            <table class="min-w-full divide-y divide-slate-100 text-sm">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">File</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Size</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Created</th>
+                        <th class="px-6 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @foreach($backups as $backup)
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-3 font-mono text-xs text-slate-700">{{ $backup['name'] }}</td>
+                        <td class="px-6 py-3 text-slate-600">{{ $backup['size'] }}</td>
+                        <td class="px-6 py-3 text-slate-600">{{ $backup['created_at'] }}</td>
+                        <td class="px-6 py-3 text-right">
+                            <a href="{{ route('tenant.settings.backup.download', $backup['name']) }}"
+                               class="text-blue-600 hover:underline text-xs font-medium">
+                                Download
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @elseif($activeTab === 'backups')
+        <div class="bg-white rounded-lg border border-slate-200 p-6 text-sm text-slate-500">
+            No backup files found yet.
+        </div>
+        @endif
+
     </div>
     @endif
 </div>

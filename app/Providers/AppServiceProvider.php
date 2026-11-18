@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\AppointmentService;
 use App\Services\BillingService;
+use App\Services\BackupService;
 use App\Services\InventoryService;
 use App\Services\ReportService;
 use App\Services\AuditService;
@@ -44,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ConsultationService::class);
         $this->app->singleton(AppointmentService::class);
         $this->app->singleton(BillingService::class);
+        $this->app->singleton(BackupService::class);
         $this->app->singleton(InventoryService::class);
         $this->app->singleton(ReportService::class);
         $this->app->singleton(PrescriptionService::class);

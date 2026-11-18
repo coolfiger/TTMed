@@ -28,6 +28,15 @@ class Tenant extends Model
         'contact_name',
         'contact_email',
         'contact_phone',
+        'backup_frequency',
+        'backup_hour',
+        'backup_day',
+        'backup_retain',
+        'backup_last_run_at',
+    ];
+
+    protected $casts = [
+        'backup_last_run_at' => 'datetime',
     ];
 
     protected $hidden = [
