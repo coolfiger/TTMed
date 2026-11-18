@@ -38,6 +38,8 @@ use App\Livewire\Tenant\Appointments\FollowUpDashboard;
 use App\Livewire\Tenant\Lab\LabOrderForm;
 use App\Livewire\Tenant\Lab\LabResultsViewer;
 use App\Livewire\Tenant\Inventory\InventoryManager;
+use App\Livewire\Tenant\Reports\ReportDashboard;
+use App\Http\Controllers\Tenant\ReportExportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -205,6 +207,14 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::middleware('permission:inventory.view')->group(function () {
             Route::get('/inventory', InventoryManager::class)
                 ->name('tenant.inventory.index');
+        });
+
+        // Reports
+        Route::middleware('permission:reports.view')->group(function () {
+            Route::get('/reports', ReportDashboard::class)->name('tenant.reports.index');
+        });
+        Route::middleware('permission:reports.export')->group(function () {
+            Route::get('/reports/export/{report}', ReportExportController::class)->name('tenant.reports.export');
         });
 
         // Patient documents

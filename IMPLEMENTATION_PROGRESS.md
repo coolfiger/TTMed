@@ -472,7 +472,16 @@ None — all architectural decisions resolved.
 
 ## Phase 11 — Reporting
 
-**Status: NOT STARTED**
+**Status: COMPLETE** — 13/13 tests passing; 218/218 total
+
+### Deliverables
+- `ReportService`: five report methods — `financialSummary`, `invoiceAging`, `appointmentVolume`, `inventoryStatus`, `patientActivity` — plus CSV export methods for each; all queries run on `DB::connection('tenant')` with optional `$branchId` filter and date range scoping; void invoices and voided payments excluded from financial totals
+- `ReportDashboard` Livewire component: tabbed UI, date-range + branch filter wired live, dispatches to the correct report method per active tab
+- `ReportExportController`: streams CSV downloads via `response()->streamDownload()` for financial, aging, appointments, and inventory reports; guarded by `reports.export` permission
+- Blade view: tabbed layout with KPI tiles, tables, and Export CSV links per tab
+- Routes: `GET /reports` (Livewire, `reports.view`), `GET /reports/export/{report}` (controller, `reports.export`)
+- `ReportService` registered as singleton in `AppServiceProvider`
+- 13 tests covering all five report methods, bucket logic, void/exclusion correctness, and CSV format
 
 ---
 
