@@ -448,7 +448,25 @@ None — all architectural decisions resolved.
 
 ## Phase 10 — Laboratory and Inventory
 
-**Status: NOT STARTED**
+**Status: COMPLETE** — 18/18 inventory tests passing; 205/205 total
+
+### Deliverables
+
+#### Laboratory UI
+- `LabOrderForm` Livewire component: test/panel search with Alpine.js dropdown, deduplication, order placement via `LabOrderService::createOrder()`, specimen collection via `markSpecimenCollected()`, per-item result entry (value, unit, flag, reference range, critical flag) via `LabOrderService::storeManualResult()`
+- `LabResultsViewer` Livewire component: paginated patient lab history with status filter, per-order result table with critical highlighting, acknowledge (mark reviewed) action
+- Blade views: `lab-order-form.blade.php`, `lab-results-viewer.blade.php`
+- Routes: `GET /lab/order/{encounterId}/{patientId}`, `GET /lab/order/{encounterId}/{patientId}/{orderId}`, `GET /lab/results/{patientId}`
+- Permissions: `lab.orders.create`, `lab.results.enter`, `lab.results.acknowledge`
+
+#### Inventory Management (new from Phase 10)
+- Migration: `inventory_categories`, `inventory_items`, `inventory_transactions`
+- Models: `InventoryCategory`, `InventoryItem` (with `isLowStock()`, `isOutOfStock()`, `scopeActive()`, `scopeLowStock()`, `unitCostFormatted`, `stockValue`), `InventoryTransaction` (with `typeLabel`)
+- `InventoryService`: `receiveStock`, `dispenseStock`, `adjustStock`, `writeOff`, `returnStock`, `getLowStockItems`, `getTransactionHistory`; all mutations via `applyTransaction` with `lockForUpdate` inside a DB transaction; throws `LogicException` on negative stock
+- `InventoryManager` Livewire component: item CRUD (create/edit), stock movement panel (all 5 types), recent transaction history sidebar, search/category/low-stock filters
+- Blade view: `inventory-manager.blade.php`
+- Route: `GET /inventory`
+- Security: stock quantity enforced at the DB row level via `lockForUpdate`; no negative stock possible under concurrent load
 
 ---
 

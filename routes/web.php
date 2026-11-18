@@ -35,6 +35,9 @@ use App\Livewire\Tenant\Billing\PaymentCollection;
 use App\Livewire\Tenant\Appointments\AppointmentCalendar;
 use App\Livewire\Tenant\Appointments\DoctorScheduleConfig;
 use App\Livewire\Tenant\Appointments\FollowUpDashboard;
+use App\Livewire\Tenant\Lab\LabOrderForm;
+use App\Livewire\Tenant\Lab\LabResultsViewer;
+use App\Livewire\Tenant\Inventory\InventoryManager;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -184,6 +187,24 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::middleware('permission:shifts.view')->group(function () {
             Route::get('/billing/shifts', CashierShiftManager::class)
                 ->name('tenant.billing.shifts');
+        });
+
+        // Lab
+        Route::middleware('permission:lab.orders.create')->group(function () {
+            Route::get('/lab/order/{encounterId}/{patientId}', LabOrderForm::class)
+                ->name('tenant.lab.order.create');
+            Route::get('/lab/order/{encounterId}/{patientId}/{orderId}', LabOrderForm::class)
+                ->name('tenant.lab.order.view');
+        });
+        Route::middleware('permission:lab.orders.create')->group(function () {
+            Route::get('/lab/results/{patientId}', LabResultsViewer::class)
+                ->name('tenant.lab.results');
+        });
+
+        // Inventory
+        Route::middleware('permission:inventory.view')->group(function () {
+            Route::get('/inventory', InventoryManager::class)
+                ->name('tenant.inventory.index');
         });
 
         // Patient documents
