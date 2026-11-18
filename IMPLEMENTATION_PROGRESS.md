@@ -51,7 +51,52 @@ None — all architectural decisions resolved.
 
 ## Phase 1 — Foundation
 
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Completed:** 2026-11-18
+
+### Completed
+
+- [x] Laravel 13 project initialised (PHP 8.3)
+- [x] Multi-tenant database configuration (platform + tenant connections, SQLite test override)
+- [x] Dual auth guards (`tenant` guard → tenant DB users, `platform` guard → platform DB)
+- [x] TenantContext singleton
+- [x] TenantDatabaseManager (connect, createTenantDatabase, dropTenantDatabase, encrypt/decrypt)
+- [x] ResolveTenant middleware (subdomain extraction, session fallback, custom domain support)
+- [x] EnsureTenantActive middleware
+- [x] CheckPermission middleware
+- [x] TenantNotFoundException and TenantInactiveException
+- [x] Platform migrations: tenants, subscription_plans, subscriptions, platform_users, platform_audit_logs
+- [x] Tenant migrations: branches, roles/permissions/role_permissions, users/user_roles, centre_settings, audit_logs
+- [x] All 60+ permissions seeded (TenantDefaultRolesSeeder)
+- [x] 12 system roles seeded with full permission mapping
+- [x] PlatformSeeder (3 subscription plans, super admin account)
+- [x] TenantProvisioningService (DB creation, migrations, seed, admin user, default branch, storage directories)
+- [x] AuditService (tenant and platform audit logging)
+- [x] Platform models: Tenant, SubscriptionPlan, Subscription, PlatformUser, PlatformAuditLog
+- [x] Tenant models: User (RBAC methods, lockout), Role, Permission, Branch, AuditLog
+- [x] Livewire: Tenant login (with MFA) and Platform login (with MFA)
+- [x] Livewire: PlatformDashboard, TenantList, TenantForm, TenantShow
+- [x] Livewire: PlanList, PlanForm, PlatformUserList
+- [x] Livewire: TenantDashboard, UserList, UserForm, RoleList, RoleForm
+- [x] AppServiceProvider: singletons registered, preventSilentlyDiscardingAttributes
+- [x] Platform routes (platform.ttmed.app prefix)
+- [x] Tenant routes (resolve.tenant + tenant.active middleware)
+- [x] Artisan commands: tenants:migrate, tenants:list
+- [x] Layouts: app.blade.php (tenant, permission-aware nav), platform.blade.php, guest.blade.php, platform-guest.blade.php
+- [x] nav-item Blade component (active state highlighting)
+- [x] Error views: tenant-not-found.blade.php, tenant-inactive.blade.php
+- [x] .env.example (all required variables documented)
+- [x] vite.config.js (Tailwind CSS, no external font dependency)
+- [x] Frontend assets built (npm run build)
+- [x] Tests: 27 unit/feature tests, 27/27 passing
+- [x] PHP syntax validated across all 59 source files
+
+### Notes
+
+- Tenant DB passwords encrypted at rest (AES-256-CBC, key from TENANT_ENCRYPTION_KEY)
+- Storage paths outside web root: /home/{user}/ttmed/storage/tenants/{uuid}/
+- locked_until cast to datetime for correct Carbon comparisons
+- Laravel version: 13.x, PHP 8.3
 
 ---
 

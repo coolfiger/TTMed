@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Livewire\Tenant\Roles;
+
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+
+#[Layout('layouts.app')]
+class RoleForm extends Component
+{
+    public function render(): \Illuminate\View\View
+    {
+        return view('livewire.tenant.roles.role-form');
+    }
+}
