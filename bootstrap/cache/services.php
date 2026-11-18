@@ -38,8 +38,10 @@
     34 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
     35 => 'Termwind\\Laravel\\TermwindServiceProvider',
     36 => 'PragmaRX\\Google2FALaravel\\ServiceProvider',
-    37 => 'App\\Providers\\AppServiceProvider',
-    38 => 'App\\Providers\\HorizonServiceProvider',
+    37 => 'Sentry\\Laravel\\ServiceProvider',
+    38 => 'Sentry\\Laravel\\Tracing\\ServiceProvider',
+    39 => 'App\\Providers\\AppServiceProvider',
+    40 => 'App\\Providers\\HorizonServiceProvider',
   ),
   'eager' => 
   array (
@@ -64,8 +66,10 @@
     18 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
     19 => 'Termwind\\Laravel\\TermwindServiceProvider',
     20 => 'PragmaRX\\Google2FALaravel\\ServiceProvider',
-    21 => 'App\\Providers\\AppServiceProvider',
-    22 => 'App\\Providers\\HorizonServiceProvider',
+    21 => 'Sentry\\Laravel\\ServiceProvider',
+    22 => 'Sentry\\Laravel\\Tracing\\ServiceProvider',
+    23 => 'App\\Providers\\AppServiceProvider',
+    24 => 'App\\Providers\\HorizonServiceProvider',
   ),
   'deferred' => 
   array (

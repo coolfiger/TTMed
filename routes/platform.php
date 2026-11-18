@@ -1,6 +1,8 @@
 <?php
 
 use App\Livewire\Platform\Auth\Login as PlatformLogin;
+use App\Livewire\Platform\Auth\ForgotPassword as PlatformForgotPassword;
+use App\Livewire\Platform\Auth\ResetPassword as PlatformResetPassword;
 use App\Livewire\Platform\Dashboard\PlatformDashboard;
 use App\Livewire\Platform\Tenants\TenantForm;
 use App\Livewire\Platform\Tenants\TenantList;
@@ -14,7 +16,9 @@ Route::prefix('platform')->name('platform.')->group(function () {
 
     // Guest routes
     Route::middleware(['guest:platform', 'throttle:10,1'])->group(function () {
-        Route::get('/login', PlatformLogin::class)->name('login');
+        Route::get('/login',           PlatformLogin::class)->name('login');
+        Route::get('/forgot-password', PlatformForgotPassword::class)->name('password.request');
+        Route::get('/reset-password',  PlatformResetPassword::class)->name('password.reset');
     });
 
     // Authenticated platform admin routes

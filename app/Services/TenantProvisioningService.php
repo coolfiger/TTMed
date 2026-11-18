@@ -62,6 +62,18 @@ class TenantProvisioningService
             '--force'    => true,
         ]);
 
+        Artisan::call('db:seed', [
+            '--class'    => 'Database\\Seeders\\Tenant\\Icd10CodeSeeder',
+            '--database' => 'tenant',
+            '--force'    => true,
+        ]);
+
+        Artisan::call('db:seed', [
+            '--class'    => 'Database\\Seeders\\Tenant\\MedicationSeeder',
+            '--database' => 'tenant',
+            '--force'    => true,
+        ]);
+
         // 5. Create the initial admin user in the tenant DB
         $this->createAdminUser($adminUser);
 

@@ -46,4 +46,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (TenantInactiveException $e, Request $request) {
             return response()->view('errors.tenant-inactive', ['tenant' => $e->tenant], 403);
         });
+
+        \Sentry\Laravel\Integration::handles($exceptions);
     })->create();

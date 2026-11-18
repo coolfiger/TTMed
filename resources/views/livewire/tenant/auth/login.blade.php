@@ -37,6 +37,7 @@
                 <input wire:model="remember" type="checkbox" class="rounded border-slate-300 text-blue-600">
                 Remember me
             </label>
+            <a href="{{ route('tenant.password.request') }}" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
         </div>
 
         <button

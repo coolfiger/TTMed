@@ -4,10 +4,12 @@ namespace App\Models\Platform;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 class PlatformUser extends Authenticatable
 {
+    use Notifiable;
     protected $connection = 'platform';
 
     protected $table = 'platform_users';

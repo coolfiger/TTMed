@@ -1,6 +1,8 @@
 <?php
 
 use App\Livewire\Tenant\Auth\Login as TenantLogin;
+use App\Livewire\Tenant\Auth\ForgotPassword as TenantForgotPassword;
+use App\Livewire\Tenant\Auth\ResetPassword as TenantResetPassword;
 use App\Livewire\Tenant\Dashboard\TenantDashboard;
 use App\Livewire\Tenant\Users\UserList;
 use App\Livewire\Tenant\Users\UserForm;
@@ -55,8 +57,10 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
 
     // Guest routes (no tenant auth required, but tenant must be resolved)
     Route::middleware(['guest:tenant', 'throttle:10,1'])->group(function () {
-        Route::get('/login', TenantLogin::class)->name('tenant.login');
-        Route::get('/',      fn () => redirect()->route('tenant.login'));
+        Route::get('/login',           TenantLogin::class)->name('tenant.login');
+        Route::get('/forgot-password', TenantForgotPassword::class)->name('tenant.password.request');
+        Route::get('/reset-password',  TenantResetPassword::class)->name('tenant.password.reset');
+        Route::get('/',                fn () => redirect()->route('tenant.login'));
     });
 
     // Authenticated tenant routes

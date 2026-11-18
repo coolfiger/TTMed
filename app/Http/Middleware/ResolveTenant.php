@@ -33,6 +33,14 @@ class ResolveTenant
         $this->context->set($tenant);
         $this->dbManager->connect($tenant);
 
+        // Tag Sentry errors with the tenant so we can filter by centre
+        if (app()->bound('sentry')) {
+            \Sentry\configureScope(function (\Sentry\State\Scope $scope) use ($tenant): void {
+                $scope->setTag('tenant.code', $tenant->code);
+                $scope->setTag('tenant.uuid', $tenant->uuid);
+            });
+        }
+
         return $next($request);
     }
 
