@@ -12,26 +12,28 @@ TTMed is a hosted platform that allows independent medical centres to subscribe 
 |---|---|
 | Backend | Laravel 11 (PHP 8.3) |
 | Frontend | React 18 + TypeScript via Inertia.js |
-| Database | PostgreSQL 16 (database-per-tenant) |
+| Database | MySQL 8 (database-per-tenant) |
 | Cache | Redis 7 |
 | Queues | Redis via Laravel Horizon |
 | Real-time | Laravel Reverb (WebSockets) |
-| PDF | Browsershot (Puppeteer/Chromium) |
+| PDF | DomPDF (server-side Blade templates) |
 | Email | SMTP2GO |
-| File Storage | Private local storage (S3-compatible abstraction) |
-| Web Server | Nginx |
-| Deployment | Docker + Docker Compose |
+| File Storage | Private local server storage |
+| Web Server | Nginx + PHP-FPM 8.3 (HestiaCP managed) |
+| Deployment | Native on Hestia VPS (no Docker) |
 
 ## Quick Start (Development)
 
 ```bash
 cp .env.example .env
-docker compose up -d
-docker compose exec app composer install
-docker compose exec app npm install && npm run dev
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate --database=platform
-docker compose exec app php artisan db:seed --class=PlatformSeeder
+# Configure .env with local MySQL and Redis credentials
+composer install
+npm install && npm run dev
+php artisan key:generate
+php artisan migrate --database=platform
+php artisan db:seed --class=PlatformSeeder
+php artisan reverb:start &
+php artisan horizon &
 ```
 
 Access the platform admin portal at: `http://localhost/platform`
