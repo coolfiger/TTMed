@@ -102,7 +102,48 @@ None — all architectural decisions resolved.
 
 ## Phase 2 — Medical Centre Administration
 
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Completed:** 2026-11-18
+
+### Completed
+
+- [x] Tenant migration: staff_profiles (SoftDeletes, FK to users + branches)
+- [x] Tenant migration: doctors (FK to staff_profiles, registration_number, specialty, file paths)
+- [x] Tenant migration: doctor_operating_hours (7-day schedule per doctor)
+- [x] Tenant migration: service_categories, services (prices in cents, tax_rate, taxable)
+- [x] Tenant migration: insurance_providers
+- [x] Tenant migration: document_categories (system-flagged)
+- [x] Tenant migration: branch_operating_hours (7-day schedule per branch)
+- [x] Models: StaffProfile (full_name accessor, SoftDeletes), Doctor, DoctorOperatingHour, BranchOperatingHour
+- [x] Models: Service (price_formatted + price_with_tax accessors, cents casting), ServiceCategory
+- [x] Models: InsuranceProvider, DocumentCategory
+- [x] Branch model extended: operatingHours HasMany, staff HasMany
+- [x] CentreSettingsService: get/set/getMany/setMany, type casting (string/boolean/integer/json/encrypted)
+- [x] CentreSettingsService registered as singleton
+- [x] TenantDefaultCatalogueSeeder: 8 document categories, 7 service categories, 5 default services (TTD pricing)
+- [x] TenantProvisioningService updated to seed catalogue on new tenant
+- [x] TenantDefaultRolesSeeder: added branches/services/insurance permissions (view + manage); assigned to manager role
+- [x] Livewire: BranchList (toggleActive, blocks deactivating main branch)
+- [x] Livewire: BranchForm (create/edit + 7-day operating hours via updateOrCreate)
+- [x] Livewire: CentreSettings (tabbed — general settings + SMTP email config with encrypted password, test email)
+- [x] Livewire: StaffList (paginated, search, branch filter)
+- [x] Livewire: StaffForm (User + StaffProfile + optional Doctor + file uploads + doctor hours)
+- [x] Livewire: ServiceList (paginated, category/status filters, toggleActive)
+- [x] Livewire: ServiceForm (dollar input → cents, code forced uppercase)
+- [x] Livewire: InsuranceList (paginated, search, toggleActive)
+- [x] Livewire: InsuranceForm (code forced uppercase)
+- [x] Blade views for all 9 Phase 2 Livewire components
+- [x] Routes: branches, settings, staff, services, insurance with permission middleware
+- [x] Sidebar nav updated: Services, Insurance, Branches links
+- [x] Tests\TestCase base class created
+- [x] Phase 2 tests: ServiceModelTest, StaffModelTest, CentreSettingsServiceTest (42 tests total, 42 passing)
+
+### Notes
+
+- SMTP password stored encrypted, never loaded back into Livewire state (write-only)
+- Doctor file uploads (signature, stamp, prescription logo) stored in tenant private storage outside web root
+- Prices stored as integers (cents) throughout; displayed as dollars via accessor
+- Main branch cannot be deactivated
 
 ---
 
