@@ -21,6 +21,7 @@ use App\Livewire\Tenant\Insurance\InsuranceForm;
 use App\Livewire\Tenant\Reception\ReceptionDashboard;
 use App\Livewire\Tenant\Reception\QueueManager;
 use App\Livewire\Tenant\Nursing\NurseDashboard;
+use App\Livewire\Tenant\Doctor\DoctorDashboard;
 use App\Http\Controllers\Tenant\LabInboundController;
 use App\Http\Controllers\Tenant\ImagingInboundController;
 use Illuminate\Support\Facades\Route;
@@ -131,6 +132,11 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         // Nursing station
         Route::middleware('permission:nursing.assess')->group(function () {
             Route::get('/nursing', NurseDashboard::class)->name('tenant.nursing.dashboard');
+        });
+
+        // Doctor consultation
+        Route::middleware('permission:encounters.view')->group(function () {
+            Route::get('/consultations', DoctorDashboard::class)->name('tenant.consultations.dashboard');
         });
     });
 

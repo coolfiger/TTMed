@@ -290,7 +290,47 @@ None — all architectural decisions resolved.
 
 ## Phase 6 — Doctor Consultations
 
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Completed:** 2026-11-18
+
+### Migrations
+- [x] `icd10_codes` — code UNIQUE, description, category_code/description, is_active; index on [code, description] for search
+- [x] `consultation_notes` — 1:1 to encounters, SOAP fields (subjective/objective/assessment/plan), examination_findings, investigations_ordered, follow_up_instructions/days, finalization fields (is_finalized, finalized_by, finalized_at), `content_hash` VARCHAR(64)
+- [x] `diagnoses` — encounter_id/patient_id FK, icd10_code_id nullable FK + denormalized icd10_code + diagnosis_text, diagnosis_type enum (primary/secondary/differential), certainty enum (confirmed/probable/suspected/ruled_out)
+- [x] `referrals` — referred_to_name/specialty/facility, urgency enum (routine/urgent/emergency), reason, clinical_summary, instructions_to_patient, status enum (pending/sent/accepted/completed/cancelled), sent_at/appointment_date timestamps, feedback_notes
+
+### Models
+- [x] `ConsultationNote` — `isFinalized()`, `computeContentHash()` (SHA-256 of encounter_id + SOAP fields), `hasContent()`, `$attributes` default for `is_finalized = false`
+- [x] `Icd10Code` — `scopeSearch()` (LIKE on code + description), `scopeActive()`, `getDisplayAttribute()`
+- [x] `Diagnosis` — type/certainty label + color accessors
+- [x] `Referral` — urgency color accessor
+
+### Services
+- [x] `ConsultationService` — `getOrCreateNote()`, `updateNote()` (blocked if finalized), `finalizeNote()` (sets hash, auditLogs, throws if already finalized or empty), `addDiagnosis()` (auto-resolves icd10_code from FK), `removeDiagnosis()`, `addReferral()`, `completeConsultationAndTransition()` (transitions queue to `completed`, marks encounter `ended_at`)
+
+### Livewire
+- [x] `DoctorDashboard` — queue showing `awaiting_doctor` patients; full SOAP note with 6 tabs (SOAP / Vitals / Diagnoses / Labs / Imaging / Referrals); ICD-10 autocomplete search; finalize flow with confirm dialog; complete encounter (requires finalized note); note read-only after finalization
+
+### Blade Views
+- [x] `livewire/tenant/doctor/doctor-dashboard.blade.php`
+
+### Routes
+- [x] GET `/consultations` — `DoctorDashboard`, behind `encounters.view` permission
+
+### AppServiceProvider
+- [x] `ConsultationService` registered as singleton
+
+### Seeder
+- [x] `Icd10CodeSeeder` — 60+ codes covering hypertension, diabetes (Types 1 & 2 with complications), dyslipidaemia, obesity, respiratory, GI, musculoskeletal (gout), renal/CKD, tropical infectious (dengue, COVID-19), mental health, common symptoms; uses upsert (re-runnable)
+
+### Tests — 13 passing
+- [x] `ConsultationServiceTest` — note creation, idempotent getOrCreate, SOAP update, update blocked when finalized, finalize sets hash and lock, hash value correctness, re-finalize blocked, empty-note finalize blocked, hash changes on content change, hash stable on no change, diagnosis add, diagnosis remove, ICD code auto-resolved from FK
+
+### Notes
+- `content_hash` is SHA-256 of `encounter_id|subjective|objective|assessment|plan|examination_findings`; stored at finalization; any post-hoc silent edit is detectable by recomputing
+- Finalized notes are read-only in the UI and in the service layer
+- Diagnoses store both FK and denormalized `icd10_code` column so historical accuracy is preserved if ICD-10 catalogue changes
+- Nav entry for Consultations already existed in `app.blade.php` (Phase 4 scaffold)
 
 ---
 

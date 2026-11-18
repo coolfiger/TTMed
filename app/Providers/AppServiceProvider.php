@@ -7,6 +7,7 @@ use App\Services\CentreSettingsService;
 use App\Services\Hl7MessageService;
 use App\Services\ImagingOrderService;
 use App\Services\LabOrderService;
+use App\Services\ConsultationService;
 use App\Services\NursingService;
 use App\Services\PatientNumberService;
 use App\Services\PatientDuplicateDetector;
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(LabOrderService::class);
         $this->app->singleton(ImagingOrderService::class);
         $this->app->singleton(NursingService::class);
+        $this->app->singleton(ConsultationService::class);
     }
 
     public function boot(): void
