@@ -29,6 +29,9 @@ use App\Http\Controllers\Tenant\PrescriptionDownloadController;
 use App\Http\Controllers\Tenant\Smtp2goWebhookController;
 use App\Livewire\Tenant\Prescriptions\PrescriptionForm;
 use App\Livewire\Tenant\Documents\PatientDocuments;
+use App\Livewire\Tenant\Billing\CashierShiftManager;
+use App\Livewire\Tenant\Billing\InvoiceForm;
+use App\Livewire\Tenant\Billing\PaymentCollection;
 use App\Livewire\Tenant\Appointments\AppointmentCalendar;
 use App\Livewire\Tenant\Appointments\DoctorScheduleConfig;
 use App\Livewire\Tenant\Appointments\FollowUpDashboard;
@@ -165,6 +168,22 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::middleware('permission:appointments.manage')->group(function () {
             Route::get('/appointments/schedule/{doctorId}', DoctorScheduleConfig::class)
                 ->name('tenant.appointments.schedule');
+        });
+
+        // Billing
+        Route::middleware('permission:billing.view')->group(function () {
+            Route::get('/billing/invoice/{patientId}', InvoiceForm::class)
+                ->name('tenant.billing.invoice.create');
+            Route::get('/billing/invoice/{patientId}/{invoiceId}', InvoiceForm::class)
+                ->name('tenant.billing.invoice.edit');
+            Route::get('/billing/invoice/{invoiceId}/payment', PaymentCollection::class)
+                ->name('tenant.billing.payment');
+        });
+
+        // Cash management
+        Route::middleware('permission:shifts.view')->group(function () {
+            Route::get('/billing/shifts', CashierShiftManager::class)
+                ->name('tenant.billing.shifts');
         });
 
         // Patient documents

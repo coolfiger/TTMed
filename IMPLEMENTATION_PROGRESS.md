@@ -434,7 +434,15 @@ None — all architectural decisions resolved.
 
 ## Phase 9 — Billing and Cash Management
 
-**Status: NOT STARTED**
+**Status: COMPLETE** — 25/25 tests passing
+
+### Deliverables
+- Migration: `invoices`, `invoice_items`, `insurance_claims`, `cashier_shifts`, `payments`, `invoice_number_sequences`, `payment_reference_sequences`
+- Models: `Invoice`, `InvoiceItem`, `InsuranceClaim`, `CashierShift`, `Payment`
+- `BillingService`: invoice creation/finalization/cancellation, line item management with totals recalculation, invoice-level discount, payment collection with per-method validation, payment void with invoice reinstatement, insurance claim attachment/status update, cashier shift open/close (variance calculation)/approve, sequential number generation with `lockForUpdate` for both invoices (`INV-{Ymd}-{0001}`) and payments (`PAY-{Ymd}-{0001}`)
+- Livewire: `InvoiceForm`, `PaymentCollection`, `CashierShiftManager`
+- Routes: `/billing/invoice/{patientId}`, `/billing/invoice/{patientId}/{invoiceId}`, `/billing/invoice/{invoiceId}/payment`, `/billing/shifts`
+- Security: finalized invoices immutable; payments with balances block cancellation; all money stored as integers (cents)
 
 ---
 
