@@ -487,4 +487,27 @@ None — all architectural decisions resolved.
 
 ## Phase 12 — Security, Testing, and Production Deployment
 
-**Status: NOT STARTED**
+**Status: COMPLETE** — 13/13 tests passing; 231/231 total
+
+### Deliverables
+
+#### Database compatibility
+- `ReportService::invoiceAging()`: replaced SQLite-only `julianday()` expression with a driver-aware switch — `DATEDIFF(CURDATE(), ...)` on MySQL, `julianday('now') - julianday(...)` on SQLite — so the query works in both production and the test suite without modification
+
+#### Security hardening
+- `SecurityHeaders` middleware: appended globally; sets `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, `X-XSS-Protection: 1; mode=block`; HSTS (`max-age=31536000; includeSubDomains; preload`) conditionally added only when `APP_ENV=production` and the request is over HTTPS
+- Rate limiting: `throttle:10,1` applied to tenant login route group and platform login route group (10 requests per minute per IP)
+- Path traversal fix in `PrescriptionDownloadController`: `realpath()` on the stored `pdf_path`, then `str_starts_with($realPath, $storageRoot . '/')` guard before `fopen()` — prevents any manipulated DB value from serving files outside the tenant's storage root
+
+#### Production operations
+- `tenants:health` Artisan command: connects to each active tenant's database, verifies connectivity, diffs migration files against the `migrations` table, and reports a health table per tenant with pending migration count
+
+#### Security tests (13 tests)
+- Security headers presence and correct values
+- HSTS absent outside production
+- TenantContext isolation: set/switch/uuid correctness
+- All three primary models (`Patient`, `Invoice`, `InventoryItem`) confirmed to use the `tenant` connection
+- `findOrFail` on non-existent ID throws `ModelNotFoundException` on all three models
+- `BillingService` cannot operate on a non-existent invoice ID
+- `InventoryService` quantity guard fires before any write regardless of caller identity
+- `CheckPermission` middleware: 403 without permission, 200 with permission

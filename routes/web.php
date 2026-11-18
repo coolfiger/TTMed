@@ -54,7 +54,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
 
     // Guest routes (no tenant auth required, but tenant must be resolved)
-    Route::middleware('guest:tenant')->group(function () {
+    Route::middleware(['guest:tenant', 'throttle:10,1'])->group(function () {
         Route::get('/login', TenantLogin::class)->name('tenant.login');
         Route::get('/',      fn () => redirect()->route('tenant.login'));
     });

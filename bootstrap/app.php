@@ -5,6 +5,7 @@ use App\Exceptions\TenantNotFoundException;
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\EnsureTenantActive;
 use App\Http\Middleware\ResolveTenant;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.active'   => EnsureTenantActive::class,
             'permission'      => CheckPermission::class,
         ]);
+
+        // Security headers on every response
+        $middleware->append(SecurityHeaders::class);
 
         // Encrypt session cookies
         $middleware->encryptCookies();

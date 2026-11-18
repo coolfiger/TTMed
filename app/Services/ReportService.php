@@ -96,7 +96,12 @@ class ReportService
      */
     public function invoiceAging(?int $branchId = null): array
     {
-        $today = now()->toDateString();
+        $driver = DB::connection('tenant')->getDriverName();
+
+        // age_days expression differs between MySQL and SQLite (used in tests)
+        $ageDaysExpr = $driver === 'sqlite'
+            ? "CAST(julianday('now') - julianday(DATE(invoices.created_at)) AS INTEGER)"
+            : 'DATEDIFF(CURDATE(), DATE(invoices.created_at))';
 
         $q = DB::connection('tenant')
             ->table('invoices')
@@ -112,7 +117,7 @@ class ReportService
                 invoices.status,
                 patients.first_name,
                 patients.last_name,
-                CAST(julianday('{$today}') - julianday(DATE(invoices.created_at)) AS INTEGER) AS age_days
+                {$ageDaysExpr} AS age_days
             ")
             ->orderByDesc('age_days')
             ->get();

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('platform')->name('platform.')->group(function () {
 
     // Guest routes
-    Route::middleware('guest:platform')->group(function () {
+    Route::middleware(['guest:platform', 'throttle:10,1'])->group(function () {
         Route::get('/login', PlatformLogin::class)->name('login');
     });
 
