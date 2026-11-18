@@ -6,6 +6,9 @@ use App\Livewire\Tenant\Users\UserList;
 use App\Livewire\Tenant\Users\UserForm;
 use App\Livewire\Tenant\Roles\RoleList;
 use App\Livewire\Tenant\Roles\RoleForm;
+use App\Livewire\Tenant\Patients\PatientSearch;
+use App\Livewire\Tenant\Patients\PatientForm;
+use App\Livewire\Tenant\Patients\PatientProfile;
 use App\Livewire\Tenant\Branches\BranchList;
 use App\Livewire\Tenant\Branches\BranchForm;
 use App\Livewire\Tenant\Settings\CentreSettings;
@@ -59,6 +62,18 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
             Route::get('/roles',             RoleList::class)->name('tenant.roles.index');
             Route::get('/roles/create',      RoleForm::class)->name('tenant.roles.create');
             Route::get('/roles/{role}/edit', RoleForm::class)->name('tenant.roles.edit');
+        });
+
+        // Patient management
+        Route::middleware('permission:patients.view')->group(function () {
+            Route::get('/patients',                  PatientSearch::class)->name('tenant.patients.index');
+            Route::get('/patients/{id}',             PatientProfile::class)->name('tenant.patients.show');
+        });
+        Route::middleware('permission:patients.create')->group(function () {
+            Route::get('/patients/create',           PatientForm::class)->name('tenant.patients.create');
+        });
+        Route::middleware('permission:patients.edit')->group(function () {
+            Route::get('/patients/{id}/edit',        PatientForm::class)->name('tenant.patients.edit');
         });
 
         // Branch management

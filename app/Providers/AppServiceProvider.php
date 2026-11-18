@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Services\AuditService;
 use App\Services\CentreSettingsService;
+use App\Services\PatientNumberService;
+use App\Services\PatientDuplicateDetector;
 use App\Tenancy\TenantContext;
 use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TenantDatabaseManager::class);
         $this->app->singleton(AuditService::class);
         $this->app->singleton(CentreSettingsService::class);
+        $this->app->singleton(PatientNumberService::class);
+        $this->app->singleton(PatientDuplicateDetector::class);
     }
 
     public function boot(): void
