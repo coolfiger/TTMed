@@ -137,6 +137,15 @@ class TenantDefaultRolesSeeder extends Seeder
             // Staff
             ['slug' => 'staff.view',                'module' => 'staff',         'name' => 'View staff'],
             ['slug' => 'staff.manage',              'module' => 'staff',         'name' => 'Manage staff'],
+            // Services
+            ['slug' => 'services.view',             'module' => 'services',      'name' => 'View service catalogue'],
+            ['slug' => 'services.manage',           'module' => 'services',      'name' => 'Manage service catalogue'],
+            // Insurance
+            ['slug' => 'insurance.view',            'module' => 'insurance',     'name' => 'View insurance providers'],
+            ['slug' => 'insurance.manage',          'module' => 'insurance',     'name' => 'Manage insurance providers'],
+            // Branches
+            ['slug' => 'branches.view',             'module' => 'branches',      'name' => 'View branches'],
+            ['slug' => 'branches.manage',           'module' => 'branches',      'name' => 'Manage branches'],
             // Settings
             ['slug' => 'settings.view',             'module' => 'settings',      'name' => 'View settings'],
             ['slug' => 'settings.manage',           'module' => 'settings',      'name' => 'Manage settings'],
@@ -199,6 +208,9 @@ class TenantDefaultRolesSeeder extends Seeder
 
         $managerPerms = array_merge($receptionistPerms, $accountantPerms, [
             'staff.view', 'staff.manage',
+            'services.view', 'services.manage',
+            'insurance.view', 'insurance.manage',
+            'branches.view', 'branches.manage',
             'settings.view', 'settings.manage',
             'reports.operational', 'reports.clinical', 'reports.financial', 'reports.export',
             'users.view', 'users.manage',

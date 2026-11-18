@@ -3,6 +3,7 @@
 namespace App\Models\Tenant;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Branch extends Model
 {
@@ -22,4 +23,14 @@ class Branch extends Model
         'is_main'   => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public function operatingHours(): HasMany
+    {
+        return $this->hasMany(BranchOperatingHour::class)->orderBy('day_of_week');
+    }
+
+    public function staff(): HasMany
+    {
+        return $this->hasMany(StaffProfile::class);
+    }
 }

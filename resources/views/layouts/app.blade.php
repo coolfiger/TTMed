@@ -74,6 +74,18 @@
                     <x-nav-item route="tenant.staff.index" label="Staff" />
                 @endif
 
+                @if($user?->hasPermission('services.view'))
+                    <x-nav-item route="tenant.services.index" label="Services" />
+                @endif
+
+                @if($user?->hasPermission('insurance.view'))
+                    <x-nav-item route="tenant.insurance.index" label="Insurance" />
+                @endif
+
+                @if($user?->hasPermission('branches.view'))
+                    <x-nav-item route="tenant.branches.index" label="Branches" />
+                @endif
+
                 @if($user?->hasPermission('settings.view'))
                     <x-nav-item route="tenant.settings.index" label="Settings" />
                 @endif

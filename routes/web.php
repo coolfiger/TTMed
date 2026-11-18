@@ -6,6 +6,15 @@ use App\Livewire\Tenant\Users\UserList;
 use App\Livewire\Tenant\Users\UserForm;
 use App\Livewire\Tenant\Roles\RoleList;
 use App\Livewire\Tenant\Roles\RoleForm;
+use App\Livewire\Tenant\Branches\BranchList;
+use App\Livewire\Tenant\Branches\BranchForm;
+use App\Livewire\Tenant\Settings\CentreSettings;
+use App\Livewire\Tenant\Staff\StaffList;
+use App\Livewire\Tenant\Staff\StaffForm;
+use App\Livewire\Tenant\Services\ServiceList;
+use App\Livewire\Tenant\Services\ServiceForm;
+use App\Livewire\Tenant\Insurance\InsuranceList;
+use App\Livewire\Tenant\Insurance\InsuranceForm;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,6 +59,47 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
             Route::get('/roles',             RoleList::class)->name('tenant.roles.index');
             Route::get('/roles/create',      RoleForm::class)->name('tenant.roles.create');
             Route::get('/roles/{role}/edit', RoleForm::class)->name('tenant.roles.edit');
+        });
+
+        // Branch management
+        Route::middleware('permission:branches.view')->group(function () {
+            Route::get('/branches', BranchList::class)->name('tenant.branches.index');
+        });
+        Route::middleware('permission:branches.manage')->group(function () {
+            Route::get('/branches/create',           BranchForm::class)->name('tenant.branches.create');
+            Route::get('/branches/{branch}/edit',    BranchForm::class)->name('tenant.branches.edit');
+        });
+
+        // Centre settings
+        Route::middleware('permission:settings.view')->group(function () {
+            Route::get('/settings', CentreSettings::class)->name('tenant.settings.index');
+        });
+
+        // Staff management
+        Route::middleware('permission:staff.view')->group(function () {
+            Route::get('/staff', StaffList::class)->name('tenant.staff.index');
+        });
+        Route::middleware('permission:staff.manage')->group(function () {
+            Route::get('/staff/create',           StaffForm::class)->name('tenant.staff.create');
+            Route::get('/staff/{staff}/edit',     StaffForm::class)->name('tenant.staff.edit');
+        });
+
+        // Service catalogue
+        Route::middleware('permission:services.view')->group(function () {
+            Route::get('/services', ServiceList::class)->name('tenant.services.index');
+        });
+        Route::middleware('permission:services.manage')->group(function () {
+            Route::get('/services/create',           ServiceForm::class)->name('tenant.services.create');
+            Route::get('/services/{service}/edit',   ServiceForm::class)->name('tenant.services.edit');
+        });
+
+        // Insurance providers
+        Route::middleware('permission:insurance.view')->group(function () {
+            Route::get('/insurance', InsuranceList::class)->name('tenant.insurance.index');
+        });
+        Route::middleware('permission:insurance.manage')->group(function () {
+            Route::get('/insurance/create',              InsuranceForm::class)->name('tenant.insurance.create');
+            Route::get('/insurance/{provider}/edit',     InsuranceForm::class)->name('tenant.insurance.edit');
         });
     });
 });
