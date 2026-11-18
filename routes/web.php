@@ -18,6 +18,8 @@ use App\Livewire\Tenant\Services\ServiceList;
 use App\Livewire\Tenant\Services\ServiceForm;
 use App\Livewire\Tenant\Insurance\InsuranceList;
 use App\Livewire\Tenant\Insurance\InsuranceForm;
+use App\Livewire\Tenant\Reception\ReceptionDashboard;
+use App\Livewire\Tenant\Reception\QueueManager;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -115,6 +117,12 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::middleware('permission:insurance.manage')->group(function () {
             Route::get('/insurance/create',              InsuranceForm::class)->name('tenant.insurance.create');
             Route::get('/insurance/{provider}/edit',     InsuranceForm::class)->name('tenant.insurance.edit');
+        });
+
+        // Reception and queue
+        Route::middleware('permission:queue.view')->group(function () {
+            Route::get('/reception',      ReceptionDashboard::class)->name('tenant.reception.dashboard');
+            Route::get('/queue',          QueueManager::class)->name('tenant.queue.manage');
         });
     });
 });

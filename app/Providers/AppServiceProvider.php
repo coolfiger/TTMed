@@ -6,6 +6,8 @@ use App\Services\AuditService;
 use App\Services\CentreSettingsService;
 use App\Services\PatientNumberService;
 use App\Services\PatientDuplicateDetector;
+use App\Services\QueueNumberService;
+use App\Services\QueueService;
 use App\Tenancy\TenantContext;
 use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(CentreSettingsService::class);
         $this->app->singleton(PatientNumberService::class);
         $this->app->singleton(PatientDuplicateDetector::class);
+        $this->app->singleton(QueueNumberService::class);
+        $this->app->singleton(QueueService::class);
     }
 
     public function boot(): void

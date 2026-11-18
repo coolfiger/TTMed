@@ -182,7 +182,39 @@ None — all architectural decisions resolved.
 
 ## Phase 4 — Reception and Queue Management
 
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Completed:** 2026-11-18
+
+### Completed
+
+- [x] Migration: encounters (skeleton — full clinical fields added in Phase 6)
+- [x] Migration: queue_entries (queue_number unique per branch+date, all statuses, is_priority, FK to encounters/patients/branches/doctors)
+- [x] Migration: queue_events (append-only audit trail of every status change and action)
+- [x] Migration: queue_number_sequences (per-branch per-day, locked transaction)
+- [x] Migration: doctor_availability (per-doctor per-branch status, upsert pattern)
+- [x] Model: Encounter (relationships to patient/branch/doctor/queueEntry, timestamp casts)
+- [x] Model: QueueEntry (status_label/status_color accessors, canTransitionTo(), VALID_TRANSITIONS map, scopeActive/scopeForBranchToday)
+- [x] Model: QueueEvent (append-only, no timestamps, occurred_at cast)
+- [x] Model: DoctorAvailability (status_label/status_color/isAvailable, explicit table name)
+- [x] QueueNumberService: sequential per branch+date, lockForUpdate transaction, never repeats, currentMax()
+- [x] QueueService: checkIn(), transition() with valid-state enforcement, assignDoctor(), transferToDoctor(), setPriority(), updateDoctorAvailability(); broadcasts QueueUpdated on every mutation
+- [x] QueueUpdated broadcast event: tenant-scoped channel (tenant.{uuid}.branch.{branchId}.queue), implements ShouldBroadcast, entryPayload() helper
+- [x] AppServiceProvider: QueueNumberService + QueueService registered as singletons
+- [x] Livewire: ReceptionDashboard (patient search + check-in form, live queue list, doctor status panel, branch switcher, real-time Echo listener)
+- [x] Livewire: QueueManager (advance/cancel/no-show, transfer modal, priority modal, doctor availability modal, branch+status+doctor filters, real-time Echo listener)
+- [x] Blade views for ReceptionDashboard and QueueManager
+- [x] Routes: /reception and /queue behind queue.view permission
+- [x] Nav: Reception + Queue links under queue.view permission
+- [x] Tests: 33 Phase 4 tests passing (QueueEntryModelTest, QueueNumberServiceTest, QueueServiceTest)
+- [x] Full suite: 90/90 passing
+
+### Notes
+
+- Queue numbers reset daily per branch; never reused within a branch+date
+- State machine enforced server-side via VALID_TRANSITIONS — invalid transitions throw InvalidArgumentException
+- WebSocket channel is tenant-UUID-scoped; no cross-tenant broadcast possible
+- doctor_availability uses explicit table name (not pluralized) to match migration
+- Encounter is a skeleton here; full clinical fields (vitals, diagnoses, SOAP notes) added in Phase 6
 
 ---
 

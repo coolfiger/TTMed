@@ -32,6 +32,7 @@
 
                 @if($user?->hasPermission('queue.view'))
                     <x-nav-item route="tenant.reception.dashboard" label="Reception" />
+                    <x-nav-item route="tenant.queue.manage" label="Queue" />
                 @endif
 
                 @if($user?->hasPermission('nursing.assess'))
