@@ -54,6 +54,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Local development only: set tenant in session so subdomain routing is not required
+// Visit /dev/tenant/{code} to switch tenant, then browse to /login
+if (app()->environment('local')) {
+    Route::get('/dev/tenant/{code}', function (string $code) {
+        $tenant = \App\Models\Platform\Tenant::on('platform')->where('code', $code)->firstOrFail();
+        session([
+            'tenant_uuid' => $tenant->uuid,
+            'tenant_id'   => $tenant->id,
+        ]);
+        app(\App\Tenancy\TenantContext::class)->set($tenant);
+        app(\App\Tenancy\TenantDatabaseManager::class)->connect($tenant);
+        return redirect('/login');
+    })->name('dev.switch-tenant');
+}
+
 Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
 
     // Guest routes (no tenant auth required, but tenant must be resolved)

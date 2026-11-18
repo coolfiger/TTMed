@@ -14,6 +14,19 @@ class TenantDatabaseManager
      */
     public function connect(Tenant $tenant): void
     {
+        // SQLite mode: db_host sentinel 'sqlite' used in local/demo environments
+        if ($tenant->db_host === 'sqlite' || env('TENANT_DB_CONNECTION') === 'sqlite') {
+            Config::set('database.connections.tenant', [
+                'driver'                  => 'sqlite',
+                'database'                => $tenant->database_name,
+                'prefix'                  => '',
+                'foreign_key_constraints' => true,
+            ]);
+            DB::purge('tenant');
+            DB::reconnect('tenant');
+            return;
+        }
+
         $password = $this->decryptPassword($tenant->db_password);
 
         Config::set('database.connections.tenant', [

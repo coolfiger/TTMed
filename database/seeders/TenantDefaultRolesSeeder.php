@@ -1,5 +1,7 @@
 <?php
 
+namespace Database\Seeders;
+
 use App\Models\Tenant\Permission;
 use App\Models\Tenant\Role;
 use Illuminate\Database\Seeder;

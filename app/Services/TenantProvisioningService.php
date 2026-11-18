@@ -51,7 +51,7 @@ class TenantProvisioningService
 
         // 4. Seed default roles, permissions, and catalogue data
         Artisan::call('db:seed', [
-            '--class'    => 'TenantDefaultRolesSeeder',
+            '--class'    => 'Database\\Seeders\\TenantDefaultRolesSeeder',
             '--database' => 'tenant',
             '--force'    => true,
         ]);
