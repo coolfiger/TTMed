@@ -336,7 +336,84 @@ None — all architectural decisions resolved.
 
 ## Phase 7 — Prescriptions and Documents
 
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Completed:** 2026-11-18
+
+### Migrations
+- [x] `medications` — name, generic_name, brand_names (JSON), strength/strength_unit, form enum (tablet/capsule/liquid/syrup/suspension/injection/cream/ointment/gel/inhaler/drops/suppository/patch/powder/other), route enum, drug_class, is_active, is_custom
+- [x] `prescriptions` — prescription_number UNIQUE, encounter/patient/doctor/branch FKs, status enum (draft/issued/cancelled), allergy_checked, pdf_path (set once at issuance, never overwritten), issued/cancelled timestamps + actors
+- [x] `prescription_items` — denormalized medication fields (name/strength/form/route), dose, frequency, duration/duration_unit, quantity, instructions, refills_allowed, sort_order
+- [x] `prescription_templates` — doctor-specific reusable item sets (JSON)
+- [x] `prescription_number_sequences` — per-day sequential locking
+- [x] `prescription_delivery_logs` — SMTP2GO message tracking, status enum (pending/sent/delivered/failed/bounced)
+- [x] `patient_documents` — absolute private storage_path (never public URL), mime_type, file_size_bytes, version, is_archived
+- [x] `document_versions` — version history with per-version storage paths
+- [x] `document_access_logs` — view/download/print events with IP; no updated_at
+- [x] `medical_certificates` — certificate_number UNIQUE, certificate_type enum (sick_leave/fit_for_work/fitness/medical_report/other), from/to dates, diagnosis_text, pdf_path
+- [x] `certificate_number_sequences` — per-day sequential locking
+
+### Models
+- [x] `Medication` — scopeActive(), scopeSearch(), getDisplayAttribute()
+- [x] `Prescription` — STATUS_* constants, isDraft/isIssued/isCancelled/hasItems()
+- [x] `PrescriptionItem` — getDurationLabelAttribute()
+- [x] `PrescriptionTemplate` — items cast to array
+- [x] `PrescriptionDeliveryLog` — getStatusColorAttribute()
+- [x] `PatientDocument` — getExtensionAttribute(), getFileSizeLabelAttribute(), isViewable()
+- [x] `DocumentVersion`, `DocumentAccessLog` ($timestamps = false)
+- [x] `MedicalCertificate` — isIssued(), getTypeLabelAttribute(), getDurationDaysAttribute()
+
+### Services
+- [x] `PrescriptionService` — getOrCreateDraft, addItem (throws if not draft), removeItem (throws if not draft), checkAllergies (case-insensitive), issuePrescription (DB transaction: generate PDF → set pdf_path once → audit), cancelPrescription, queueEmailDelivery; nextPrescriptionNumber (lockForUpdate, format RX-{Ymd}-{0001}); generatePdf (DomPDF → private storage)
+- [x] `DocumentService` — upload (20MB limit, MIME allowlist), addVersion (archives current), streamDownload (file_exists check + access log + chunked streamDownload — never public URL), logAccess
+- [x] `MedicalCertificateService` — create (DB transaction, number generation, PDF generation, audit); nextCertificateNumber (MC-{Ymd}-{0001})
+
+### Jobs
+- [x] `SendPrescriptionEmailJob` — ShouldQueue, 3 tries; reads SMTP credentials from CentreSettingsService (host/port/username/encrypted password/from); configures mail.mailers.smtp dynamically; attaches PDF; updates delivery log on success/failure; failed() handler marks log as failed
+
+### Controllers
+- [x] `DocumentDownloadController` — permission check (documents.view), PatientDocument::on('tenant')->findOrFail, delegates to DocumentService::streamDownload
+- [x] `PrescriptionDownloadController` — permission check (prescriptions.view), only issued prescriptions, file_exists guard, chunked streamDownload
+- [x] `Smtp2goWebhookController` — HMAC-SHA256 verification (hash_equals), maps event to delivery log status (delivered/bounced/failed)
+- [x] `Controller` base class added (was missing)
+
+### Livewire
+- [x] `PrescriptionForm` — medication search with debounce autocomplete, selectMedication populates item form, addItem/removeItem (tenant-scoped), allergy warning banner with mark-reviewed flow, issuePrescription with confirm dialog, read-only state after issuance
+- [x] `PatientDocuments` — Livewire WithFileUploads, upload form with category selector, filter by category + archived toggle, download link
+
+### Blade Views
+- [x] `livewire/tenant/prescriptions/prescription-form.blade.php`
+- [x] `livewire/tenant/documents/patient-documents.blade.php`
+- [x] `pdf/prescription.blade.php` — DejaVu Sans, centre header, ℞ banner, patient block, items table, footer with signature line
+- [x] `pdf/medical-certificate.blade.php` — certificate title (uppercase, bordered), body text varies by certificate_type, details box, footer
+
+### Routes
+- [x] GET `/prescriptions/encounter/{encounterId}` — `PrescriptionForm`, behind `prescriptions.create`
+- [x] GET `/prescriptions/{id}/download` — `PrescriptionDownloadController`, behind `prescriptions.view`
+- [x] GET `/patients/{patientId}/documents` — `PatientDocuments`, behind `documents.view`
+- [x] GET `/documents/{id}/download` — `DocumentDownloadController`, behind `documents.view`
+- [x] POST `/api/smtp2go/webhook` — `Smtp2goWebhookController` (no session auth — HMAC-verified)
+
+### AppServiceProvider
+- [x] `PrescriptionService`, `DocumentService`, `MedicalCertificateService` registered as singletons
+
+### Seeders
+- [x] `MedicationSeeder` — 70+ medications covering antihypertensives, diabetes, statins, analgesics/NSAIDs, antibiotics, GI agents, respiratory (inhalers/steroids/antihistamines), mental health (SSRIs/benzodiazepines), thyroid, vitamins; upsert on [name, strength, form]
+
+### Tests — 13 passing
+- [x] `PrescriptionServiceTest` — draft creation, idempotent getOrCreate, number format (RX-{Ymd}-{0001}), sequential numbers, add item, cannot add to non-draft, remove item, cannot remove from non-draft, cannot issue empty prescription, allergy conflict detected, no conflict on no match, cancel, cannot cancel twice
+
+### Security
+- [x] Documents never served via public URL — always through authenticated controller with access logging
+- [x] Prescription PDF set once at issuance inside DB transaction; no overwrite path exists
+- [x] SMTP credentials read from encrypted centre_settings at job runtime — never hardcoded
+- [x] SMTP2GO webhook verified with HMAC-SHA256 (hash_equals) before processing
+- [x] DocumentDownloadController and PrescriptionDownloadController both check tenant guard + permission before serving any file
+
+### Notes
+- Prescription numbers: RX-{Ymd}-{0001}, resets daily, lockForUpdate prevents duplicate numbers under concurrency
+- Certificate numbers: MC-{Ymd}-{0001}, same pattern
+- PDF files stored in {tenantStorage}/prescriptions/ and {tenantStorage}/certificates/ respectively
+- Document storage at {tenantStorage}/documents/ — absolute path stored in DB, never relative
 
 ---
 

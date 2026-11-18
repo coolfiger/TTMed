@@ -24,6 +24,11 @@ use App\Livewire\Tenant\Nursing\NurseDashboard;
 use App\Livewire\Tenant\Doctor\DoctorDashboard;
 use App\Http\Controllers\Tenant\LabInboundController;
 use App\Http\Controllers\Tenant\ImagingInboundController;
+use App\Http\Controllers\Tenant\DocumentDownloadController;
+use App\Http\Controllers\Tenant\PrescriptionDownloadController;
+use App\Http\Controllers\Tenant\Smtp2goWebhookController;
+use App\Livewire\Tenant\Prescriptions\PrescriptionForm;
+use App\Livewire\Tenant\Documents\PatientDocuments;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -138,6 +143,24 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::middleware('permission:encounters.view')->group(function () {
             Route::get('/consultations', DoctorDashboard::class)->name('tenant.consultations.dashboard');
         });
+
+        // Prescriptions
+        Route::middleware('permission:prescriptions.create')->group(function () {
+            Route::get('/prescriptions/encounter/{encounterId}', PrescriptionForm::class)
+                ->name('tenant.prescriptions.encounter');
+        });
+        Route::middleware('permission:prescriptions.view')->group(function () {
+            Route::get('/prescriptions/{id}/download', PrescriptionDownloadController::class)
+                ->name('tenant.prescriptions.download');
+        });
+
+        // Patient documents
+        Route::middleware('permission:documents.view')->group(function () {
+            Route::get('/patients/{patientId}/documents', PatientDocuments::class)
+                ->name('tenant.documents.index');
+            Route::get('/documents/{id}/download', DocumentDownloadController::class)
+                ->name('tenant.documents.download');
+        });
     });
 
     // Integration inbound webhooks (no session auth — HMAC-verified)
@@ -146,5 +169,6 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::post('/lab/inbound/fhir',     [LabInboundController::class,     'receiveFhir'])->name('tenant.lab.inbound.fhir');
         Route::post('/imaging/inbound/hl7',  [ImagingInboundController::class, 'receiveHl7'])->name('tenant.imaging.inbound.hl7');
         Route::post('/imaging/inbound/vepro',[ImagingInboundController::class, 'receiveVepro'])->name('tenant.imaging.inbound.vepro');
+        Route::post('/smtp2go/webhook', Smtp2goWebhookController::class)->name('tenant.smtp2go.webhook');
     });
 });
