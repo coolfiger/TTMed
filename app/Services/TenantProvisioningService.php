@@ -78,7 +78,7 @@ class TenantProvisioningService
         $this->createAdminUser($adminUser);
 
         // 6. Create the default branch
-        $this->createDefaultBranch($tenant);
+        $this->createDefaultBranch($tenant, $adminUser['branchName'] ?? $tenant->name);
 
         // 7. Create tenant file storage directory
         $storagePath = config('tenancy.storage_root') . '/' . $tenant->uuid;
@@ -116,11 +116,11 @@ class TenantProvisioningService
         $user->roles()->attach($adminRole->id);
     }
 
-    private function createDefaultBranch(Tenant $tenant): void
+    private function createDefaultBranch(Tenant $tenant, string $branchName): void
     {
         \App\Models\Tenant\Branch::on('tenant')->create([
-            'name'    => $tenant->name,
-            'is_main' => true,
+            'name'      => $branchName,
+            'is_main'   => true,
             'is_active' => true,
         ]);
     }
