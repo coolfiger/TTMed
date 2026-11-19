@@ -3,6 +3,7 @@
 use App\Livewire\Tenant\Auth\Login as TenantLogin;
 use App\Livewire\Tenant\Auth\ForgotPassword as TenantForgotPassword;
 use App\Livewire\Tenant\Auth\ResetPassword as TenantResetPassword;
+use App\Livewire\Tenant\Auth\ChangePassword as TenantChangePassword;
 use App\Livewire\Tenant\Dashboard\TenantDashboard;
 use App\Livewire\Tenant\Users\UserList;
 use App\Livewire\Tenant\Users\UserForm;
@@ -81,6 +82,8 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
 
     // Authenticated tenant routes
     Route::middleware('auth:tenant')->group(function () {
+
+        Route::get('/change-password', TenantChangePassword::class)->name('tenant.password.change');
 
         Route::get('/logout', function () {
             auth()->guard('tenant')->logout();
