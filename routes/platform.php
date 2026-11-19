@@ -15,7 +15,12 @@ use App\Livewire\Platform\Users\PlatformUserForm;
 use App\Livewire\Platform\Users\MedicalCentreUserList;
 use Illuminate\Support\Facades\Route;
 
-// Root redirect for platform subdomain
+// All platform routes are scoped to the platform subdomain so they
+// do not collide with tenant routes on other subdomains.
+$platformDomain = config('tenancy.platform_subdomain', 'platform') . '.' . config('tenancy.domain', 'ttmed.app');
+
+Route::domain($platformDomain)->group(function () {
+
 Route::get('/', fn () => redirect()->route('platform.login'));
 
 Route::prefix('platform')->name('platform.')->group(function () {
@@ -64,3 +69,5 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::get('/profile', PlatformUserForm::class)->name('profile');
     });
 });
+
+}); // end Route::domain($platformDomain)
