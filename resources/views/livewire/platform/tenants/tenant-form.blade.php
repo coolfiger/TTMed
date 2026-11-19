@@ -1,4 +1,14 @@
 <div class="max-w-2xl">
+    <div class="flex items-center justify-between mb-4">
+        <span></span>
+        @if($tenant)
+        <a href="{{ route('platform.tenants.show', $tenant->uuid) }}"
+            class="text-sm text-slate-500 hover:text-slate-800">← Back to detail</a>
+        @else
+        <a href="{{ route('platform.tenants.index') }}"
+            class="text-sm text-slate-500 hover:text-slate-800">← Back to list</a>
+        @endif
+    </div>
     <form wire:submit="save" class="space-y-6 bg-white rounded-lg border border-slate-200 p-6">
 
         <div class="grid grid-cols-2 gap-5">
