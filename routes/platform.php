@@ -12,6 +12,9 @@ use App\Livewire\Platform\Plans\PlanForm;
 use App\Livewire\Platform\Users\PlatformUserList;
 use Illuminate\Support\Facades\Route;
 
+// Root redirect for platform subdomain
+Route::get('/', fn () => redirect()->route('platform.login'));
+
 Route::prefix('platform')->name('platform.')->group(function () {
 
     // Guest routes
