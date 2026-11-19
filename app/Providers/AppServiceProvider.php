@@ -21,10 +21,13 @@ use App\Services\PatientNumberService;
 use App\Services\PatientDuplicateDetector;
 use App\Services\QueueNumberService;
 use App\Services\QueueService;
+use App\Http\Middleware\EnsureTenantActive;
+use App\Http\Middleware\ResolveTenant;
 use App\Tenancy\TenantContext;
 use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -59,5 +62,12 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->isProduction()) {
             \Illuminate\Database\Eloquent\Model::preventSilentlyDiscardingAttributes();
         }
+
+        // Ensure Livewire's internal update route runs through tenant resolution,
+        // so wire:submit / wire:click work on tenant subdomains.
+        Livewire::setUpdateRoute(function ($handle) {
+            return \Illuminate\Support\Facades\Route::post('/livewire/update', $handle)
+                ->middleware(['web', ResolveTenant::class, EnsureTenantActive::class]);
+        });
     }
 }

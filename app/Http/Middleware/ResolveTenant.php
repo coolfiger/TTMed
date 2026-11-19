@@ -20,6 +20,15 @@ class ResolveTenant
 
     public function handle(Request $request, Closure $next): Response
     {
+        $host     = $request->getHost();
+        $domain   = config('tenancy.domain');
+        $platform = config('tenancy.platform_subdomain') . '.' . $domain;
+
+        // Skip entirely for the platform subdomain or bare domain — not a tenant request
+        if ($host === $platform || $host === $domain) {
+            return $next($request);
+        }
+
         $tenant = $this->resolveTenant($request);
 
         if (! $tenant) {
