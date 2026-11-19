@@ -21,10 +21,12 @@ use App\Services\PatientNumberService;
 use App\Services\PatientDuplicateDetector;
 use App\Services\QueueNumberService;
 use App\Services\QueueService;
+use App\Auth\TenantUserProvider;
 use App\Http\Middleware\EnsureTenantActive;
 use App\Http\Middleware\ResolveTenant;
 use App\Tenancy\TenantContext;
 use App\Tenancy\TenantDatabaseManager;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -62,6 +64,17 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->isProduction()) {
             \Illuminate\Database\Eloquent\Model::preventSilentlyDiscardingAttributes();
         }
+
+        // Custom user provider that guarantees the tenant DB connection is live
+        // before every user retrieval — guards against middleware ordering edge cases.
+        Auth::provider('tenant_eloquent', function ($app, array $config) {
+            return new TenantUserProvider(
+                $app->make(TenantContext::class),
+                $app->make(TenantDatabaseManager::class),
+                $app['hash'],
+                $config['model'],
+            );
+        });
 
         // Ensure Livewire's internal update route runs through tenant resolution,
         // so wire:submit / wire:click work on tenant subdomains.

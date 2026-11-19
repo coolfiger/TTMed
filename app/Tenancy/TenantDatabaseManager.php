@@ -8,12 +8,22 @@ use Illuminate\Support\Facades\DB;
 
 class TenantDatabaseManager
 {
+    private ?string $connectedCode = null;
+
     /**
      * Configure and establish the 'tenant' database connection
-     * for the given tenant.
+     * for the given tenant. Idempotent within the same request —
+     * skips the purge/reconnect cycle if already connected to this tenant.
      */
     public function connect(Tenant $tenant): void
     {
+        // Skip if already connected to this tenant and config is populated
+        if ($this->connectedCode === $tenant->code &&
+            Config::get('database.connections.tenant.database')) {
+            return;
+        }
+
+
         // SQLite mode: db_host sentinel 'sqlite' used in local/demo environments
         if ($tenant->db_host === 'sqlite' || env('TENANT_DB_CONNECTION') === 'sqlite') {
             Config::set('database.connections.tenant', [
@@ -24,6 +34,7 @@ class TenantDatabaseManager
             ]);
             DB::purge('tenant');
             DB::reconnect('tenant');
+            $this->connectedCode = $tenant->code;
             return;
         }
 
@@ -43,9 +54,12 @@ class TenantDatabaseManager
             'engine'    => 'InnoDB',
         ]);
 
-        // Purge any existing connection so the new config takes effect
+        // Purge any existing connection so the new config takes effect,
+        // then immediately establish a fresh connection with the new credentials.
         DB::purge('tenant');
-        DB::reconnect('tenant');
+        DB::connection('tenant'); // Lazy-create with new config (avoids reconnect's extra disconnect step)
+
+        $this->connectedCode = $tenant->code;
     }
 
     /**

@@ -76,7 +76,7 @@ return [
             'model'  => User::class,
         ],
         'tenant_users' => [
-            'driver' => 'eloquent',
+            'driver' => 'tenant_eloquent',
             'model'  => User::class,
         ],
         'platform_users' => [
