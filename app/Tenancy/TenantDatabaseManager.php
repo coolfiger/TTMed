@@ -58,7 +58,7 @@ class TenantDatabaseManager
 
         $provisioner->statement("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         $provisioner->statement("CREATE USER IF NOT EXISTS '{$dbUsername}'@'localhost' IDENTIFIED BY '{$dbPassword}'");
-        $provisioner->statement("GRANT SELECT, INSERT, UPDATE, DELETE, INDEX, CREATE TEMPORARY TABLES ON `{$databaseName}`.* TO '{$dbUsername}'@'localhost'");
+        $provisioner->statement("GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, REFERENCES, CREATE TEMPORARY TABLES ON `{$databaseName}`.* TO '{$dbUsername}'@'localhost'");
         $provisioner->statement('FLUSH PRIVILEGES');
     }
 
