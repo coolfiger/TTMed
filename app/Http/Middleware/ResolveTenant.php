@@ -57,18 +57,20 @@ class ResolveTenant
     {
         $resolution = config('tenancy.resolution', 'subdomain');
 
-        // During authenticated requests, prefer the session-stored tenant
-        // (avoids a platform DB lookup on every request)
-        if ($request->session()->has('tenant_uuid')) {
-            return Tenant::where('uuid', $request->session()->get('tenant_uuid'))
-                ->first();
-        }
-
+        // Always resolve from subdomain first — the session may hold a stale
+        // or unrelated tenant_uuid from a previous session on a different centre.
         if ($resolution === 'subdomain') {
-            return $this->resolveFromSubdomain($request);
+            $tenant = $this->resolveFromSubdomain($request);
+            if ($tenant) {
+                return $tenant;
+            }
         }
 
-        // Session fallback (development / localhost)
+        // Fallback: session-stored UUID (local / non-subdomain environments only)
+        if ($request->session()->has('tenant_uuid')) {
+            return Tenant::where('uuid', $request->session()->get('tenant_uuid'))->first();
+        }
+
         return null;
     }
 
