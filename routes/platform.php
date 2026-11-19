@@ -36,20 +36,20 @@ Route::prefix('platform')->name('platform.')->group(function () {
         })->name('logout');
 
         // Tenants
-        Route::get('/tenants',           TenantList::class)->name('tenants.index');
-        Route::get('/tenants/create',    TenantForm::class)->name('tenants.create');
-        Route::get('/tenants/{tenant}',  TenantShow::class)->name('tenants.show');
-        Route::get('/tenants/{tenant}/edit', TenantForm::class)->name('tenants.edit');
+        Route::get('/tenants',               TenantList::class)->name('tenants.index');
+        Route::get('/tenants/create',        TenantForm::class)->name('tenants.create');
+        Route::get('/tenants/{uuid}',        TenantShow::class)->name('tenants.show');
+        Route::get('/tenants/{uuid}/edit',   TenantForm::class)->name('tenants.edit');
 
         // Subscription plans
-        Route::get('/plans',          PlanList::class)->name('plans.index');
-        Route::get('/plans/create',   PlanForm::class)->name('plans.create');
-        Route::get('/plans/{plan}/edit', PlanForm::class)->name('plans.edit');
+        Route::get('/plans',              PlanList::class)->name('plans.index');
+        Route::get('/plans/create',       PlanForm::class)->name('plans.create');
+        Route::get('/plans/{uuid}/edit',  PlanForm::class)->name('plans.edit');
 
         // Platform users
         Route::get('/users',              PlatformUserList::class)->name('users.index');
         Route::get('/users/create',       PlatformUserForm::class)->name('users.create');
-        Route::get('/users/{user}/edit',  PlatformUserForm::class)->name('users.edit');
+        Route::get('/users/{id}/edit',    PlatformUserForm::class)->name('users.edit');
 
         // My profile
         Route::get('/profile', PlatformUserForm::class)->name('profile');

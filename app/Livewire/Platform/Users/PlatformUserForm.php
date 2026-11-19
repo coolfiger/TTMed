@@ -24,12 +24,15 @@ class PlatformUserForm extends Component
 
     public bool $isProfile = false;
 
-    public function mount(?PlatformUser $user = null): void
+    public function mount(?int $id = null): void
     {
-        // /platform/profile loads the authenticated user
         if (request()->routeIs('platform.profile')) {
             $this->isProfile = true;
             $user = Auth::guard('platform')->user();
+        } elseif ($id) {
+            $user = PlatformUser::findOrFail($id);
+        } else {
+            $user = null;
         }
 
         if ($user && $user->exists) {

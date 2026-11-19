@@ -29,13 +29,14 @@ class TenantForm extends Component
     public string $admin_password = '';
     public bool   $isEdit        = false;
 
-    public function mount(Tenant $tenant = null): void
+    public function mount(?string $uuid = null): void
     {
-        if ($tenant && $tenant->exists) {
-            $this->tenant       = $tenant;
-            $this->isEdit       = true;
-            $this->code         = $tenant->code;
-            $this->name         = $tenant->name;
+        if ($uuid) {
+            $tenant = Tenant::where('uuid', $uuid)->firstOrFail();
+            $this->tenant        = $tenant;
+            $this->isEdit        = true;
+            $this->code          = $tenant->code;
+            $this->name          = $tenant->name;
             $this->business_name = $tenant->business_name ?? '';
             $this->contact_name  = $tenant->contact_name ?? '';
             $this->contact_email = $tenant->contact_email ?? '';
