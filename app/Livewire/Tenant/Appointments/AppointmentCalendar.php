@@ -282,7 +282,7 @@ class AppointmentCalendar extends Component
             ->whereHas('staffProfile', fn ($q) => $q->where('branch_id', $this->branchId)->whereNull('deleted_at'))
             ->get();
 
-        $appointments = [];
+        $appointments = collect();
         if ($this->selectedDoctor && $this->selectedDate) {
             $appointments = Appointment::on('tenant')
                 ->with(['patient'])

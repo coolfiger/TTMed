@@ -268,8 +268,8 @@
     {{-- Real-time update --}}
     <script>
         document.addEventListener('livewire:initialized', () => {
-            @if(app('App\Tenancy\TenantContext')->getTenant())
-                const tenantUuid = "{{ app('App\Tenancy\TenantContext')->getTenant()->uuid }}";
+            @if(app('App\Tenancy\TenantContext')->get())
+                const tenantUuid = "{{ app('App\Tenancy\TenantContext')->get()->uuid }}";
                 const branchId   = {{ $branchId }};
                 const channel    = `tenant.${tenantUuid}.branch.${branchId}.queue`;
 
