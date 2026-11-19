@@ -54,4 +54,50 @@
             </a>
         </div>
     </div>
+
+    {{-- Tenant users --}}
+    <div class="bg-white rounded-lg border border-slate-200">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-800">Users</h3>
+            <a href="{{ route('platform.tenants.users.create', $tenant->uuid) }}"
+                class="rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
+                New User
+            </a>
+        </div>
+        <table class="min-w-full divide-y divide-slate-100">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Username</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Roles</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @forelse($tenantUsers as $u)
+                <tr class="hover:bg-slate-50">
+                    <td class="px-6 py-3 text-sm font-medium text-slate-800">{{ $u->name }}</td>
+                    <td class="px-6 py-3 text-sm font-mono text-slate-600">{{ $u->username }}</td>
+                    <td class="px-6 py-3 text-sm text-slate-600">{{ $u->email }}</td>
+                    <td class="px-6 py-3 text-sm text-slate-600">
+                        {{ $u->roles->pluck('name')->join(', ') ?: '—' }}
+                    </td>
+                    <td class="px-6 py-3 text-sm">
+                        <span class="{{ $u->is_active ? 'text-green-600' : 'text-red-500' }}">
+                            {{ $u->is_active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <a href="{{ route('platform.tenants.users.edit', [$tenant->uuid, $u->id]) }}"
+                            class="text-xs text-slate-500 hover:text-slate-800">Edit</a>
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400">No users yet.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>

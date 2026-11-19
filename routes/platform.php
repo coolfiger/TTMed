@@ -7,6 +7,7 @@ use App\Livewire\Platform\Dashboard\PlatformDashboard;
 use App\Livewire\Platform\Tenants\TenantForm;
 use App\Livewire\Platform\Tenants\TenantList;
 use App\Livewire\Platform\Tenants\TenantShow;
+use App\Livewire\Platform\Tenants\TenantUserForm;
 use App\Livewire\Platform\Plans\PlanList;
 use App\Livewire\Platform\Plans\PlanForm;
 use App\Livewire\Platform\Users\PlatformUserList;
@@ -40,6 +41,10 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::get('/tenants/create',        TenantForm::class)->name('tenants.create');
         Route::get('/tenants/{uuid}',        TenantShow::class)->name('tenants.show');
         Route::get('/tenants/{uuid}/edit',   TenantForm::class)->name('tenants.edit');
+
+        // Tenant user management (platform admin managing users within a medical centre)
+        Route::get('/tenants/{tenantUuid}/users/create',       TenantUserForm::class)->name('tenants.users.create');
+        Route::get('/tenants/{tenantUuid}/users/{userId}/edit', TenantUserForm::class)->name('tenants.users.edit');
 
         // Subscription plans
         Route::get('/plans',              PlanList::class)->name('plans.index');
