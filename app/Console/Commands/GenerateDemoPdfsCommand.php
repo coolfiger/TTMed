@@ -70,7 +70,7 @@ class GenerateDemoPdfsCommand extends Command
                 ->table('lab_results as lr')
                 ->join('lab_order_items as li', 'li.id', '=', 'lr.lab_order_item_id')
                 ->where('li.lab_order_id', $order->order_id)
-                ->select('li.test_name', 'lr.value', 'lr.unit', 'lr.reference_range', 'lr.flag', 'lr.notes')
+                ->select('li.test_name', 'lr.value', 'lr.value_unit as unit', 'lr.reference_range', 'lr.flag', 'lr.interpretation_notes as notes')
                 ->get();
 
             $html = view('pdf.lab-report', [
