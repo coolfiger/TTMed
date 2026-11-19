@@ -126,11 +126,11 @@ class GenerateDemoPdfsCommand extends Command
             ->select(
                 'ir.id as report_id',
                 'ir.imaging_order_id',
-                'ir.modality', 'ir.body_part', 'ir.description',
                 'ir.findings', 'ir.impression', 'ir.recommendations',
                 'ir.radiologist_name',
                 'ir.created_at as reported_at',
                 'io.order_number',
+                'io.modality', 'io.body_part', 'io.clinical_indication as description',
                 'p.first_name', 'p.last_name', 'p.date_of_birth', 'p.gender', 'p.patient_number',
                 'b.name as branch_name', 'b.address as branch_address', 'b.phone as branch_phone',
             )
