@@ -1076,11 +1076,11 @@ class DemoDataSeeder extends Seeder
             }
         }
 
-        // Doctor availability — both doctors on duty
-        DB::connection($this->db)->table('doctor_availability')->insert([
-            ['doctor_id' => $drSharmaId,   'branch_id' => $mainBranch, 'status' => 'busy',      'status_note' => 'With patient', 'updated_by' => $this->userIds['rsharma'],  'created_at' => now(), 'updated_at' => now()],
-            ['doctor_id' => $drRamloganId, 'branch_id' => $mainBranch, 'status' => 'available', 'status_note' => null,           'updated_by' => $this->userIds['pramlogan'],'created_at' => now(), 'updated_at' => now()],
-        ]);
+        // Doctor availability — both doctors on duty (upsert in case of re-run)
+        DB::connection($this->db)->table('doctor_availability')->upsert([
+            ['doctor_id' => $drSharmaId,   'branch_id' => $mainBranch, 'status' => 'busy',      'status_note' => 'With patient', 'updated_by' => $this->userIds['rsharma'],  'created_at' => now()->toDateTimeString(), 'updated_at' => now()->toDateTimeString()],
+            ['doctor_id' => $drRamloganId, 'branch_id' => $mainBranch, 'status' => 'available', 'status_note' => null,           'updated_by' => $this->userIds['pramlogan'],'created_at' => now()->toDateTimeString(), 'updated_at' => now()->toDateTimeString()],
+        ], ['doctor_id', 'branch_id'], ['status', 'status_note', 'updated_by', 'updated_at']);
 
         $this->command->info("  → Today's queue: 6 patients (1 completed, 1 with nurse, 1 awaiting doctor, 1 with doctor, 2 waiting)");
     }
