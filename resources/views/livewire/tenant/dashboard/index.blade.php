@@ -26,7 +26,7 @@
         <div class="bg-white rounded-lg border border-slate-200">
             <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-slate-700">Live Queue</h3>
-                <a href="{{ route('tenant.reception') }}" class="text-xs text-blue-600 hover:underline">Manage →</a>
+                <a href="{{ route('tenant.reception.dashboard') }}" class="text-xs text-blue-600 hover:underline">Manage →</a>
             </div>
             @if($queueEntries->isEmpty())
                 <p class="px-5 py-8 text-sm text-slate-400 text-center">No active patients in queue.</p>
@@ -71,7 +71,7 @@
         <div class="bg-white rounded-lg border border-slate-200">
             <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-slate-700">Today's Appointments</h3>
-                <a href="{{ route('tenant.appointments.index') }}" class="text-xs text-blue-600 hover:underline">View all →</a>
+                <a href="{{ route('tenant.appointments.calendar') }}" class="text-xs text-blue-600 hover:underline">View all →</a>
             </div>
             @if($upcomingAppointments->isEmpty())
                 <p class="px-5 py-8 text-sm text-slate-400 text-center">No appointments scheduled for today.</p>
