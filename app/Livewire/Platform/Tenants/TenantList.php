@@ -20,15 +20,15 @@ class TenantList extends Component
         $this->resetPage();
     }
 
-    public function updateStatus(int $tenantId, string $status): void
+    public function updateStatus(string $tenantUuid, string $status): void
     {
-        $allowed = ['active', 'suspended', 'deactivated', 'trial'];
+        $allowed = ['active', 'suspended', 'cancelled', 'trial'];
 
         if (! in_array($status, $allowed)) {
             return;
         }
 
-        $tenant = Tenant::findOrFail($tenantId);
+        $tenant = Tenant::where('uuid', $tenantUuid)->firstOrFail();
         $old    = $tenant->status;
         $tenant->update(['status' => $status]);
 
