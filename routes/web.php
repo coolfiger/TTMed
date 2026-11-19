@@ -31,10 +31,13 @@ use App\Http\Controllers\Tenant\DocumentDownloadController;
 use App\Http\Controllers\Tenant\PrescriptionDownloadController;
 use App\Http\Controllers\Tenant\Smtp2goWebhookController;
 use App\Livewire\Tenant\Prescriptions\PrescriptionForm;
+use App\Livewire\Tenant\Prescriptions\PrescriptionList;
 use App\Livewire\Tenant\Documents\PatientDocuments;
+use App\Livewire\Tenant\Billing\BillingList;
 use App\Livewire\Tenant\Billing\CashierShiftManager;
 use App\Livewire\Tenant\Billing\InvoiceForm;
 use App\Livewire\Tenant\Billing\PaymentCollection;
+use App\Livewire\Tenant\Billing\PaymentList;
 use App\Livewire\Tenant\Appointments\AppointmentCalendar;
 use App\Livewire\Tenant\Appointments\DoctorScheduleConfig;
 use App\Livewire\Tenant\Appointments\FollowUpDashboard;
@@ -179,6 +182,9 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         });
 
         // Prescriptions
+        Route::middleware('permission:prescriptions.view')->group(function () {
+            Route::get('/prescriptions', PrescriptionList::class)->name('tenant.prescriptions.index');
+        });
         Route::middleware('permission:prescriptions.create')->group(function () {
             Route::get('/prescriptions/encounter/{encounterId}', PrescriptionForm::class)
                 ->name('tenant.prescriptions.encounter');
@@ -200,6 +206,8 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
 
         // Billing
         Route::middleware('permission:billing.view')->group(function () {
+            Route::get('/billing', BillingList::class)->name('tenant.billing.index');
+            Route::get('/billing/payments', PaymentList::class)->name('tenant.payments.index');
             Route::get('/billing/invoice/{patientId}', InvoiceForm::class)
                 ->name('tenant.billing.invoice.create');
             Route::get('/billing/invoice/{patientId}/{invoiceId}', InvoiceForm::class)
