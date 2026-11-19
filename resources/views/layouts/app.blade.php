@@ -44,7 +44,7 @@
                 @endif
 
                 @if($user?->hasPermission('appointments.view'))
-                    <x-nav-item route="tenant.appointments.index" label="Appointments" />
+                    <x-nav-item route="tenant.appointments.calendar" label="Appointments" />
                 @endif
 
                 @if($user?->hasPermission('prescriptions.view'))
@@ -64,7 +64,7 @@
                 @endif
 
                 @if($user?->hasPermission('shifts.view'))
-                    <x-nav-item route="tenant.shifts.index" label="Cash Management" />
+                    <x-nav-item route="tenant.billing.shifts" label="Cash Management" />
                 @endif
 
                 @if($user?->hasPermission('reports.operational'))
