@@ -28,6 +28,25 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission'      => CheckPermission::class,
         ]);
 
+        // Ensure tenant resolution runs before auth guards check the user.
+        // Without this, Laravel's middleware priority sorts Authenticate ahead
+        // of custom middleware, leaving TenantContext empty when the guard fires.
+        $middleware->priority([
+            \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\ResolveTenant::class,
+            \App\Http\Middleware\EnsureTenantActive::class,
+            \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            \Illuminate\Routing\Middleware\ThrottleRequests::class,
+            \Illuminate\Routing\Middleware\ThrottleRequestsWithRedis::class,
+            \Illuminate\Contracts\Session\Middleware\AuthenticatesSessions::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \Illuminate\Auth\Middleware\Authorize::class,
+        ]);
+
         // Security headers on every response
         $middleware->append(SecurityHeaders::class);
 
