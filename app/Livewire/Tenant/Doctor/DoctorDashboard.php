@@ -38,7 +38,7 @@ class DoctorDashboard extends Component
     // -------------------------------------------------------------------------
     // Patient context (loaded on selectPatient)
     // -------------------------------------------------------------------------
-    public array  $patientHistory   = [];   // last 3 completed encounters
+    public array  $patientHistory   = [];   // last 20 completed encounters
     public array  $allergies        = [];
     public array  $medications      = [];
 
@@ -213,7 +213,7 @@ class DoctorDashboard extends Component
             return;
         }
 
-        // Last 3 completed encounters (excluding current)
+        // Last 20 completed encounters (excluding current)
         $pastEncounters = Encounter::on('tenant')
             ->where('patient_id', $this->activePatientId)
             ->where('status', 'completed')
@@ -221,7 +221,7 @@ class DoctorDashboard extends Component
                 $q->where('id', '!=', $this->activeEncounterId)
             )
             ->orderByDesc('encounter_date')
-            ->limit(3)
+            ->limit(20)
             ->get();
 
         $this->patientHistory = $pastEncounters->map(function ($enc) {

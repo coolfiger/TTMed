@@ -571,7 +571,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            <div x-show="open.allergies" x-collapse class="px-4 pb-3">
+            <div x-show="open.allergies" class="px-4 pb-3">
                 @if(count($allergies) > 0)
                     <div class="space-y-1.5">
                         @foreach($allergies as $allergy)
@@ -606,7 +606,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            <div x-show="open.meds" x-collapse class="px-4 pb-3">
+            <div x-show="open.meds" class="px-4 pb-3">
                 @if(count($medications) > 0)
                     <div class="space-y-1.5">
                         @foreach($medications as $med)
@@ -633,7 +633,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            <div x-show="open.history" x-collapse class="px-4 pb-3">
+            <div x-show="open.history" class="px-4 pb-3">
                 @forelse($patientHistory as $index => $visit)
                     <div class="mb-3 last:mb-0" x-data="{ expanded: {{ $index === 0 ? 'true' : 'false' }} }">
                         <button class="w-full text-left flex items-center justify-between py-1.5 group"
@@ -648,7 +648,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
-                        <div x-show="expanded" x-collapse class="pl-2 border-l-2 border-slate-200 mt-1 space-y-1.5">
+                        <div x-show="expanded" class="pl-2 border-l-2 border-slate-200 mt-1 space-y-1.5">
                             @if(count($visit['diagnoses']) > 0)
                                 <div class="flex flex-wrap gap-1">
                                     @foreach($visit['diagnoses'] as $dx)
@@ -688,7 +688,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            <div x-show="open.labs" x-collapse class="px-4 pb-3 space-y-2">
+            <div x-show="open.labs" class="px-4 pb-3 space-y-2">
                 @foreach($labOrders as $order)
                     <div class="border border-slate-100 rounded px-2.5 py-2">
                         <div class="flex items-center justify-between mb-1">
@@ -747,7 +747,7 @@
                     </svg>
                 </div>
             </button>
-            <div x-show="open.imaging" x-collapse class="px-4 pb-3">
+            <div x-show="open.imaging" class="px-4 pb-3">
 
                 @if(count($compareReportIds) === 2)
                     <div class="mb-3 flex items-center gap-2 p-2 bg-indigo-50 border border-indigo-200 rounded-lg">

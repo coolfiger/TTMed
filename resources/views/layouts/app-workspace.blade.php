@@ -88,7 +88,7 @@
                     <x-nav-item route="tenant.settings.index" label="Settings" />
                 @endif
 
-                @if($user?->hasPermission('users.manage'))
+                @if($user?->hasPermission('users.view'))
                     <x-nav-item route="tenant.users.index" label="Users" />
                 @endif
             </ul>
