@@ -29,6 +29,8 @@ use App\Http\Controllers\Tenant\LabInboundController;
 use App\Http\Controllers\Tenant\ImagingInboundController;
 use App\Http\Controllers\Tenant\DocumentDownloadController;
 use App\Http\Controllers\Tenant\PrescriptionDownloadController;
+use App\Http\Controllers\Tenant\LabAttachmentDownloadController;
+use App\Http\Controllers\Tenant\ImagingReportDownloadController;
 use App\Http\Controllers\Tenant\Smtp2goWebhookController;
 use App\Livewire\Tenant\Prescriptions\PrescriptionForm;
 use App\Livewire\Tenant\Prescriptions\PrescriptionList;
@@ -252,6 +254,18 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::get('/settings/backups/{filename}', BackupDownloadController::class)
             ->where('filename', 'db_[0-9A-Za-z_\-]+\.sql\.gz')
             ->name('tenant.settings.backup.download');
+
+        // Lab attachment PDF viewer
+        Route::middleware('permission:lab.orders.create')->group(function () {
+            Route::get('/lab-attachments/{id}/view', LabAttachmentDownloadController::class)
+                ->name('tenant.lab.attachment.view');
+        });
+
+        // Imaging report PDF viewer
+        Route::middleware('permission:encounters.view')->group(function () {
+            Route::get('/imaging-reports/{id}/view', ImagingReportDownloadController::class)
+                ->name('tenant.imaging.report.view');
+        });
 
         // Patient documents
         Route::middleware('permission:documents.view')->group(function () {
