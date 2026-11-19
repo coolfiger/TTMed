@@ -28,6 +28,14 @@ class TenantUserProvider extends EloquentUserProvider
     {
         $tenant = $this->context->get();
 
+        \Illuminate\Support\Facades\Log::error('TenantUserProvider::ensureConnected', [
+            'tenant_code'     => $tenant?->code,
+            'tenant_db_user'  => $tenant?->db_username,
+            'tenant_db_name'  => $tenant?->database_name,
+            'config_db_now'   => \Illuminate\Support\Facades\Config::get('database.connections.tenant.database'),
+            'config_user_now' => \Illuminate\Support\Facades\Config::get('database.connections.tenant.username'),
+        ]);
+
         if ($tenant) {
             $this->dbManager->connect($tenant);
         }
