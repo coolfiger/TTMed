@@ -1,230 +1,337 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+<div class="flex flex-col h-full">
 
-    {{-- Header --}}
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Reception Dashboard</h1>
-            <p class="text-sm text-gray-500 mt-1">{{ today()->format('l, d F Y') }}</p>
+    {{-- Top bar --}}
+    <div class="flex-shrink-0 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-3">
+            <h1 class="text-base font-semibold text-slate-800">Reception</h1>
+            <span class="text-sm text-slate-400">{{ today()->format('l, d F Y') }}</span>
         </div>
         <div class="flex items-center gap-3">
-            <select wire:model.live="branchId" wire:change="switchBranch($event.target.value)"
-                    class="rounded-md border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+            <select wire:change="switchBranch($event.target.value)"
+                    class="text-sm rounded-lg border-slate-300 shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 @foreach($branches as $b)
-                    <option value="{{ $b->id }}">{{ $b->name }}</option>
+                    <option value="{{ $b->id }}" {{ $b->id == $branchId ? 'selected' : '' }}>{{ $b->name }}</option>
                 @endforeach
             </select>
-            @if(auth()->guard('tenant')->user()?->hasPermission('queue.checkin'))
-                <button wire:click="$set('showCheckinForm', true)"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    + Check In Patient
-                </button>
-            @endif
+            <button wire:click="loadQueue"
+                    class="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition">
+                Refresh
+            </button>
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="rounded-md bg-green-50 p-4 border border-green-200">
-            <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
-        </div>
-    @endif
+    {{-- Main workspace --}}
+    <div class="flex flex-1 min-h-0">
 
-    {{-- Check-in form --}}
-    @if($showCheckinForm)
-        <div class="bg-white rounded-xl shadow border border-gray-200 p-6">
-            <div class="flex items-center justify-between mb-5">
-                <h2 class="text-lg font-semibold text-gray-900">Check In Patient</h2>
-                <button wire:click="cancelCheckin" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
-            </div>
+        {{-- ══════════════════════════════════════════════════════════
+             LEFT PANEL — Check-in wizard
+        ══════════════════════════════════════════════════════════ --}}
+        <div class="w-96 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
 
-            {{-- Patient search --}}
-            @if(!$selectedPatientId)
-                <div class="relative mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Search Patient</label>
-                    <input wire:model.live.debounce.300ms="patientSearch"
-                           type="text"
-                           placeholder="Name, patient number, phone..."
-                           class="w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
+            @if(!$showCheckinForm)
+                {{-- Search state --}}
+                <div class="flex-1 flex flex-col p-6">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Check In Patient</p>
 
-                    @if(count($searchResults) > 0)
-                        <div class="absolute z-20 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200">
-                            @foreach($searchResults as $result)
-                                <button wire:click="selectPatient({{ $result['id'] }})"
-                                        class="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-gray-100 last:border-b-0">
-                                    <span class="font-medium text-gray-900 text-sm">{{ $result['display_name'] }}</span>
-                                    <span class="ml-2 text-xs text-gray-500">{{ $result['patient_number'] }}</span>
-                                    @if($result['dob'])
-                                        <span class="ml-2 text-xs text-gray-400">DOB: {{ $result['dob'] }}</span>
+                    <div class="relative" x-data="{ open: false }">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </span>
+                            <input wire:model.live.debounce.250ms="patientSearch"
+                                   @focus="open = true"
+                                   @click.away="open = false"
+                                   type="text"
+                                   placeholder="Search name, ID or phone..."
+                                   class="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                        </div>
+
+                        @if(count($searchResults) > 0)
+                            <div class="absolute z-30 mt-1 w-full bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                                @foreach($searchResults as $result)
+                                    <button wire:click="selectPatient({{ $result['id'] }})"
+                                            class="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-slate-100 last:border-0 transition">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium text-slate-800">{{ $result['display_name'] }}</span>
+                                            <span class="text-xs font-mono text-slate-500">{{ $result['patient_number'] }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3 mt-0.5">
+                                            @if($result['dob'])
+                                                <span class="text-xs text-slate-400">DOB: {{ $result['dob'] }}</span>
+                                            @endif
+                                            @if($result['phone'])
+                                                <span class="text-xs text-slate-400">{{ $result['phone'] }}</span>
+                                            @endif
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @elseif(strlen($patientSearch) >= 2)
+                            <div class="mt-2 text-xs text-slate-500">No patients found matching "{{ $patientSearch }}".</div>
+                        @endif
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <a href="{{ route('tenant.patients.create') }}"
+                           class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Register new patient
+                        </a>
+                    </div>
+
+                    {{-- Doctor status summary --}}
+                    <div class="mt-6">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Doctors On Duty</p>
+                        @forelse($doctorStatuses as $doc)
+                            <div class="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-slate-800 truncate">{{ $doc['name'] }}</p>
+                                    @if($doc['specialty'])
+                                        <p class="text-xs text-slate-500">{{ $doc['specialty'] }}</p>
                                     @endif
-                                    @if($result['phone'])
-                                        <span class="ml-2 text-xs text-gray-400">{{ $result['phone'] }}</span>
-                                    @endif
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                                    <span class="text-xs text-slate-500">{{ $doc['queueCount'] }} waiting</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                        {{ $doc['status'] === 'available'    ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                        {{ $doc['status'] === 'busy'         ? 'bg-amber-100 text-amber-700' : '' }}
+                                        {{ $doc['status'] === 'on_break'     ? 'bg-orange-100 text-orange-700' : '' }}
+                                        {{ in_array($doc['status'], ['off_duty', 'not_accepting']) ? 'bg-slate-100 text-slate-600' : '' }}">
+                                        {{ $doc['statusLabel'] }}
+                                    </span>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-sm text-slate-400 italic">No doctors assigned.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+            @else
+                {{-- Check-in wizard --}}
+                <div class="flex-1 flex flex-col"
+                     x-data="{ step: 1 }">
+
+                    {{-- Patient selected header --}}
+                    <div class="px-6 pt-5 pb-4 border-b border-slate-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 mb-0.5">Checking in</p>
+                                <p class="text-base font-semibold text-slate-800">{{ $selectedPatientName }}</p>
+                            </div>
+                            <button wire:click="cancelCheckin"
+                                    class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        {{-- Step indicators --}}
+                        <div class="flex items-center gap-2 mt-3">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center transition"
+                                      :class="step >= 1 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'">1</span>
+                                <span class="text-xs" :class="step >= 1 ? 'text-blue-600 font-medium' : 'text-slate-400'">Visit Type</span>
+                            </div>
+                            <div class="flex-1 h-px bg-slate-200"></div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center transition"
+                                      :class="step >= 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'">2</span>
+                                <span class="text-xs" :class="step >= 2 ? 'text-blue-600 font-medium' : 'text-slate-400'">Details</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Step 1: Visit type --}}
+                    <div x-show="step === 1" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0"
+                         class="flex-1 p-6">
+                        <p class="text-sm font-medium text-slate-700 mb-4">What brings them in today?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            @foreach(['walk_in' => ['Walk-in', 'M17 20h5m-9 0H3m9 0v-9m0 0a3 3 0 100-6 3 3 0 000 6z', 'blue'], 'follow_up' => ['Follow-up', 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15', 'violet'], 'emergency' => ['Emergency', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', 'red'], 'appointment' => ['Appointment', 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', 'emerald']] as $type => [$label, $icon, $color])
+                                <button @click="$wire.set('visitType', '{{ $type }}'); step = 2"
+                                        class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition
+                                            {{ $visitType === $type
+                                                ? ($color === 'blue' ? 'border-blue-500 bg-blue-50' : ($color === 'violet' ? 'border-violet-500 bg-violet-50' : ($color === 'red' ? 'border-red-500 bg-red-50' : 'border-emerald-500 bg-emerald-50')))
+                                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                                    <svg class="w-7 h-7 {{ $color === 'blue' ? 'text-blue-600' : ($color === 'violet' ? 'text-violet-600' : ($color === 'red' ? 'text-red-600' : 'text-emerald-600')) }}"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $icon }}"/>
+                                    </svg>
+                                    <span class="text-xs font-semibold text-slate-700">{{ $label }}</span>
                                 </button>
                             @endforeach
                         </div>
-                    @endif
-
-                    @if(strlen($patientSearch) >= 2 && count($searchResults) === 0)
-                        <p class="mt-1 text-xs text-gray-500">No patients found.</p>
-                    @endif
-                </div>
-            @else
-                <div class="mb-4 flex items-center gap-3 bg-indigo-50 rounded-md p-3">
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-indigo-900">{{ $selectedPatientName }}</p>
-                    </div>
-                    <button wire:click="$set('selectedPatientId', 0)" class="text-xs text-indigo-600 hover:underline">Change</button>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Visit Type</label>
-                        <select wire:model="visitType"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                            <option value="walk_in">Walk-in</option>
-                            <option value="appointment">Appointment</option>
-                            <option value="follow_up">Follow-up</option>
-                            <option value="emergency">Emergency</option>
-                        </select>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Assign Doctor <span class="text-gray-400 font-normal">(optional)</span></label>
-                        <select wire:model="selectedDoctorId"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                            <option value="0">— Unassigned —</option>
-                            @foreach($activeDoctors as $doc)
-                                <option value="{{ $doc->id }}">{{ $doc->staffProfile?->full_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    {{-- Step 2: Details --}}
+                    <div x-show="step === 2" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0"
+                         class="flex-1 flex flex-col p-6 gap-4">
 
-                    <div class="sm:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Chief Complaint <span class="text-gray-400 font-normal">(optional)</span></label>
-                        <input wire:model="chiefComplaint" type="text"
-                               class="w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                               placeholder="Reason for visit" />
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input wire:model.live="isPriority" type="checkbox"
-                                   class="rounded border-gray-300 text-red-600 focus:ring-red-500" />
-                            <span class="text-sm font-medium text-gray-700">Mark as Priority</span>
-                        </label>
-                    </div>
-
-                    @if($isPriority)
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Priority Reason</label>
-                            <input wire:model="priorityReason" type="text"
-                                   class="w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500 text-sm"
-                                   placeholder="e.g. Chest pain, elderly patient" />
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Assign Doctor <span class="text-slate-400 font-normal">(optional)</span></label>
+                            <select wire:model="selectedDoctorId"
+                                    class="w-full text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="0">— Unassigned —</option>
+                                @foreach($activeDoctors as $doc)
+                                    <option value="{{ $doc->id }}">{{ $doc->staffProfile?->full_name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                    @endif
-                </div>
 
-                <div class="mt-5 flex justify-end gap-3">
-                    <button wire:click="cancelCheckin"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                        Cancel
-                    </button>
-                    <button wire:click="checkIn" wire:loading.attr="disabled"
-                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 disabled:opacity-50">
-                        <span wire:loading.remove wire:target="checkIn">Check In</span>
-                        <span wire:loading wire:target="checkIn">Processing...</span>
-                    </button>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Chief Complaint <span class="text-slate-400 font-normal">(optional)</span></label>
+                            <input wire:model="chiefComplaint" type="text"
+                                   placeholder="Reason for visit..."
+                                   class="w-full text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+
+                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 transition">
+                            <input wire:model.live="isPriority" type="checkbox"
+                                   class="rounded border-slate-300 text-red-600 focus:ring-red-500" />
+                            <div>
+                                <span class="text-sm font-medium text-slate-700">Mark as Priority</span>
+                                <p class="text-xs text-slate-500">Moves to top of queue</p>
+                            </div>
+                        </label>
+
+                        @if($isPriority)
+                            <div x-show="true" x-transition>
+                                <input wire:model="priorityReason" type="text"
+                                       placeholder="Priority reason (e.g. chest pain)..."
+                                       class="w-full text-sm rounded-lg border-red-300 focus:ring-red-500 focus:border-red-500" />
+                            </div>
+                        @endif
+
+                        <div class="mt-auto flex gap-3">
+                            <button @click="step = 1"
+                                    class="flex-1 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition">
+                                Back
+                            </button>
+                            <button wire:click="checkIn" wire:loading.attr="disabled"
+                                    class="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition disabled:opacity-60">
+                                <span wire:loading.remove wire:target="checkIn">Check In</span>
+                                <span wire:loading wire:target="checkIn">Processing...</span>
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             @endif
+
         </div>
-    @endif
 
-    {{-- Main grid: doctor panel + queue --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {{-- ══════════════════════════════════════════════════════════
+             RIGHT PANEL — Live queue
+        ══════════════════════════════════════════════════════════ --}}
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-        {{-- Doctor status panel --}}
-        <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Doctors On Duty</h2>
-            @forelse($doctorStatuses as $doc)
-                <div class="mb-4 pb-4 border-b border-gray-100 last:border-b-0 last:mb-0 last:pb-0">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="min-w-0">
-                            <p class="text-sm font-medium text-gray-900 truncate">{{ $doc['name'] }}</p>
-                            @if($doc['specialty'])
-                                <p class="text-xs text-gray-500">{{ $doc['specialty'] }}</p>
-                            @endif
-                        </div>
-                        <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-                            {{ $doc['status'] === 'available'    ? 'bg-green-100 text-green-800' : '' }}
-                            {{ $doc['status'] === 'busy'         ? 'bg-yellow-100 text-yellow-800' : '' }}
-                            {{ $doc['status'] === 'on_break'     ? 'bg-orange-100 text-orange-800' : '' }}
-                            {{ in_array($doc['status'], ['off_duty', 'not_accepting']) ? 'bg-gray-100 text-gray-700' : '' }}">
-                            {{ $doc['statusLabel'] }}
-                        </span>
+            {{-- Queue header --}}
+            <div class="flex-shrink-0 px-6 py-4 border-b border-slate-200 bg-slate-50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-sm font-semibold text-slate-700">Today's Queue</h2>
+                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">{{ count($queueEntries) }}</span>
                     </div>
-                    <div class="mt-1 flex items-center gap-3">
-                        <span class="text-xs text-gray-500">{{ $doc['queueCount'] }} in queue</span>
-                        @if($doc['statusNote'])
-                            <span class="text-xs text-gray-400 italic truncate">{{ $doc['statusNote'] }}</span>
-                        @endif
+                    {{-- Stage legend --}}
+                    <div class="flex items-center gap-4 text-xs">
+                        @foreach([
+                            ['waiting', 'Waiting', 'bg-amber-100 text-amber-700'],
+                            ['with_nurse', 'Nurse', 'bg-violet-100 text-violet-700'],
+                            ['awaiting_doctor', 'Awaiting Dr', 'bg-orange-100 text-orange-700'],
+                            ['with_doctor', 'With Dr', 'bg-emerald-100 text-emerald-700'],
+                        ] as [$status, $label, $cls])
+                            @php $count = collect($queueEntries)->where('status', $status)->count(); @endphp
+                            @if($count > 0)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full {{ $cls }}">
+                                    {{ $count }} {{ $label }}
+                                </span>
+                            @endif
+                        @endforeach
                     </div>
                 </div>
-            @empty
-                <p class="text-sm text-gray-400 italic">No doctors currently assigned to this branch.</p>
-            @endforelse
-        </div>
-
-        {{-- Today's queue --}}
-        <div class="lg:col-span-2 bg-white rounded-xl shadow border border-gray-200">
-            <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                    Today's Queue
-                    <span class="ml-2 text-indigo-600 font-bold">{{ count($queueEntries) }}</span>
-                </h2>
-                <button wire:click="loadQueue" class="text-xs text-indigo-500 hover:underline">Refresh</button>
             </div>
 
-            @if(count($queueEntries) === 0)
-                <div class="py-12 text-center">
-                    <p class="text-sm text-gray-400">No patients in queue.</p>
-                </div>
-            @else
-                <div class="divide-y divide-gray-100">
-                    @foreach($queueEntries as $entry)
-                        <div class="px-5 py-3 flex items-center gap-4">
-                            <div class="flex-shrink-0 w-10 text-center">
-                                <span class="text-lg font-bold {{ $entry['isPriority'] ? 'text-red-600' : 'text-gray-800' }}">
-                                    {{ $entry['number'] }}
-                                </span>
-                                @if($entry['isPriority'])
-                                    <div class="text-xs text-red-500 leading-tight">PRIORITY</div>
-                                @endif
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-gray-900 truncate">{{ $entry['patientName'] }}</p>
-                                <p class="text-xs text-gray-500">{{ $entry['doctorName'] }} &middot; {{ ucfirst(str_replace('_', ' ', $entry['visitType'])) }}</p>
-                            </div>
-                            <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-                                {{ $entry['status'] === 'waiting'          ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                {{ $entry['status'] === 'with_nurse'       ? 'bg-blue-100 text-blue-800' : '' }}
-                                {{ $entry['status'] === 'awaiting_doctor'  ? 'bg-orange-100 text-orange-800' : '' }}
-                                {{ $entry['status'] === 'with_doctor'      ? 'bg-green-100 text-green-800' : '' }}">
-                                {{ $entry['statusLabel'] }}
-                            </span>
-                        </div>
-                    @endforeach
+            {{-- Flash success --}}
+            @if(session('success'))
+                <div class="mx-6 mt-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800"
+                     x-data x-init="setTimeout(() => $el.remove(), 4000)">
+                    {{ session('success') }}
                 </div>
             @endif
+
+            {{-- Queue entries --}}
+            <div class="flex-1 overflow-y-auto px-6 py-4">
+                @if(count($queueEntries) === 0)
+                    <div class="flex flex-col items-center justify-center h-full text-center py-20">
+                        <svg class="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <p class="text-sm font-medium text-slate-500">Queue is empty</p>
+                        <p class="text-xs text-slate-400 mt-1">Check in a patient using the panel on the left.</p>
+                    </div>
+                @else
+                    <div class="space-y-2">
+                        @foreach($queueEntries as $entry)
+                            <div class="bg-white rounded-xl border border-slate-200 px-4 py-3.5 flex items-center gap-4 hover:border-slate-300 transition">
+
+                                {{-- Queue number --}}
+                                <div class="w-10 text-center flex-shrink-0">
+                                    <span class="text-xl font-black {{ $entry['isPriority'] ? 'text-red-600' : 'text-slate-700' }}">{{ $entry['number'] }}</span>
+                                    @if($entry['isPriority'])
+                                        <p class="text-xs font-bold text-red-500 leading-tight -mt-0.5">PRIORITY</p>
+                                    @endif
+                                </div>
+
+                                {{-- Pipeline position --}}
+                                <div class="hidden sm:flex items-center gap-1 text-xs flex-shrink-0">
+                                    @foreach([
+                                        ['waiting', 'W'],
+                                        ['with_nurse', 'N'],
+                                        ['awaiting_doctor', 'A'],
+                                        ['with_doctor', 'D'],
+                                    ] as $i => [$s, $letter])
+                                        @php
+                                            $stages = ['waiting', 'with_nurse', 'awaiting_doctor', 'with_doctor'];
+                                            $currentIdx = array_search($entry['status'], $stages);
+                                            $thisIdx = $i;
+                                        @endphp
+                                        <span class="w-6 h-6 rounded-full font-semibold flex items-center justify-center
+                                            {{ $thisIdx < $currentIdx ? 'bg-slate-200 text-slate-500' : ($thisIdx === $currentIdx ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400') }}">
+                                            {{ $letter }}
+                                        </span>
+                                        @if($i < 3)<span class="w-3 h-px bg-slate-200"></span>@endif
+                                    @endforeach
+                                </div>
+
+                                {{-- Patient info --}}
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold text-slate-800 truncate">{{ $entry['patientName'] }}</p>
+                                    <p class="text-xs text-slate-500">{{ $entry['doctorName'] }} &middot; {{ ucfirst(str_replace('_', ' ', $entry['visitType'])) }}</p>
+                                </div>
+
+                                {{-- Status badge --}}
+                                <span class="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold
+                                    {{ $entry['status'] === 'waiting'         ? 'bg-amber-100 text-amber-800' : '' }}
+                                    {{ $entry['status'] === 'with_nurse'      ? 'bg-violet-100 text-violet-800' : '' }}
+                                    {{ $entry['status'] === 'awaiting_doctor' ? 'bg-orange-100 text-orange-800' : '' }}
+                                    {{ $entry['status'] === 'with_doctor'     ? 'bg-emerald-100 text-emerald-800' : '' }}">
+                                    {{ $entry['statusLabel'] }}
+                                </span>
+
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 
-    {{-- Real-time update via Echo --}}
+    {{-- Real-time Echo --}}
     <script>
         document.addEventListener('livewire:initialized', () => {
             @if(app('App\Tenancy\TenantContext')->get())
                 const tenantUuid = "{{ app('App\Tenancy\TenantContext')->get()->uuid }}";
                 const branchId   = {{ $branchId }};
                 const channel    = `tenant.${tenantUuid}.branch.${branchId}.queue`;
-
                 if (window.Echo) {
                     window.Echo.channel(channel).listen('.queue.updated', () => {
                         @this.loadQueue();

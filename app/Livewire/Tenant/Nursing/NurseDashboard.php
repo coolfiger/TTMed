@@ -196,15 +196,15 @@ class NurseDashboard extends Component
             'encounter_id'     => $this->activeEncounterId,
             'systolic_bp'      => $this->systolic ?: null,
             'diastolic_bp'     => $this->diastolic ?: null,
-            'pulse'            => $this->pulse ?: null,
-            'respiratory_rate' => $this->respiratoryRate ?: null,
-            'oxygen_saturation' => $this->oxygenSat ?: null,
-            'temperature'      => $this->temperature ?: null,
-            'temperature_site' => $this->tempSite,
-            'weight_kg'        => $this->weightKg ?: null,
-            'height_cm'        => $this->heightCm ?: null,
-            'blood_glucose'    => $this->bloodGlucose ?: null,
-            'glucose_timing'   => $this->bloodGlucose ? $this->glucoseTiming : null,
+            'pulse_rate'           => $this->pulse ?: null,
+            'respiratory_rate'     => $this->respiratoryRate ?: null,
+            'oxygen_saturation'    => $this->oxygenSat ?: null,
+            'temperature'          => $this->temperature ?: null,
+            'temperature_site'     => $this->tempSite,
+            'weight_kg'            => $this->weightKg ?: null,
+            'height_cm'            => $this->heightCm ?: null,
+            'blood_glucose'        => $this->bloodGlucose ?: null,
+            'blood_glucose_timing' => $this->bloodGlucose ? $this->glucoseTiming : null,
             'pain_score'       => $this->painScore !== '' ? (int) $this->painScore : null,
             'notes'            => $this->vitalsNotes ?: null,
         ];
@@ -324,7 +324,7 @@ class NurseDashboard extends Component
     public function render()
     {
         return view('livewire.tenant.nursing.nurse-dashboard')
-            ->layout('layouts.app');
+            ->layout('layouts.app-workspace');
     }
 
     // -------------------------------------------------------------------------

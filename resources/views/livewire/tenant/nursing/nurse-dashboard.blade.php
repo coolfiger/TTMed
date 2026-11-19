@@ -1,142 +1,174 @@
-<div class="p-6 space-y-6">
+<div class="flex flex-col h-full">
 
-    {{-- Header --}}
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Nursing Station</h1>
-        <button wire:click="loadQueue"
-                class="text-sm text-blue-600 hover:underline dark:text-blue-400">
-            Refresh Queue
-        </button>
+    {{-- Top bar --}}
+    <div class="flex-shrink-0 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+        <h1 class="text-base font-semibold text-slate-800">Nursing Station</h1>
+        <div class="flex items-center gap-3">
+            @if($successMessage)
+                <span class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg"
+                      x-data x-init="setTimeout(() => $el.remove(), 4000)">
+                    {{ $successMessage }}
+                </span>
+            @endif
+            @if($errorMessage)
+                <span class="text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-1 rounded-lg">
+                    {{ $errorMessage }}
+                </span>
+            @endif
+            <button wire:click="loadQueue"
+                    class="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition">
+                Refresh
+            </button>
+        </div>
     </div>
 
-    {{-- Alerts --}}
-    @if($successMessage)
-        <div class="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-300"
-             x-data x-init="setTimeout(() => $el.remove(), 4000)">
-            {{ $successMessage }}
-        </div>
-    @endif
-    @if($errorMessage)
-        <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-300">
-            {{ $errorMessage }}
-        </div>
-    @endif
+    <div class="flex flex-1 min-h-0">
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {{-- ══════════════════════════════════════════════════════════
+             LEFT PANEL — Patient queue
+        ══════════════════════════════════════════════════════════ --}}
+        <div class="w-72 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
 
-        {{-- Queue panel --}}
-        <div class="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                <h2 class="font-semibold text-gray-700 dark:text-gray-300">Waiting Queue</h2>
+            <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Patients</span>
+                <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{{ count($queue) }}</span>
             </div>
-            <div class="divide-y divide-gray-100 dark:divide-gray-700 overflow-y-auto max-h-[calc(100vh-220px)]">
+
+            <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
                 @forelse($queue as $entry)
                     <button wire:click="selectPatient({{ $entry['id'] }})"
-                            class="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition
-                                   {{ $activeEntryId === $entry['id'] ? 'bg-blue-50 dark:bg-blue-900/20' : '' }}">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <span class="text-xs font-mono font-bold text-gray-500">#{{ $entry['queue_number'] }}</span>
-                                @if($entry['is_priority'])
-                                    <span class="ml-1 text-xs font-semibold text-red-600">PRIORITY</span>
-                                @endif
-                                <p class="text-sm font-medium text-gray-900 dark:text-white mt-0.5">{{ $entry['patient_name'] }}</p>
+                            class="w-full text-left px-4 py-4 hover:bg-slate-50 transition group
+                                   {{ $activeEntryId === $entry['id'] ? 'bg-blue-50 border-l-2 border-l-blue-600' : 'border-l-2 border-l-transparent' }}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="text-xs font-mono font-bold {{ $activeEntryId === $entry['id'] ? 'text-blue-600' : 'text-slate-400' }}">#{{ $entry['queue_number'] }}</span>
+                                    @if($entry['is_priority'])
+                                        <span class="text-xs font-bold text-red-600">PRIORITY</span>
+                                    @endif
+                                </div>
+                                <p class="text-sm font-semibold {{ $activeEntryId === $entry['id'] ? 'text-blue-800' : 'text-slate-800' }} truncate">{{ $entry['patient_name'] }}</p>
                             </div>
-                            <span class="text-xs px-2 py-0.5 rounded-full
-                                {{ $entry['status'] === 'with_nurse' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' }}">
+                            <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                {{ $entry['status'] === 'with_nurse' ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-700' }}">
                                 {{ $entry['status_label'] }}
                             </span>
                         </div>
                     </button>
                 @empty
-                    <p class="px-4 py-8 text-center text-sm text-gray-400">No patients waiting.</p>
+                    <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+                        <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <p class="text-sm text-slate-500 font-medium">Queue is clear</p>
+                        <p class="text-xs text-slate-400 mt-1">No patients waiting.</p>
+                    </div>
                 @endforelse
             </div>
         </div>
 
-        {{-- Main panel --}}
-        <div class="lg:col-span-2 space-y-4">
+        {{-- ══════════════════════════════════════════════════════════
+             RIGHT PANEL — Assessment wizard
+        ══════════════════════════════════════════════════════════ --}}
+        <div class="flex-1 flex flex-col min-w-0 bg-slate-50">
 
             @if(!$activeEntryId)
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-16 text-center">
-                    <p class="text-gray-400 dark:text-gray-500">Select a patient from the queue.</p>
-                </div>
-            @else
-                {{-- Patient header --}}
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs uppercase tracking-wide text-gray-400">Active Patient</p>
-                            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $activePatientName }}</p>
-                        </div>
-                        <button wire:click="completeAndSendToDoctor"
-                                wire:confirm="Mark nursing complete and send patient to doctor?"
-                                class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-                            Complete &amp; Send to Doctor
-                        </button>
-                    </div>
+                <div class="flex flex-col items-center justify-center h-full text-center">
+                    <svg class="w-14 h-14 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    <p class="text-base font-semibold text-slate-500">Select a patient to begin</p>
+                    <p class="text-sm text-slate-400 mt-1">Choose a patient from the queue on the left.</p>
                 </div>
 
-                {{-- Tabs --}}
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div class="border-b border-gray-200 dark:border-gray-700 flex">
-                        @foreach(['vitals' => 'Vitals', 'assessment' => 'Assessment', 'procedures' => 'Procedures'] as $tab => $label)
+            @else
+                {{-- Patient header --}}
+                <div class="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500">Assessing</p>
+                            <p class="text-lg font-bold text-slate-800">{{ $activePatientName }}</p>
+                        </div>
+                        <button wire:click="completeAndSendToDoctor"
+                                wire:confirm="Mark nursing complete and send this patient to the doctor?"
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-60">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                            <span wire:loading.remove wire:target="completeAndSendToDoctor">Send to Doctor</span>
+                            <span wire:loading wire:target="completeAndSendToDoctor">Sending...</span>
+                        </button>
+                    </div>
+
+                    {{-- Step tabs --}}
+                    <div class="flex gap-1 mt-4">
+                        @foreach(['vitals' => '1. Vitals', 'assessment' => '2. Assessment', 'procedures' => '3. Procedures'] as $tab => $label)
                             <button wire:click="$set('activeTab', '{{ $tab }}')"
-                                    class="px-5 py-3 text-sm font-medium border-b-2 transition
+                                    class="px-4 py-2 text-sm font-medium rounded-lg transition
                                         {{ $activeTab === $tab
-                                            ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300' }}">
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                                 {{ $label }}
                             </button>
                         @endforeach
                     </div>
+                </div>
 
-                    <div class="p-6">
+                {{-- Step content --}}
+                <div class="flex-1 overflow-y-auto">
 
-                        {{-- ---- Vitals Tab ---- --}}
-                        @if($activeTab === 'vitals')
-                            <form wire:submit="saveVitals" class="space-y-5">
+                    {{-- ══════ VITALS ══════ --}}
+                    @if($activeTab === 'vitals')
+                        <form wire:submit="saveVitals" class="p-6 space-y-5">
 
-                                {{-- Blood Pressure & Pulse --}}
+                            {{-- Section: Blood Pressure & Pulse --}}
+                            <div class="bg-white rounded-xl border border-slate-200 p-5">
+                                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Cardiovascular</h3>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Systolic (mmHg)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Systolic <span class="text-slate-400 font-normal">mmHg</span></label>
                                         <input wire:model="systolic" type="number" min="50" max="300"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        @error('systolic') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Diastolic (mmHg)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Diastolic <span class="text-slate-400 font-normal">mmHg</span></label>
                                         <input wire:model="diastolic" type="number" min="20" max="200"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        @error('diastolic') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Pulse (bpm)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Pulse <span class="text-slate-400 font-normal">bpm</span></label>
                                         <input wire:model="pulse" type="number" min="20" max="300"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        @error('pulse') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Resp. Rate (br/min)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Resp. Rate <span class="text-slate-400 font-normal">br/min</span></label>
                                         <input wire:model="respiratoryRate" type="number" min="1" max="60"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        @error('respiratoryRate') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
+                            </div>
 
-                                {{-- O2 Sat & Temperature --}}
+                            {{-- Section: SpO2, Temp, Pain --}}
+                            <div class="bg-white rounded-xl border border-slate-200 p-5">
+                                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Respiratory & Temperature</h3>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">SpO₂ (%)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">SpO₂ <span class="text-slate-400 font-normal">%</span></label>
                                         <input wire:model="oxygenSat" type="number" step="0.1" min="50" max="100"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Temperature (°C)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Temp <span class="text-slate-400 font-normal">°C</span></label>
                                         <input wire:model="temperature" type="number" step="0.1" min="30" max="45"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Site</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Site</label>
                                         <select wire:model="tempSite"
-                                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                                                class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500">
                                             <option value="oral">Oral</option>
                                             <option value="axillary">Axillary</option>
                                             <option value="rectal">Rectal</option>
@@ -144,201 +176,262 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Pain Score (0–10)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Pain Score <span class="text-slate-400 font-normal">0–10</span></label>
                                         <input wire:model="painScore" type="number" min="0" max="10"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
                                     </div>
                                 </div>
+                            </div>
 
-                                {{-- Anthropometrics with live BMI --}}
+                            {{-- Section: Anthropometrics --}}
+                            <div class="bg-white rounded-xl border border-slate-200 p-5">
+                                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Anthropometrics</h3>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Weight (kg)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Weight <span class="text-slate-400 font-normal">kg</span></label>
                                         <input wire:model.live="weightKg" type="number" step="0.1" min="0.5" max="500"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Height (cm)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Height <span class="text-slate-400 font-normal">cm</span></label>
                                         <input wire:model.live="heightCm" type="number" step="0.1" min="20" max="250"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">BMI</label>
-                                        <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 min-h-[38px]">
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">BMI <span class="text-slate-400 font-normal">(auto)</span></label>
+                                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 h-[38px] flex items-center">
                                             {{ $bmi ?: '—' }}
                                         </div>
                                     </div>
                                     <div></div>
                                 </div>
+                            </div>
 
-                                {{-- Blood Glucose --}}
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {{-- Section: Glucose --}}
+                            <div class="bg-white rounded-xl border border-slate-200 p-5">
+                                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Blood Glucose</h3>
+                                <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Blood Glucose (mmol/L)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Blood Glucose <span class="text-slate-400 font-normal">mmol/L</span></label>
                                         <input wire:model="bloodGlucose" type="number" step="0.1" min="0.5" max="50"
-                                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Timing</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Timing</label>
                                         <select wire:model="glucoseTiming"
-                                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                                                class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500">
                                             <option value="fasting">Fasting</option>
                                             <option value="random">Random</option>
                                             <option value="post_prandial">Post-prandial</option>
                                         </select>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Notes</label>
-                                    <textarea wire:model="vitalsNotes" rows="2"
-                                              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
-                                </div>
+                            <div class="bg-white rounded-xl border border-slate-200 p-5">
+                                <label class="block text-xs font-medium text-slate-600 mb-1.5">Nursing Notes</label>
+                                <textarea wire:model="vitalsNotes" rows="2"
+                                          class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                          placeholder="Any observations..."></textarea>
+                            </div>
 
-                                <div class="flex justify-end">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs text-slate-400">All fields optional — record what's relevant.</p>
+                                <div class="flex gap-3">
                                     <button type="submit"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
-                                        Save Vitals
+                                            wire:loading.attr="disabled"
+                                            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-60">
+                                        <span wire:loading.remove wire:target="saveVitals">Save Vitals</span>
+                                        <span wire:loading wire:target="saveVitals">Saving...</span>
+                                    </button>
+                                    <button type="button" wire:click="$set('activeTab', 'assessment')"
+                                            class="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-xl transition">
+                                        Next: Assessment
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                     </button>
                                 </div>
-                            </form>
-                        @endif
+                            </div>
+                        </form>
+                    @endif
 
-                        {{-- ---- Assessment Tab ---- --}}
-                        @if($activeTab === 'assessment')
-                            <form wire:submit="saveAssessment" class="space-y-5">
-                                <div class="space-y-3">
-                                    <label class="flex items-center gap-3 cursor-pointer">
-                                        <input wire:model="allergiesReviewed" type="checkbox"
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                        <span class="text-sm text-gray-700 dark:text-gray-300">Allergies reviewed with patient</span>
-                                    </label>
-                                    <label class="flex items-center gap-3 cursor-pointer">
-                                        <input wire:model="medicationsReviewed" type="checkbox"
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                        <span class="text-sm text-gray-700 dark:text-gray-300">Current medications reviewed</span>
-                                    </label>
-                                </div>
+                    {{-- ══════ ASSESSMENT ══════ --}}
+                    @if($activeTab === 'assessment')
+                        <form wire:submit="saveAssessment" class="p-6 space-y-5">
 
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Assessment Notes</label>
-                                    <textarea wire:model="assessmentNotes" rows="4"
-                                              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                                              placeholder="Nursing observations, patient concerns..."></textarea>
-                                </div>
+                            <div class="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+                                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Pre-consultation Checklist</h3>
 
-                                <div class="flex justify-end">
-                                    <button type="submit"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
-                                        Save Assessment
-                                    </button>
-                                </div>
-                            </form>
-                        @endif
-
-                        {{-- ---- Procedures Tab ---- --}}
-                        @if($activeTab === 'procedures')
-                            <div class="space-y-4">
-                                @if(!$showProcedureForm)
-                                    <div class="flex justify-end">
-                                        <button wire:click="$set('showProcedureForm', true)"
-                                                class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-                                            + Add Procedure
-                                        </button>
+                                <label class="flex items-center gap-4 p-3 rounded-lg cursor-pointer transition
+                                              {{ $allergiesReviewed ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-50 border border-slate-200 hover:border-slate-300' }}">
+                                    <input wire:model.live="allergiesReviewed" type="checkbox"
+                                           class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-800">Allergies reviewed with patient</p>
+                                        <p class="text-xs text-slate-500">Confirm patient's known allergies are documented</p>
                                     </div>
-                                @else
-                                    <form wire:submit="saveProcedure" class="space-y-4 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                                        <div class="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Type</label>
-                                                <select wire:model="procedureType"
-                                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                                                    <option value="">Select...</option>
-                                                    @foreach(\App\Models\Tenant\NursingProcedure::TYPES as $key => $label)
-                                                        <option value="{{ $key }}">{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                                @error('procedureType') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name / Description</label>
-                                                <input wire:model="procedureName" type="text" maxlength="200"
-                                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
-                                                @error('procedureName') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                                            </div>
-                                        </div>
-                                        <div class="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Site</label>
-                                                <input wire:model="procedureSite" type="text"
-                                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Outcome</label>
-                                                <input wire:model="procedureOutcome" type="text"
-                                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
-                                            </div>
+                                    @if($allergiesReviewed)
+                                        <svg class="w-5 h-5 text-emerald-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    @endif
+                                </label>
+
+                                <label class="flex items-center gap-4 p-3 rounded-lg cursor-pointer transition
+                                              {{ $medicationsReviewed ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-50 border border-slate-200 hover:border-slate-300' }}">
+                                    <input wire:model.live="medicationsReviewed" type="checkbox"
+                                           class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-800">Current medications reviewed</p>
+                                        <p class="text-xs text-slate-500">Confirm patient's medication list is up to date</p>
+                                    </div>
+                                    @if($medicationsReviewed)
+                                        <svg class="w-5 h-5 text-emerald-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    @endif
+                                </label>
+                            </div>
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-5">
+                                <label class="block text-xs font-medium text-slate-600 mb-1.5">Assessment Notes</label>
+                                <textarea wire:model="assessmentNotes" rows="4"
+                                          class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                          placeholder="Nursing observations, patient concerns, additional notes..."></textarea>
+                            </div>
+
+                            @if(!$allergiesReviewed || !$medicationsReviewed)
+                                <div class="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+                                    Both checklist items must be ticked before you can send the patient to the doctor.
+                                </div>
+                            @endif
+
+                            <div class="flex items-center justify-between">
+                                <button type="button" wire:click="$set('activeTab', 'vitals')"
+                                        class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                    Back to Vitals
+                                </button>
+                                <div class="flex gap-3">
+                                    <button type="submit"
+                                            wire:loading.attr="disabled"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-60">
+                                        <span wire:loading.remove wire:target="saveAssessment">Save Assessment</span>
+                                        <span wire:loading wire:target="saveAssessment">Saving...</span>
+                                    </button>
+                                    <button type="button" wire:click="completeAndSendToDoctor"
+                                            wire:confirm="Send this patient to the doctor now?"
+                                            @disabled(!$allergiesReviewed || !$medicationsReviewed)
+                                            class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                        Send to Doctor
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    @endif
+
+                    {{-- ══════ PROCEDURES ══════ --}}
+                    @if($activeTab === 'procedures')
+                        <div class="p-6 space-y-4">
+
+                            @if(!$showProcedureForm)
+                                <div class="flex justify-end">
+                                    <button wire:click="$set('showProcedureForm', true)"
+                                            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        Add Procedure
+                                    </button>
+                                </div>
+                            @else
+                                <form wire:submit="saveProcedure"
+                                      class="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+                                    <h3 class="text-sm font-semibold text-slate-700">Record Procedure</h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Type</label>
+                                            <select wire:model="procedureType"
+                                                    class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                                <option value="">Select type...</option>
+                                                @foreach(\App\Models\Tenant\NursingProcedure::TYPES as $key => $label)
+                                                    <option value="{{ $key }}">{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('procedureType') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div>
-                                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Details</label>
-                                            <textarea wire:model="procedureDetails" rows="2"
-                                                      class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Name / Description</label>
+                                            <input wire:model="procedureName" type="text" maxlength="200"
+                                                   class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                            @error('procedureName') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                         </div>
-                                        <div class="flex gap-3 justify-end">
-                                            <button type="button" wire:click="$set('showProcedureForm', false)"
-                                                    class="text-sm text-gray-500 hover:text-gray-700 px-4 py-2">
-                                                Cancel
-                                            </button>
-                                            <button type="submit"
-                                                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
-                                                Save Procedure
-                                            </button>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Site</label>
+                                            <input wire:model="procedureSite" type="text"
+                                                   class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
                                         </div>
-                                    </form>
-                                @endif
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Outcome</label>
+                                            <input wire:model="procedureOutcome" type="text"
+                                                   class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Details</label>
+                                        <textarea wire:model="procedureDetails" rows="2"
+                                                  class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                                    </div>
+                                    <div class="flex justify-end gap-3">
+                                        <button type="button" wire:click="$set('showProcedureForm', false)"
+                                                class="text-sm text-slate-500 hover:text-slate-700 px-4 py-2">
+                                            Cancel
+                                        </button>
+                                        <button type="submit"
+                                                class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition">
+                                            Save Procedure
+                                        </button>
+                                    </div>
+                                </form>
+                            @endif
 
-                                {{-- Procedure history for active encounter --}}
-                                @if($activeEncounterId)
-                                    @php
-                                        $procedures = \App\Models\Tenant\NursingProcedure::on('tenant')
-                                            ->where('encounter_id', $activeEncounterId)
-                                            ->orderByDesc('performed_at')
-                                            ->get();
-                                    @endphp
-                                    @if($procedures->isNotEmpty())
+                            {{-- Procedure history --}}
+                            @if($activeEncounterId)
+                                @php
+                                    $procedures = \App\Models\Tenant\NursingProcedure::on('tenant')
+                                        ->where('encounter_id', $activeEncounterId)
+                                        ->orderByDesc('performed_at')
+                                        ->get();
+                                @endphp
+                                @if($procedures->isNotEmpty())
+                                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
                                         <table class="min-w-full text-sm">
-                                            <thead>
-                                                <tr class="text-xs text-gray-500 uppercase tracking-wide border-b dark:border-gray-700">
-                                                    <th class="text-left py-2 pr-4">Procedure</th>
-                                                    <th class="text-left py-2 pr-4">Site</th>
-                                                    <th class="text-left py-2 pr-4">Outcome</th>
-                                                    <th class="text-left py-2">Time</th>
+                                            <thead class="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th class="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Procedure</th>
+                                                    <th class="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Site</th>
+                                                    <th class="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Outcome</th>
+                                                    <th class="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Time</th>
                                                 </tr>
                                             </thead>
-                                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                                            <tbody class="divide-y divide-slate-100">
                                                 @foreach($procedures as $proc)
-                                                    <tr>
-                                                        <td class="py-2 pr-4">
-                                                            <span class="font-medium text-gray-800 dark:text-gray-200">{{ $proc->type_label }}</span>
+                                                    <tr class="hover:bg-slate-50">
+                                                        <td class="px-4 py-3">
+                                                            <p class="font-medium text-slate-800">{{ $proc->type_label }}</p>
                                                             @if($proc->procedure_name !== $proc->type_label)
-                                                                <br><span class="text-xs text-gray-500">{{ $proc->procedure_name }}</span>
+                                                                <p class="text-xs text-slate-500">{{ $proc->procedure_name }}</p>
                                                             @endif
                                                         </td>
-                                                        <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">{{ $proc->site ?? '—' }}</td>
-                                                        <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">{{ $proc->outcome ?? '—' }}</td>
-                                                        <td class="py-2 text-gray-500 text-xs">{{ $proc->performed_at?->format('H:i') }}</td>
+                                                        <td class="px-4 py-3 text-slate-600">{{ $proc->site ?? '—' }}</td>
+                                                        <td class="px-4 py-3 text-slate-600">{{ $proc->outcome ?? '—' }}</td>
+                                                        <td class="px-4 py-3 text-xs text-slate-400">{{ $proc->performed_at?->format('H:i') }}</td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
-                                    @else
-                                        <p class="text-sm text-gray-400 py-4 text-center">No procedures recorded yet.</p>
-                                    @endif
+                                    </div>
+                                @else
+                                    <p class="text-sm text-slate-400 text-center py-8">No procedures recorded yet.</p>
                                 @endif
-                            </div>
-                        @endif
+                            @endif
+                        </div>
+                    @endif
 
-                    </div>
                 </div>
             @endif
         </div>

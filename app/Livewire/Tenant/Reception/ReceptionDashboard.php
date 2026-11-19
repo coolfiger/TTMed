@@ -220,6 +220,6 @@ class ReceptionDashboard extends Component
         return view('livewire.tenant.reception.reception-dashboard', [
             'branches'      => $branches,
             'activeDoctors' => $activeDoctors,
-        ])->layout('layouts.app');
+        ])->layout('layouts.app-workspace');
     }
 }

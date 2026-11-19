@@ -616,7 +616,7 @@ class DoctorDashboard extends Component
             'imagingReports'  => $imagingReports,
             'referrals'       => $referrals,
             'noteIsFinalized' => $noteIsFinalized,
-        ])->layout('layouts.app');
+        ])->layout('layouts.app-workspace');
     }
 
     // -------------------------------------------------------------------------
