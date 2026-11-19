@@ -966,8 +966,8 @@ class DemoDataSeeder extends Seeder
             [11, 2, 'with_nurse',      'with_nurse',      75,  'Lower back pain — 3 days duration',   $drSharmaId,   false, null],
             [16, 3, 'awaiting_doctor', 'awaiting_doctor', 60,  'Follow-up after hospital discharge',  $drRamloganId, true,  'Post-hospitalisation'],
             [18, 4, 'with_doctor',     'with_doctor',     45,  'Persistent cough and fever',          $drSharmaId,   false, null],
-            [8,  5, 'waiting',         'waiting',         20,  'Routine pre-employment medical',      $drSharmaId,   false, null],
-            [19, 6, 'waiting',         'waiting',         5,   'Chest tightness — shortness of breath', $drRamloganId, true, 'Cardiac symptoms'],
+            [8,  5, 'checked_in',      'waiting',         20,  'Routine pre-employment medical',      $drSharmaId,   false, null],
+            [19, 6, 'checked_in',      'waiting',         5,   'Chest tightness — shortness of breath', $drRamloganId, true, 'Cardiac symptoms'],
         ];
 
         // Seed today's queue number sequence
