@@ -34,11 +34,15 @@ class TenantProvisioningService
         $this->dbManager->createTenantDatabase($dbName, $dbUsername, $dbPassword);
 
         // 2. Store encrypted credentials on the tenant record
+        $provCfg = config('tenancy.provisioner');
         $tenant->update([
             'database_name' => $dbName,
+            'db_host'       => $provCfg['host'],
+            'db_port'       => $provCfg['port'],
             'db_username'   => $dbUsername,
             'db_password'   => $this->dbManager->encryptPassword($dbPassword),
         ]);
+        $tenant->refresh();
 
         // 3. Connect to tenant DB and run migrations
         $this->dbManager->connect($tenant);
