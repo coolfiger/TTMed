@@ -35,7 +35,7 @@ class TenantUserProvider extends EloquentUserProvider
             'config_db'     => \Illuminate\Support\Facades\Config::get('database.connections.tenant.database'),
             'pid'           => getmypid(),
             'url'           => request()->fullUrl(),
-            'trace'         => collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 8))
+            'trace'         => collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20))
                 ->skip(1)->map(fn($f) => ($f['class'] ?? '') . '::' . ($f['function'] ?? ''))->implode(' → '),
         ]);
 

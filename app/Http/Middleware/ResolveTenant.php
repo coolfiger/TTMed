@@ -24,6 +24,14 @@ class ResolveTenant
         $domain   = config('tenancy.domain');
         $platform = config('tenancy.platform_subdomain') . '.' . $domain;
 
+        \Illuminate\Support\Facades\Log::info('ResolveTenant::handle', [
+            'host'     => $host,
+            'domain'   => $domain,
+            'platform' => $platform,
+            'url'      => $request->fullUrl(),
+            'skipping' => ($host === $platform || $host === $domain),
+        ]);
+
         // Skip entirely for the platform subdomain or bare domain — not a tenant request
         if ($host === $platform || $host === $domain) {
             return $next($request);
@@ -41,6 +49,11 @@ class ResolveTenant
 
         $this->context->set($tenant);
         $this->dbManager->connect($tenant);
+
+        \Illuminate\Support\Facades\Log::info('ResolveTenant::handle context set', [
+            'code' => $tenant->code,
+            'db'   => $tenant->database_name,
+        ]);
 
         // Tag Sentry errors with the tenant so we can filter by centre
         if (app()->bound('sentry')) {
