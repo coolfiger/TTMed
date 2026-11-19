@@ -171,8 +171,8 @@
 
     {{-- Transfer modal --}}
     @if($showTransferForm)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Transfer Patient to Doctor</h3>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Select Doctor</label>
