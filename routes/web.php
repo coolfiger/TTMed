@@ -112,13 +112,13 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         // Patient management
         Route::middleware('permission:patients.view')->group(function () {
             Route::get('/patients',                  PatientSearch::class)->name('tenant.patients.index');
-            Route::get('/patients/{id}',             PatientProfile::class)->name('tenant.patients.show');
+            Route::get('/patients/{id}',             PatientProfile::class)->name('tenant.patients.show')->whereNumber('id');
         });
         Route::middleware('permission:patients.create')->group(function () {
             Route::get('/patients/create',           PatientForm::class)->name('tenant.patients.create');
         });
         Route::middleware('permission:patients.edit')->group(function () {
-            Route::get('/patients/{id}/edit',        PatientForm::class)->name('tenant.patients.edit');
+            Route::get('/patients/{id}/edit',        PatientForm::class)->name('tenant.patients.edit')->whereNumber('id');
         });
 
         // Branch management
