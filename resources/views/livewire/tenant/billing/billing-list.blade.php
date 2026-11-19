@@ -53,7 +53,7 @@
                         <div class="text-xs text-slate-400">{{ $invoice->patient->patient_number ?? '' }}</div>
                     </td>
                     <td class="px-4 py-3 text-sm text-slate-500">{{ $invoice->branch->name ?? '—' }}</td>
-                    <td class="px-4 py-3 text-sm text-slate-700 text-right">{{ $invoice->formattedTotal }}</td>
+                    <td class="px-4 py-3 text-sm text-slate-700 text-right">{{ $invoice->formatted_total }}</td>
                     <td class="px-4 py-3 text-sm text-right {{ $invoice->amount_due > 0 ? 'text-red-600' : 'text-slate-500' }}">
                         ${{ number_format($invoice->amount_due / 100, 2) }}
                     </td>

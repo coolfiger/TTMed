@@ -52,7 +52,7 @@
                     </td>
                     <td class="px-4 py-3 text-sm font-mono text-slate-500">{{ $payment->invoice->invoice_number ?? '—' }}</td>
                     <td class="px-4 py-3 text-sm text-slate-600 capitalize">{{ $payment->payment_method }}</td>
-                    <td class="px-4 py-3 text-sm text-slate-800 text-right font-medium">{{ $payment->formattedAmount }}</td>
+                    <td class="px-4 py-3 text-sm text-slate-800 text-right font-medium">{{ $payment->amount_formatted }}</td>
                     <td class="px-4 py-3 text-sm text-slate-500">{{ $payment->collectedBy->name ?? '—' }}</td>
                     <td class="px-4 py-3 text-sm text-slate-500">{{ $payment->created_at->format('d M Y') }}</td>
                 </tr>

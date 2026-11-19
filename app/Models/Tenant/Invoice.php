@@ -49,6 +49,11 @@ class Invoice extends Model
         return in_array($this->status, ['draft', 'finalized', 'partially_paid']);
     }
 
+    public function isPayable(): bool
+    {
+        return in_array($this->status, ['finalized', 'partially_paid']);
+    }
+
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
@@ -79,9 +84,27 @@ class Invoice extends Model
     // Formatted money helpers (TTD dollars)
     // -------------------------------------------------------------------------
 
+    public function getFormattedTotalAttribute(): string
+    {
+        return 'TTD $' . number_format($this->total / 100, 2);
+    }
+
+    public function getStatusBadgeClassAttribute(): string
+    {
+        return match ($this->status) {
+            'draft'          => 'bg-gray-100 text-gray-700',
+            'finalized'      => 'bg-blue-100 text-blue-700',
+            'paid'           => 'bg-green-100 text-green-700',
+            'partially_paid' => 'bg-yellow-100 text-yellow-700',
+            'cancelled'      => 'bg-red-100 text-red-700',
+            'void'           => 'bg-red-100 text-red-700',
+            default          => 'bg-gray-100 text-gray-700',
+        };
+    }
+
     public function getTotalFormattedAttribute(): string
     {
-        return '$' . number_format($this->total / 100, 2);
+        return 'TTD $' . number_format($this->total / 100, 2);
     }
 
     public function getAmountDueFormattedAttribute(): string
