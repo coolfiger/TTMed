@@ -52,7 +52,6 @@
                 @endif
 
                 @if($user?->hasPermission('documents.view'))
-                    <x-nav-item route="tenant.documents.index" label="Documents" />
                 @endif
 
                 @if($user?->hasPermission('billing.view'))

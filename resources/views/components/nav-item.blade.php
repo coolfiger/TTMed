@@ -1,9 +1,17 @@
 @props(['route', 'label'])
 
 @php
-    $exists = \Illuminate\Support\Facades\Route::has($route);
+    $href = '#';
+    $exists = false;
+    if (\Illuminate\Support\Facades\Route::has($route)) {
+        try {
+            $href   = route($route);
+            $exists = true;
+        } catch (\Throwable $e) {
+            // Route exists but requires parameters not available in a nav context
+        }
+    }
     $active = $exists && (request()->routeIs($route) || request()->routeIs($route . '.*'));
-    $href   = $exists ? route($route) : '#';
 @endphp
 
 <li>
