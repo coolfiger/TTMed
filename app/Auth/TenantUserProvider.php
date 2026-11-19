@@ -24,16 +24,19 @@ class TenantUserProvider extends EloquentUserProvider
         parent::__construct($hasher, $model);
     }
 
-    private function ensureConnected(): void
+    private function ensureConnected(string $method): void
     {
         $tenant = $this->context->get();
 
         \Illuminate\Support\Facades\Log::error('TenantUserProvider::ensureConnected', [
-            'tenant_code'     => $tenant?->code,
-            'tenant_db_user'  => $tenant?->db_username,
-            'tenant_db_name'  => $tenant?->database_name,
-            'config_db_now'   => \Illuminate\Support\Facades\Config::get('database.connections.tenant.database'),
-            'config_user_now' => \Illuminate\Support\Facades\Config::get('database.connections.tenant.username'),
+            'method'        => $method,
+            'tenant_code'   => $tenant?->code,
+            'tenant_db'     => $tenant?->database_name,
+            'config_db'     => \Illuminate\Support\Facades\Config::get('database.connections.tenant.database'),
+            'pid'           => getmypid(),
+            'url'           => request()->fullUrl(),
+            'trace'         => collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 8))
+                ->skip(1)->map(fn($f) => ($f['class'] ?? '') . '::' . ($f['function'] ?? ''))->implode(' → '),
         ]);
 
         if ($tenant) {
@@ -43,31 +46,33 @@ class TenantUserProvider extends EloquentUserProvider
 
     public function retrieveById($identifier)
     {
-        $this->ensureConnected();
-        return parent::retrieveById($identifier);
+        $this->ensureConnected('retrieveById');
+        $result = parent::retrieveById($identifier);
+        \Illuminate\Support\Facades\Log::error('TenantUserProvider::retrieveById result', ['found' => ! is_null($result), 'id' => $identifier]);
+        return $result;
     }
 
     public function retrieveByToken($identifier, $token)
     {
-        $this->ensureConnected();
+        $this->ensureConnected('retrieveByToken');
         return parent::retrieveByToken($identifier, $token);
     }
 
     public function updateRememberToken(\Illuminate\Contracts\Auth\Authenticatable $user, $token)
     {
-        $this->ensureConnected();
+        $this->ensureConnected('updateRememberToken');
         parent::updateRememberToken($user, $token);
     }
 
     public function retrieveByCredentials(array $credentials)
     {
-        $this->ensureConnected();
+        $this->ensureConnected('retrieveByCredentials');
         return parent::retrieveByCredentials($credentials);
     }
 
     public function validateCredentials(\Illuminate\Contracts\Auth\Authenticatable $user, array $credentials)
     {
-        $this->ensureConnected();
+        $this->ensureConnected('validateCredentials');
         return parent::validateCredentials($user, $credentials);
     }
 }
