@@ -52,7 +52,30 @@
                 class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 Open portal ↗
             </a>
+            <button wire:click="$set('confirmingDelete', true)"
+                class="ml-auto rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                Delete
+            </button>
         </div>
+
+        {{-- Delete confirmation --}}
+        @if($confirmingDelete)
+        <div class="mt-4 rounded-md bg-red-50 border border-red-200 p-4">
+            <p class="text-sm font-medium text-red-800 mb-1">This permanently deletes the database, all data and files for this medical centre. This cannot be undone.</p>
+            <p class="text-sm text-red-700 mb-3">Type <strong>{{ $tenant->code }}</strong> to confirm.</p>
+            <div class="flex items-center gap-3">
+                <input wire:model="deleteConfirmCode" type="text" placeholder="{{ $tenant->code }}"
+                    class="rounded-md border border-red-300 px-3 py-1.5 text-sm font-mono w-40 focus:outline-none focus:border-red-500">
+                <button wire:click="deleteTenant" wire:loading.attr="disabled"
+                    class="rounded-md bg-red-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-red-700">
+                    <span wire:loading.remove wire:target="deleteTenant">Delete permanently</span>
+                    <span wire:loading wire:target="deleteTenant">Deleting…</span>
+                </button>
+                <button wire:click="$set('confirmingDelete', false)" class="text-sm text-slate-500 hover:text-slate-700">Cancel</button>
+            </div>
+            @error('deleteConfirmCode') <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror
+        </div>
+        @endif
     </div>
 
     {{-- Tenant users --}}

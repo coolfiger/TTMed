@@ -124,4 +124,44 @@ class TenantProvisioningService
             'is_active' => true,
         ]);
     }
+
+    /**
+     * Fully deprovision a tenant:
+     * - Drop the tenant database and MySQL user
+     * - Delete tenant file storage directory
+     * - Delete all platform records (subscriptions, tenant row)
+     */
+    public function deprovision(Tenant $tenant): void
+    {
+        Log::warning("Deprovisioning tenant: {$tenant->code} (id={$tenant->id})");
+
+        // Drop DB and MySQL user
+        try {
+            $this->dbManager->dropTenantDatabase($tenant->database_name, $tenant->db_username, confirm: true);
+        } catch (\Throwable $e) {
+            Log::error("Failed to drop tenant database for {$tenant->code}: {$e->getMessage()}");
+        }
+
+        // Remove file storage directory
+        $storagePath = config('tenancy.storage_root') . '/' . $tenant->uuid;
+        if (is_dir($storagePath)) {
+            $this->deleteDirectory($storagePath);
+        }
+
+        // Delete platform records
+        $tenant->subscription()?->delete();
+        $tenant->delete();
+
+        Log::warning("Tenant {$tenant->code} deprovisioned.");
+    }
+
+    private function deleteDirectory(string $path): void
+    {
+        foreach (scandir($path) as $item) {
+            if ($item === '.' || $item === '..') continue;
+            $full = $path . '/' . $item;
+            is_dir($full) ? $this->deleteDirectory($full) : unlink($full);
+        }
+        rmdir($path);
+    }
 }
