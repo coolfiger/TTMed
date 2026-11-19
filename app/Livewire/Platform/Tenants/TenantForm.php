@@ -86,7 +86,7 @@ class TenantForm extends Component
 
             $audit->logPlatform('tenant.updated', 'Tenant', $this->tenant->id, $this->tenant->id, $old, $this->tenant->fresh()->toArray());
             session()->flash('message', 'Medical centre updated.');
-            $this->redirectRoute('platform.tenants.show', $this->tenant);
+            $this->redirectRoute('platform.tenants.show', ['uuid' => $this->tenant->uuid]);
             return;
         }
 

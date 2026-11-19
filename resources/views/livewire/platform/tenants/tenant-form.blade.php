@@ -103,7 +103,7 @@
         </div>
         @endif
 
-        <div class="flex gap-3 pt-2">
+        <div class="flex gap-3 pt-2 items-center">
             <button type="submit"
                 class="rounded-md bg-slate-800 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-700"
                 wire:loading.attr="disabled" wire:loading.class="opacity-75">
@@ -114,6 +114,12 @@
                 class="rounded-md px-5 py-2 text-sm font-medium text-slate-600 hover:text-slate-800">
                 Cancel
             </a>
+            @if($tenant)
+            <a href="{{ route('platform.tenants.show', $tenant->uuid) }}#delete"
+                class="ml-auto text-sm text-red-500 hover:text-red-700">
+                Delete this centre
+            </a>
+            @endif
         </div>
     </form>
 </div>
