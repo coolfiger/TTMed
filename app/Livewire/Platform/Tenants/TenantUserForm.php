@@ -3,6 +3,7 @@
 namespace App\Livewire\Platform\Tenants;
 
 use App\Models\Platform\Tenant;
+use App\Models\Tenant\Role as TenantRole;
 use App\Models\Tenant\User as TenantUser;
 use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Support\Facades\Hash;
@@ -23,6 +24,7 @@ class TenantUserForm extends Component
     public bool   $must_change_password = true;
     public string $password  = '';
     public string $password_confirmation = '';
+    public ?int   $roleId    = null;
 
     public bool $isEdit = false;
 
@@ -32,13 +34,14 @@ class TenantUserForm extends Component
         $dbManager->connect($this->tenant);
 
         if ($userId) {
-            $this->tenantUser = TenantUser::on('tenant')->findOrFail($userId);
+            $this->tenantUser = TenantUser::on('tenant')->with('roles')->findOrFail($userId);
             $this->isEdit     = true;
             $this->name       = $this->tenantUser->name;
             $this->username   = $this->tenantUser->username;
             $this->email      = $this->tenantUser->email;
             $this->is_active  = $this->tenantUser->is_active;
             $this->must_change_password = $this->tenantUser->must_change_password;
+            $this->roleId     = $this->tenantUser->roles->first()?->id;
         }
     }
 
@@ -54,6 +57,7 @@ class TenantUserForm extends Component
             'username'  => ['required', 'string', 'max:50', 'alpha_dash', $uniqueUsername],
             'email'     => ['required', 'email', 'max:150', $uniqueEmail],
             'is_active' => 'boolean',
+            'roleId'    => 'nullable|integer',
         ];
 
         if (! $this->isEdit || $this->password !== '') {
@@ -76,17 +80,58 @@ class TenantUserForm extends Component
 
         if ($this->isEdit) {
             $this->tenantUser->update($data);
+            if ($this->roleId) {
+                $this->tenantUser->roles()->sync([$this->roleId]);
+            } else {
+                $this->tenantUser->roles()->detach();
+            }
             session()->flash('message', 'User updated.');
         } else {
-            TenantUser::on('tenant')->create($data);
+            $newUser = TenantUser::on('tenant')->create($data);
+            if ($this->roleId) {
+                $newUser->roles()->attach($this->roleId);
+            }
             session()->flash('message', 'User created.');
         }
 
-        $this->redirectRoute('platform.tenants.show', $this->tenant->uuid);
+        $this->redirectRoute('platform.tenants.show', ['uuid' => $this->tenant->uuid]);
     }
 
-    public function render(): \Illuminate\View\View
+    public function render(TenantDatabaseManager $dbManager): \Illuminate\View\View
     {
-        return view('livewire.platform.tenants.tenant-user-form');
+        $dbManager->connect($this->tenant);
+        $roles = TenantRole::on('tenant')->orderBy('name')->get();
+
+        // Find this person's other centre memberships (by email)
+        $otherCentres = collect();
+        if ($this->isEdit && $this->email) {
+            $allTenants = Tenant::whereIn('status', ['active', 'trial'])
+                ->where('id', '!=', $this->tenant->id)
+                ->get();
+
+            foreach ($allTenants as $otherTenant) {
+                try {
+                    $dbManager->connect($otherTenant);
+                    $match = TenantUser::on('tenant')
+                        ->with('roles')
+                        ->where('email', $this->tenantUser->email)
+                        ->first();
+
+                    if ($match) {
+                        $otherCentres->push([
+                            'tenant' => $otherTenant,
+                            'user'   => $match,
+                        ]);
+                    }
+                } catch (\Throwable) {
+                    continue;
+                }
+            }
+
+            // Reconnect to this tenant for any subsequent queries
+            $dbManager->connect($this->tenant);
+        }
+
+        return view('livewire.platform.tenants.tenant-user-form', compact('roles', 'otherCentres'));
     }
 }

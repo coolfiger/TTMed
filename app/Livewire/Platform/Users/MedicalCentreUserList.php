@@ -5,6 +5,7 @@ namespace App\Livewire\Platform\Users;
 use App\Models\Platform\Tenant;
 use App\Models\Tenant\User as TenantUser;
 use App\Tenancy\TenantDatabaseManager;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -17,45 +18,50 @@ class MedicalCentreUserList extends Component
     {
         $tenants = Tenant::whereIn('status', ['active', 'trial'])->orderBy('name')->get();
 
-        $users = collect();
+        // Collect every user record across all tenants, keyed by email
+        $byEmail = [];
 
         foreach ($tenants as $tenant) {
             try {
                 $dbManager->connect($tenant);
 
-                $query = TenantUser::on('tenant')
-                    ->with('roles')
-                    ->orderBy('name');
+                $query = TenantUser::on('tenant')->with('roles');
 
                 if ($this->search) {
-                    $query->where(function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%")
-                          ->orWhere('username', 'like', "%{$this->search}%")
-                          ->orWhere('email', 'like', "%{$this->search}%");
+                    $term = $this->search;
+                    $query->where(function ($q) use ($term) {
+                        $q->where('name', 'like', "%{$term}%")
+                          ->orWhere('username', 'like', "%{$term}%")
+                          ->orWhere('email', 'like', "%{$term}%");
                     });
                 }
 
-                $tenantUsers = $query->get()->map(function ($u) use ($tenant) {
-                    $u->_tenant = $tenant;
-                    return $u;
-                });
+                foreach ($query->get() as $user) {
+                    $email = strtolower($user->email);
 
-                $users = $users->merge($tenantUsers);
+                    if (! isset($byEmail[$email])) {
+                        $byEmail[$email] = [
+                            'name'        => $user->name,
+                            'email'       => $user->email,
+                            'memberships' => [],
+                        ];
+                    }
+
+                    $byEmail[$email]['memberships'][] = [
+                        'tenant'   => $tenant,
+                        'user'     => $user,
+                    ];
+                }
             } catch (\Throwable) {
                 continue;
             }
         }
 
-        if ($this->search) {
-            $users = $users->filter(fn ($u) =>
-                str_contains(strtolower($u->name), strtolower($this->search)) ||
-                str_contains(strtolower($u->username), strtolower($this->search)) ||
-                str_contains(strtolower($u->email), strtolower($this->search))
-            );
-        }
+        // Sort by name
+        usort($byEmail, fn ($a, $b) => strcasecmp($a['name'], $b['name']));
 
         return view('livewire.platform.users.medical-centre-user-list', [
-            'users' => $users->sortBy('name')->values(),
+            'people' => $byEmail,
         ]);
     }
 }
