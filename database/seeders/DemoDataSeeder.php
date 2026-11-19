@@ -32,7 +32,9 @@ class DemoDataSeeder extends Seeder
         $this->seedInventory();
         $this->seedCashierShift();
         $this->seedEncounters();
-        $this->seedAppointments();
+        $this->seedTodaysQueue();
+        $this->seedWeekSchedule();
+        $this->seedFollowUps();
 
         $this->command->info('Done.');
     }
@@ -946,55 +948,311 @@ class DemoDataSeeder extends Seeder
     // ─────────────────────────────────────────────────────────────────────────
     // Upcoming appointments (future)
     // ─────────────────────────────────────────────────────────────────────────
-    private function seedAppointments(): void
+    // ─────────────────────────────────────────────────────────────────────────
+    // Today's live queue — patients in various stages right now
+    // ─────────────────────────────────────────────────────────────────────────
+    private function seedTodaysQueue(): void
+    {
+        $receptionUser = $this->userIds['amohammed'];
+        $nurseUser     = $this->userIds['ksingh'];
+        $drSharmaId    = $this->doctorIds['rsharma'];
+        $drRamloganId  = $this->doctorIds['pramlogan'];
+        $mainBranch    = $this->branchIds['MAIN'];
+        $today         = now()->format('Y-m-d');
+
+        // [patientIndex, queueNum, encounterStatus, queueStatus, checkedInMinsAgo, complaint, doctorId, isPriority, priorityReason]
+        $livePatients = [
+            [5,  1, 'completed',       'completed',       195, 'High blood pressure — routine check', $drSharmaId,   false, null],
+            [11, 2, 'with_nurse',      'with_nurse',      75,  'Lower back pain — 3 days duration',   $drSharmaId,   false, null],
+            [16, 3, 'awaiting_doctor', 'awaiting_doctor', 60,  'Follow-up after hospital discharge',  $drRamloganId, true,  'Post-hospitalisation'],
+            [18, 4, 'with_doctor',     'with_doctor',     45,  'Persistent cough and fever',          $drSharmaId,   false, null],
+            [8,  5, 'waiting',         'waiting',         20,  'Routine pre-employment medical',      $drSharmaId,   false, null],
+            [19, 6, 'waiting',         'waiting',         5,   'Chest tightness — shortness of breath', $drRamloganId, true, 'Cardiac symptoms'],
+        ];
+
+        // Seed today's queue number sequence
+        DB::connection($this->db)->table('queue_number_sequences')->insert([
+            'branch_id'  => $mainBranch,
+            'queue_date' => $today,
+            'last_number'=> count($livePatients),
+            'created_at' => now()->startOfDay()->addHours(8),
+            'updated_at' => now(),
+        ]);
+
+        foreach ($livePatients as [$patIdx, $qNum, $encStatus, $qStatus, $minsAgo, $complaint, $doctorId, $isPriority, $priorityReason]) {
+            $checkedInAt = now()->subMinutes($minsAgo);
+
+            $seenByNurseAt  = in_array($encStatus, ['with_nurse', 'awaiting_doctor', 'with_doctor', 'completed'])
+                ? $checkedInAt->copy()->addMinutes(12) : null;
+            $seenByDoctorAt = in_array($encStatus, ['with_doctor', 'completed'])
+                ? $checkedInAt->copy()->addMinutes(35) : null;
+            $completedAt    = $encStatus === 'completed'
+                ? $checkedInAt->copy()->addMinutes(65) : null;
+
+            $encounterId = DB::connection($this->db)->table('encounters')->insertGetId([
+                'patient_id'        => $this->patientIds[$patIdx],
+                'branch_id'         => $mainBranch,
+                'doctor_id'         => $doctorId,
+                'visit_type'        => 'walk_in',
+                'status'            => $encStatus,
+                'encounter_date'    => $today,
+                'checked_in_at'     => $checkedInAt,
+                'seen_by_nurse_at'  => $seenByNurseAt,
+                'seen_by_doctor_at' => $seenByDoctorAt,
+                'completed_at'      => $completedAt,
+                'checked_in_by'     => $receptionUser,
+                'chief_complaint'   => $complaint,
+                'created_at'        => $checkedInAt,
+                'updated_at'        => now(),
+            ]);
+
+            DB::connection($this->db)->table('queue_entries')->insert([
+                'encounter_id'   => $encounterId,
+                'patient_id'     => $this->patientIds[$patIdx],
+                'branch_id'      => $mainBranch,
+                'doctor_id'      => $doctorId,
+                'queue_number'   => $qNum,
+                'queue_date'     => $today,
+                'visit_type'     => 'walk_in',
+                'status'         => $qStatus,
+                'is_priority'    => $isPriority,
+                'priority_reason'=> $priorityReason,
+                'checked_in_by'  => $receptionUser,
+                'created_at'     => $checkedInAt,
+                'updated_at'     => now(),
+            ]);
+
+            // Vitals for patients past the waiting stage
+            if ($seenByNurseAt) {
+                DB::connection($this->db)->table('vital_signs')->insert([
+                    'patient_id'           => $this->patientIds[$patIdx],
+                    'encounter_id'         => $encounterId,
+                    'recorded_by'          => $nurseUser,
+                    'systolic_bp'          => rand(110, 165),
+                    'diastolic_bp'         => rand(68, 100),
+                    'pulse_rate'           => rand(58, 102),
+                    'pulse_rhythm'         => 'regular',
+                    'respiratory_rate'     => rand(14, 20),
+                    'oxygen_saturation'    => rand(94, 100),
+                    'temperature'          => round(rand(366, 376) / 10, 1),
+                    'temperature_site'     => 'oral',
+                    'weight_kg'            => round(rand(55, 110) + rand(0, 9) / 10, 1),
+                    'height_cm'            => rand(155, 185),
+                    'bmi'                  => round(rand(195, 310) / 10, 1),
+                    'blood_glucose'        => round(rand(45, 115) / 10, 1),
+                    'blood_glucose_timing' => 'random',
+                    'pain_score'           => rand(0, 7),
+                    'recorded_at'          => $seenByNurseAt->copy()->addMinutes(5),
+                    'created_at'           => $seenByNurseAt->copy()->addMinutes(5),
+                    'updated_at'           => $seenByNurseAt->copy()->addMinutes(5),
+                ]);
+            }
+
+            // Queue events for status transitions
+            $events = [];
+            $events[] = ['checked_in', null, 'waiting', $receptionUser, $checkedInAt];
+            if ($seenByNurseAt) {
+                $events[] = ['called_to_nurse', 'waiting', 'with_nurse', $nurseUser, $seenByNurseAt];
+            }
+            if ($encStatus === 'awaiting_doctor' || $encStatus === 'with_doctor' || $encStatus === 'completed') {
+                $events[] = ['nurse_done', 'with_nurse', 'awaiting_doctor', $nurseUser, $seenByNurseAt ? $seenByNurseAt->copy()->addMinutes(15) : now()];
+            }
+            if ($seenByDoctorAt) {
+                $events[] = ['called_to_doctor', 'awaiting_doctor', 'with_doctor', $this->userIds['rsharma'], $seenByDoctorAt];
+            }
+            if ($completedAt) {
+                $events[] = ['completed', 'with_doctor', 'completed', $this->userIds['rsharma'], $completedAt];
+            }
+
+            foreach ($events as [$eventType, $fromStatus, $toStatus, $performedBy, $occurredAt]) {
+                DB::connection($this->db)->table('queue_events')->insert([
+                    'queue_entry_id' => DB::connection($this->db)->table('queue_entries')->where('encounter_id', $encounterId)->value('id'),
+                    'event_type'     => $eventType,
+                    'from_status'    => $fromStatus,
+                    'to_status'      => $toStatus,
+                    'performed_by'   => $performedBy,
+                    'occurred_at'    => $occurredAt,
+                ]);
+            }
+        }
+
+        // Doctor availability — both doctors on duty
+        DB::connection($this->db)->table('doctor_availability')->insert([
+            ['doctor_id' => $drSharmaId,   'branch_id' => $mainBranch, 'status' => 'busy',      'status_note' => 'With patient', 'updated_by' => $this->userIds['rsharma'],  'created_at' => now(), 'updated_at' => now()],
+            ['doctor_id' => $drRamloganId, 'branch_id' => $mainBranch, 'status' => 'available', 'status_note' => null,           'updated_by' => $this->userIds['pramlogan'],'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->command->info("  → Today's queue: 6 patients (1 completed, 1 with nurse, 1 awaiting doctor, 1 with doctor, 2 waiting)");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Appointments — today through end of week + next two weeks of follow-ups
+    // ─────────────────────────────────────────────────────────────────────────
+    private function seedWeekSchedule(): void
     {
         $bookingUser  = $this->userIds['amohammed'];
         $drSharmaId   = $this->doctorIds['rsharma'];
         $drRamloganId = $this->doctorIds['pramlogan'];
         $drAliId      = $this->doctorIds['kali'];
+        $drBaptisteId = $this->doctorIds['sbaptiste'];
         $mainBranch   = $this->branchIds['MAIN'];
         $northBranch  = $this->branchIds['NORTH'];
 
+        // [patientIndex, daysFromNow, time, doctorId, branchId, reason, type, status, durationMins]
         $appts = [
-            // [patientIndex, daysFromNow, time, doctorId, branchId, reason, type]
-            [0, 7,  '09:00', $drSharmaId,   $mainBranch,  'Diabetes and BP 3-month review',         'follow_up'],
-            [1, 3,  '10:30', $drRamloganId, $mainBranch,  'Thyroid levels follow-up',                'follow_up'],
-            [4, 14, '08:30', $drSharmaId,   $mainBranch,  'Gout management review',                  'follow_up'],
-            [7, 5,  '11:00', $drRamloganId, $mainBranch,  'CKD monitoring — quarterly',              'follow_up'],
-            [9, 10, '09:30', $drSharmaId,   $mainBranch,  'Migraine prophylaxis review',             'follow_up'],
-            [2, 2,  '14:00', $drSharmaId,   $mainBranch,  'Post-exacerbation asthma check',          'follow_up'],
-            [5, 4,  '10:00', $drSharmaId,   $mainBranch,  'General health check',                    'scheduled'],
-            [6, 8,  '08:00', $drRamloganId, $mainBranch,  'Allergic rhinitis review',                'scheduled'],
-            [10,6,  '15:00', $drAliId,      $northBranch, 'Hypertension + BPH — specialist review',  'scheduled'],
-            [12,1,  '09:00', $drSharmaId,   $mainBranch,  'Walk-in — sore throat',                   'walk_in'],
+            // ── Today's remaining scheduled appointments ──────────────────────
+            [6,  0, '14:00', $drSharmaId,   $mainBranch,  'Annual wellness check',                   'scheduled', 'confirmed',  30],
+            [12, 0, '15:30', $drRamloganId, $mainBranch,  'Thyroid result review',                   'follow_up', 'confirmed',  15],
+            [15, 0, '16:00', $drSharmaId,   $mainBranch,  'Blood pressure medication adjustment',    'follow_up', 'confirmed',  15],
+
+            // ── Tomorrow ──────────────────────────────────────────────────────
+            [0,  1, '08:30', $drSharmaId,   $mainBranch,  'Diabetes — HbA1c review',                 'follow_up', 'confirmed',  20],
+            [3,  1, '09:00', $drRamloganId, $mainBranch,  'Iron deficiency anaemia — recheck FBC',   'follow_up', 'confirmed',  15],
+            [7,  1, '10:30', $drRamloganId, $mainBranch,  'CKD Stage 3 — quarterly monitoring',      'follow_up', 'confirmed',  30],
+            [10, 1, '11:00', $drAliId,      $northBranch, 'Hypertension + BPH — cardiology review',  'follow_up', 'confirmed',  30],
+            [13, 1, '14:00', $drSharmaId,   $mainBranch,  'GORD — symptom reassessment',             'follow_up', 'confirmed',  15],
+            [17, 1, '15:00', $drAliId,      $northBranch, 'Atrial fibrillation — INR and rate control','follow_up','confirmed', 20],
+
+            // ── Day after tomorrow ────────────────────────────────────────────
+            [1,  2, '09:30', $drRamloganId, $mainBranch,  'Hypothyroidism — TSH recheck',            'follow_up', 'confirmed',  15],
+            [2,  2, '10:00', $drSharmaId,   $mainBranch,  'Post-asthma exacerbation check',          'follow_up', 'confirmed',  20],
+            [4,  2, '11:30', $drSharmaId,   $mainBranch,  'Gout — urate and renal function',         'follow_up', 'confirmed',  15],
+            [9,  2, '14:30', $drSharmaId,   $mainBranch,  'Migraine prophylaxis — 4-week review',    'follow_up', 'confirmed',  15],
+            [11, 2, '16:00', $drBaptisteId, $mainBranch,  'New patient — GP registration',           'scheduled', 'confirmed',  30],
+
+            // ── 3 days from now ───────────────────────────────────────────────
+            [5,  3, '08:00', $drSharmaId,   $mainBranch,  'General health check — results review',   'scheduled', 'confirmed',  30],
+            [14, 3, '09:00', $drRamloganId, $mainBranch,  'COPD — post-exacerbation spirometry',     'follow_up', 'confirmed',  30],
+            [16, 3, '10:30', $drAliId,      $northBranch, 'Post-hospitalisation cardiac review',      'follow_up', 'confirmed',  30],
+            [18, 3, '14:00', $drSharmaId,   $mainBranch,  'Respiratory — chest X-ray result review', 'follow_up', 'confirmed',  20],
+            [6,  3, '15:00', $drBaptisteId, $mainBranch,  'Routine cervical smear',                  'scheduled', 'confirmed',  20],
+
+            // ── 4 days from now ───────────────────────────────────────────────
+            [0,  4, '08:30', $drSharmaId,   $mainBranch,  'Diabetes — insulin dose adjustment',      'follow_up', 'confirmed',  20],
+            [8,  4, '09:00', $drSharmaId,   $mainBranch,  'Pre-employment medical — Oilfields',      'scheduled', 'confirmed',  45],
+            [19, 4, '11:00', $drAliId,      $northBranch, 'Cardiology new referral — chest pain',    'urgent',    'confirmed',  30],
+            [1,  4, '14:00', $drRamloganId, $mainBranch,  'Levothyroxine dose review',               'follow_up', 'confirmed',  15],
+            [15, 4, '15:30', $drBaptisteId, $mainBranch,  'Routine wellness check — female',         'scheduled', 'confirmed',  30],
+
+            // ── 5 days from now ───────────────────────────────────────────────
+            [7,  5, '09:00', $drRamloganId, $mainBranch,  'CKD — nephrology liaison update',         'follow_up', 'confirmed',  30],
+            [9,  5, '10:00', $drSharmaId,   $mainBranch,  'Migraine diary review',                   'follow_up', 'confirmed',  15],
+            [3,  5, '11:30', $drRamloganId, $mainBranch,  'Iron studies — repeat panel',             'follow_up', 'confirmed',  15],
+            [12, 5, '14:00', $drSharmaId,   $mainBranch,  'Anxiety disorder — medication review',    'follow_up', 'confirmed',  20],
+            [17, 5, '15:00', $drAliId,      $northBranch, 'AF — Warfarin INR check',                 'follow_up', 'confirmed',  15],
+
+            // ── 6 days from now ───────────────────────────────────────────────
+            [4,  6, '08:30', $drSharmaId,   $mainBranch,  'Gout management — allopurinol titration', 'follow_up', 'confirmed',  15],
+            [10, 6, '09:30', $drAliId,      $northBranch, 'BPH — IPSS score and flow rate',          'follow_up', 'confirmed',  30],
+            [14, 6, '10:00', $drSharmaId,   $mainBranch,  'COPD — inhaler technique review',         'follow_up', 'confirmed',  20],
+            [18, 6, '14:00', $drBaptisteId, $mainBranch,  'Walk-in slot — available',               'walk_in',   'scheduled',  15],
+            [5,  6, '15:00', $drSharmaId,   $mainBranch,  'Hypertension — ambulatory BP result',    'follow_up', 'confirmed',  20],
+
+            // ── Next week — days 7–13 ─────────────────────────────────────────
+            [0,  7, '09:00', $drSharmaId,   $mainBranch,  'Diabetes and BP 3-month review',          'follow_up', 'confirmed',  20],
+            [1,  8, '10:30', $drRamloganId, $mainBranch,  'Thyroid levels — 3-month check',          'follow_up', 'confirmed',  15],
+            [2,  8, '14:00', $drSharmaId,   $mainBranch,  'Asthma — peak flow diary review',         'follow_up', 'confirmed',  20],
+            [7,  9, '11:00', $drRamloganId, $mainBranch,  'CKD — renal function panel',              'follow_up', 'confirmed',  30],
+            [9,  10,'09:30', $drSharmaId,   $mainBranch,  'Migraine prophylaxis — 8-week review',    'follow_up', 'confirmed',  15],
+            [16, 11,'10:00', $drAliId,      $northBranch, '6-week post-discharge cardiac review',    'follow_up', 'confirmed',  30],
+            [4,  12,'08:30', $drSharmaId,   $mainBranch,  'Gout — uric acid recheck',                'follow_up', 'confirmed',  15],
+            [13, 13,'09:00', $drSharmaId,   $mainBranch,  'GORD and anxiety — 3-month review',       'follow_up', 'confirmed',  20],
         ];
 
-        foreach ($appts as $ai => [$patIdx, $days, $time, $doctorId, $branchId, $reason, $apptType]) {
+        $apptNum = 0;
+        foreach ($appts as [$patIdx, $days, $time, $doctorId, $branchId, $reason, $apptType, $status, $duration]) {
+            $apptNum++;
             $apptDate = now()->addDays($days)->format('Y-m-d');
-            $apptNum  = 'APT-' . now()->format('Ymd') . '-' . str_pad($ai + 1, 3, '0', STR_PAD_LEFT);
+            $dateKey  = now()->addDays($days)->format('Y-m-d');
+            $apptNo   = 'APT-' . now()->addDays($days)->format('Ymd') . '-' . str_pad($apptNum, 3, '0', STR_PAD_LEFT);
 
             DB::connection($this->db)->table('appointment_number_sequences')->updateOrInsert(
-                ['date_key' => now()->format('Y-m-d')],
-                ['last_number' => $ai + 1]
+                ['date_key' => $dateKey],
+                ['last_number' => DB::raw('last_number + 1')]
             );
 
             DB::connection($this->db)->table('appointments')->insert([
-                'appointment_number' => $apptNum,
+                'appointment_number' => $apptNo,
                 'patient_id'         => $this->patientIds[$patIdx],
                 'doctor_id'          => $doctorId,
                 'branch_id'          => $branchId,
                 'appointment_date'   => $apptDate,
                 'appointment_time'   => $time . ':00',
-                'duration_minutes'   => 15,
+                'duration_minutes'   => $duration,
                 'appointment_type'   => $apptType,
-                'status'             => 'confirmed',
+                'status'             => $status,
                 'reason'             => $reason,
                 'booked_by'          => $bookingUser,
-                'reminder_sent'      => false,
-                'created_at'         => now(),
+                'reminder_sent'      => $days > 1 ? false : true,
+                'reminder_sent_at'   => $days <= 1 ? now()->subHours(24) : null,
+                'created_at'         => now()->subDays(rand(1, 14)),
                 'updated_at'         => now(),
             ]);
         }
+
+        $this->command->info('  → Week schedule: ' . $apptNum . ' appointments seeded (today through +13 days)');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Follow-ups — pending next-visit orders tied to completed encounters
+    // ─────────────────────────────────────────────────────────────────────────
+    private function seedFollowUps(): void
+    {
+        $drSharmaId    = $this->doctorIds['rsharma'];
+        $drRamloganId  = $this->doctorIds['pramlogan'];
+        $drAliId       = $this->doctorIds['kali'];
+        $mainBranch    = $this->branchIds['MAIN'];
+        $northBranch   = $this->branchIds['NORTH'];
+
+        // Pull the encounter IDs we seeded — first 10 are from seedEncounters
+        $encounterIds = DB::connection($this->db)->table('encounters')
+            ->where('status', 'completed')
+            ->orderBy('id')
+            ->limit(10)
+            ->pluck('id', 'patient_id')
+            ->all();
+
+        $followUps = [
+            // [patientIndex, encIdOffset, daysToTarget, followUpDays, reason, instructions, drId, status]
+            [0,  0, 90, 90,  'Diabetes and hypertension 3-month review', 'Repeat HbA1c, BMP, lipid panel before visit. Bring glucose diary.', $drSharmaId,   'pending'],
+            [1,  1, 90, 90,  'Hypothyroidism — TSH recheck',             'Repeat TSH, free T4 two weeks before appointment.',                   $drRamloganId, 'pending'],
+            [2,  2, 42, 42,  'Post-exacerbation asthma follow-up',       'Peak flow diary daily. Return sooner if symptoms worsen.',             $drSharmaId,   'booked'],
+            [4,  3, 30, 30,  'Gout — urate-lowering therapy review',     'Fasting uric acid and renal function one week before visit.',          $drSharmaId,   'pending'],
+            [7,  4, 90, 90,  'CKD Stage 3 quarterly monitoring',         'Repeat BMP, FBC, urinalysis, spot protein:creatinine ratio.',          $drRamloganId, 'pending'],
+            [9,  5, 28, 28,  'Migraine prophylaxis — 4-week check',      'Headache diary to be completed and brought to visit.',                 $drSharmaId,   'booked'],
+            [13, 6, 60, 60,  'GORD and GAD — 2-month medication review', 'Note whether heartburn has resolved. Mood screening questionnaire.',   $drSharmaId,   'pending'],
+            [17, 7, 30, 30,  'AF — INR and rate control',                'INR check 1 week prior. Bring current Warfarin booklet.',              $drAliId,      'booked'],
+            [3,  8, 60, 60,  'Iron deficiency anaemia — recheck FBC',    'Repeat FBC and iron studies. Ensure ferrous sulphate taken with food.', $drRamloganId,'pending'],
+            [14, 9, 42, 42,  'COPD post-exacerbation — spirometry',      'Bring all inhalers to appointment. Post-bronchodilator spirometry.',   $drRamloganId, 'booked'],
+        ];
+
+        $encounterList = DB::connection($this->db)->table('encounters')
+            ->where('status', 'completed')
+            ->orderBy('id')
+            ->limit(10)
+            ->get(['id', 'patient_id', 'doctor_id', 'branch_id']);
+
+        foreach ($followUps as $i => [$patIdx, $encOffset, $daysToTarget, $followUpDays, $reason, $instructions, $drId, $status]) {
+            $enc = $encounterList[$encOffset] ?? null;
+            if (! $enc) continue;
+
+            DB::connection($this->db)->table('follow_ups')->insert([
+                'encounter_id'   => $enc->id,
+                'patient_id'     => $this->patientIds[$patIdx],
+                'doctor_id'      => $drId,
+                'branch_id'      => $mainBranch,
+                'target_date'    => now()->addDays($daysToTarget)->format('Y-m-d'),
+                'follow_up_days' => $followUpDays,
+                'reason'         => $reason,
+                'instructions'   => $instructions,
+                'status'         => $status,
+                'created_by'     => $drId === $drSharmaId ? $this->userIds['rsharma'] : ($drId === $drRamloganId ? $this->userIds['pramlogan'] : $this->userIds['kali']),
+                'created_at'     => now()->subDays(rand(1, 60)),
+                'updated_at'     => now(),
+            ]);
+        }
+
+        $this->command->info('  → Follow-ups: 10 records seeded (pending and booked)');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
