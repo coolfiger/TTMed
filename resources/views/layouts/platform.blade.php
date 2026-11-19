@@ -38,6 +38,11 @@
                         Platform Users
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('platform.centre-users.index') }}" class="group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white {{ request()->routeIs('platform.centre-users.*') ? 'bg-slate-800 text-white' : '' }}">
+                        Centre Users
+                    </a>
+                </li>
             </ul>
             <div class="mt-auto pt-4 border-t border-slate-700">
                 <a href="{{ route('platform.profile') }}" class="flex items-center gap-x-3 rounded-md px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 {{ request()->routeIs('platform.profile') ? 'text-white bg-slate-800' : '' }}">

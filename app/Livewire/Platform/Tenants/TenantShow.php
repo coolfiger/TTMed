@@ -44,8 +44,12 @@ class TenantShow extends Component
 
         try {
             $dbManager->connect($this->tenant);
-            $tenantUsers = TenantUser::on('tenant')->with('roles')->orderBy('name')->get();
-        } catch (\Throwable) {
+            $tenantUsers = TenantUser::on('tenant')->orderBy('name')->get();
+            foreach ($tenantUsers as $u) {
+                try { $u->load('roles'); } catch (\Throwable) { $u->setRelation('roles', collect()); }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("TenantShow failed to load users for {$this->tenant->code}: " . $e->getMessage());
             $tenantUsers = collect();
         }
 

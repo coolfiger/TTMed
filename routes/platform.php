@@ -12,6 +12,7 @@ use App\Livewire\Platform\Plans\PlanList;
 use App\Livewire\Platform\Plans\PlanForm;
 use App\Livewire\Platform\Users\PlatformUserList;
 use App\Livewire\Platform\Users\PlatformUserForm;
+use App\Livewire\Platform\Users\MedicalCentreUserList;
 use Illuminate\Support\Facades\Route;
 
 // Root redirect for platform subdomain
@@ -51,10 +52,13 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::get('/plans/create',       PlanForm::class)->name('plans.create');
         Route::get('/plans/{uuid}/edit',  PlanForm::class)->name('plans.edit');
 
-        // Platform users
+        // Platform users (platform admins)
         Route::get('/users',              PlatformUserList::class)->name('users.index');
         Route::get('/users/create',       PlatformUserForm::class)->name('users.create');
         Route::get('/users/{id}/edit',    PlatformUserForm::class)->name('users.edit');
+
+        // Medical centre users (staff across all tenants)
+        Route::get('/centre-users',       MedicalCentreUserList::class)->name('centre-users.index');
 
         // My profile
         Route::get('/profile', PlatformUserForm::class)->name('profile');
