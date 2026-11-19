@@ -48,6 +48,23 @@
             </div>
         </div>
 
+        @if($tenant)
+        <div class="border-t border-slate-100 pt-5">
+            <h3 class="text-sm font-semibold text-slate-800 mb-4">Subscription</h3>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Plan</label>
+                <select wire:model="planId"
+                    class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none @error('planId') border-red-500 @enderror">
+                    <option value="">— No plan assigned —</option>
+                    @foreach($plans as $plan)
+                    <option value="{{ $plan->id }}">{{ $plan->name }}</option>
+                    @endforeach
+                </select>
+                @error('planId') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+        </div>
+        @endif
+
         @if(!$tenant)
         <div class="border-t border-slate-100 pt-5">
             <h3 class="text-sm font-semibold text-slate-800 mb-4">Initial Admin Account</h3>

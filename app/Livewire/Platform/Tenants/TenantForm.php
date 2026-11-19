@@ -45,6 +45,7 @@ class TenantForm extends Component
             $this->contactEmail  = $tenant->contact_email ?? '';
             $this->contactPhone  = $tenant->contact_phone ?? '';
             $this->customDomain  = $tenant->custom_domain ?? '';
+            $this->planId        = $tenant->subscription?->plan_id;
         }
     }
 
@@ -83,6 +84,30 @@ class TenantForm extends Component
                 'contact_phone' => $this->contactPhone ?: null,
                 'custom_domain' => $this->customDomain ?: null,
             ]);
+
+            // Update subscription plan if changed
+            if ($this->planId) {
+                $subscription = $this->tenant->subscription;
+                $plan         = SubscriptionPlan::findOrFail($this->planId);
+                if ($subscription) {
+                    if ($subscription->plan_id !== (int) $this->planId) {
+                        $subscription->update([
+                            'plan_id' => $plan->id,
+                            'amount'  => $plan->monthly_price,
+                        ]);
+                    }
+                } else {
+                    Subscription::create([
+                        'tenant_id'     => $this->tenant->id,
+                        'plan_id'       => $plan->id,
+                        'status'        => 'active',
+                        'billing_cycle' => 'monthly',
+                        'starts_at'     => today(),
+                        'expires_at'    => today()->addMonth(),
+                        'amount'        => $plan->monthly_price,
+                    ]);
+                }
+            }
 
             $audit->logPlatform('tenant.updated', 'Tenant', $this->tenant->id, $this->tenant->id, $old, $this->tenant->fresh()->toArray());
             session()->flash('message', 'Medical centre updated.');
