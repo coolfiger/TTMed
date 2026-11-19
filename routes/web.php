@@ -241,7 +241,7 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         });
 
         // Reports
-        Route::middleware('permission:reports.view')->group(function () {
+        Route::middleware('permission:reports.operational')->group(function () {
             Route::get('/reports', ReportDashboard::class)->name('tenant.reports.index');
         });
         Route::middleware('permission:reports.export')->group(function () {
