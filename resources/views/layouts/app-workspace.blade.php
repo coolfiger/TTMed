@@ -52,6 +52,14 @@
                     <x-nav-item route="tenant.prescriptions.index" label="Prescriptions" />
                 @endif
 
+                @if($user?->hasPermission('imaging.view'))
+                    <x-nav-item route="tenant.imaging.index" label="Imaging" />
+                @endif
+
+                @if($user?->hasPermission('documents.view'))
+                    <x-nav-item route="tenant.document.tracker" label="Doc Tracker" />
+                @endif
+
                 @if($user?->hasPermission('billing.view'))
                     <x-nav-item route="tenant.billing.index" label="Billing" />
                 @endif
@@ -86,6 +94,10 @@
 
                 @if($user?->hasPermission('settings.view'))
                     <x-nav-item route="tenant.settings.index" label="Settings" />
+                @endif
+
+                @if($user?->hasPermission('settings.manage'))
+                    <x-nav-item route="tenant.settings.integrations" label="Integrations" />
                 @endif
 
                 @if($user?->hasPermission('users.view'))

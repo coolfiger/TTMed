@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Tenant\DocumentInboundLog;
 use App\Models\Tenant\ImagingOrder;
 use App\Models\Tenant\ImagingReport;
 use App\Models\Tenant\ImagingStudy;
@@ -109,7 +110,7 @@ class ImagingOrderService
             $isCritical  = collect($parsed['results'])->contains('is_critical', true);
 
             DB::connection('tenant')->transaction(function () use ($order, $findings, $impression, $status, $isCritical, $rawMessage, $parsed) {
-                ImagingReport::on('tenant')->create([
+                $report = ImagingReport::on('tenant')->create([
                     'imaging_order_id' => $order->id,
                     'patient_id'       => $order->patient_id,
                     'findings'         => trim($findings),
@@ -124,6 +125,19 @@ class ImagingOrderService
                 $order->update([
                     'status'              => $status === 'final' ? 'report_final' : 'report_preliminary',
                     'results_received_at' => now(),
+                ]);
+
+                DocumentInboundLog::on('tenant')->create([
+                    'type'           => 'imaging_report',
+                    'source'         => 'hl7_v2',
+                    'reference_type' => ImagingReport::class,
+                    'reference_id'   => $report->id,
+                    'patient_id'     => $order->patient_id,
+                    'branch_id'      => $order->branch_id,
+                    'description'    => ($order->modality_label ?? $order->modality) . ' — ' . $order->body_part . ' (' . $status . ')',
+                    'status'         => $isCritical ? 'critical' : 'received',
+                    'is_critical'    => $isCritical,
+                    'critical_note'  => $isCritical ? collect($parsed['results'])->where('is_critical', true)->pluck('value')->join('; ') : null,
                 ]);
             });
 
@@ -174,7 +188,7 @@ class ImagingOrderService
                 $status    = ($payload['reportStatus'] ?? 'preliminary') === 'FINAL' ? 'final' : 'preliminary';
                 $critical  = !empty($payload['criticalFinding']);
 
-                ImagingReport::on('tenant')->create([
+                $report = ImagingReport::on('tenant')->create([
                     'imaging_order_id' => $order->id,
                     'patient_id'       => $order->patient_id,
                     'radiologist_name' => $payload['radiologistName'] ?? null,
@@ -193,6 +207,19 @@ class ImagingOrderService
                     'status'              => $status === 'final' ? 'report_final' : 'report_preliminary',
                     'ris_order_id'        => $payload['risOrderId'] ?? $order->ris_order_id,
                     'results_received_at' => now(),
+                ]);
+
+                DocumentInboundLog::on('tenant')->create([
+                    'type'           => 'imaging_report',
+                    'source'         => 'vepro',
+                    'reference_type' => ImagingReport::class,
+                    'reference_id'   => $report->id,
+                    'patient_id'     => $order->patient_id,
+                    'branch_id'      => $order->branch_id,
+                    'description'    => ($order->modality_label ?? $order->modality) . ' — ' . $order->body_part . ' (' . $status . ')',
+                    'status'         => $critical ? 'critical' : 'received',
+                    'is_critical'    => $critical,
+                    'critical_note'  => $critical ? ($payload['criticalFinding'] ?? null) : null,
                 ]);
             });
 

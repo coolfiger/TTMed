@@ -16,6 +16,9 @@ use App\Http\Controllers\Tenant\PatientIntakeController;
 use App\Livewire\Tenant\Branches\BranchList;
 use App\Livewire\Tenant\Branches\BranchForm;
 use App\Livewire\Tenant\Settings\CentreSettings;
+use App\Livewire\Tenant\Settings\IntegrationSettings;
+use App\Livewire\Tenant\Imaging\ImagingWorkqueue;
+use App\Livewire\Tenant\Documents\DocumentTracker;
 use App\Livewire\Tenant\Staff\StaffList;
 use App\Livewire\Tenant\Staff\StaffForm;
 use App\Livewire\Tenant\Services\ServiceList;
@@ -144,6 +147,9 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         // Centre settings
         Route::middleware('permission:settings.view')->group(function () {
             Route::get('/settings', CentreSettings::class)->name('tenant.settings.index');
+        });
+        Route::middleware('permission:settings.manage')->group(function () {
+            Route::get('/settings/integrations', IntegrationSettings::class)->name('tenant.settings.integrations');
         });
 
         // Staff management
@@ -279,6 +285,16 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
                 ->name('tenant.documents.index');
             Route::get('/documents/{id}/download', DocumentDownloadController::class)
                 ->name('tenant.documents.download');
+        });
+
+        // Imaging workqueue
+        Route::middleware('permission:imaging.view')->group(function () {
+            Route::get('/imaging', ImagingWorkqueue::class)->name('tenant.imaging.index');
+        });
+
+        // Document tracker
+        Route::middleware('permission:documents.view')->group(function () {
+            Route::get('/document-tracker', DocumentTracker::class)->name('tenant.document.tracker');
         });
     });
 
