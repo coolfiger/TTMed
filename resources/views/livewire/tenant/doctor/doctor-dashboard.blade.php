@@ -343,8 +343,8 @@
                                         @if($v['systolic_bp'] && $v['diastolic_bp'])
                                             <div><span class="text-gray-500">BP:</span> <span class="font-semibold">{{ $v['systolic_bp'] }}/{{ $v['diastolic_bp'] }}</span> mmHg</div>
                                         @endif
-                                        @if($v['pulse'])
-                                            <div><span class="text-gray-500">Pulse:</span> <span class="font-semibold">{{ $v['pulse'] }}</span> bpm</div>
+                                        @if($v['pulse_rate'])
+                                            <div><span class="text-gray-500">Pulse:</span> <span class="font-semibold">{{ $v['pulse_rate'] }}</span> bpm</div>
                                         @endif
                                         @if($v['temperature'])
                                             <div><span class="text-gray-500">Temp:</span> <span class="font-semibold">{{ $v['temperature'] }}°C</span></div>
