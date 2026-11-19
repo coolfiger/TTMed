@@ -40,9 +40,9 @@
                 </li>
             </ul>
             <div class="mt-auto pt-4 border-t border-slate-700">
-                <div class="flex items-center gap-x-3 px-3 py-2">
-                    <span class="text-sm text-slate-400">{{ auth()->guard('platform')->user()?->name }}</span>
-                </div>
+                <a href="{{ route('platform.profile') }}" class="flex items-center gap-x-3 rounded-md px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 {{ request()->routeIs('platform.profile') ? 'text-white bg-slate-800' : '' }}">
+                    <span>{{ auth()->guard('platform')->user()?->name }}</span>
+                </a>
                 <a href="{{ route('platform.logout') }}" class="flex gap-x-3 rounded-md px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800">
                     Sign out
                 </a>

@@ -10,6 +10,7 @@ use App\Livewire\Platform\Tenants\TenantShow;
 use App\Livewire\Platform\Plans\PlanList;
 use App\Livewire\Platform\Plans\PlanForm;
 use App\Livewire\Platform\Users\PlatformUserList;
+use App\Livewire\Platform\Users\PlatformUserForm;
 use Illuminate\Support\Facades\Route;
 
 // Root redirect for platform subdomain
@@ -46,6 +47,11 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::get('/plans/{plan}/edit', PlanForm::class)->name('plans.edit');
 
         // Platform users
-        Route::get('/users', PlatformUserList::class)->name('users.index');
+        Route::get('/users',              PlatformUserList::class)->name('users.index');
+        Route::get('/users/create',       PlatformUserForm::class)->name('users.create');
+        Route::get('/users/{user}/edit',  PlatformUserForm::class)->name('users.edit');
+
+        // My profile
+        Route::get('/profile', PlatformUserForm::class)->name('profile');
     });
 });
