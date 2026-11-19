@@ -33,7 +33,7 @@ class PlanForm extends Component
                 'storageLimitGb' => $this->plan->storage_limit_gb,
                 'monthlyPrice'   => $this->plan->monthly_price,
                 'annualPrice'    => $this->plan->annual_price,
-                'features'       => $this->plan->features ?? [],
+                'features'       => is_array($this->plan->features) ? $this->plan->features : (json_decode($this->plan->features, true) ?? []),
                 'isActive'       => $this->plan->is_active,
             ]);
         }
