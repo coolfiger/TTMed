@@ -12,6 +12,7 @@ use App\Livewire\Tenant\Roles\RoleForm;
 use App\Livewire\Tenant\Patients\PatientSearch;
 use App\Livewire\Tenant\Patients\PatientForm;
 use App\Livewire\Tenant\Patients\PatientProfile;
+use App\Http\Controllers\Tenant\PatientIntakeController;
 use App\Livewire\Tenant\Branches\BranchList;
 use App\Livewire\Tenant\Branches\BranchForm;
 use App\Livewire\Tenant\Settings\CentreSettings;
@@ -76,6 +77,11 @@ if (app()->environment('local')) {
 }
 
 Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
+
+    // Patient intake form — public, PIN-verified, single-use token
+    Route::get('/intake/{token}',  [PatientIntakeController::class, 'show'])->name('tenant.patient.intake');
+    Route::post('/intake/{token}', [PatientIntakeController::class, 'submit'])->name('tenant.patient.intake.submit')
+        ->middleware('throttle:10,5');
 
     // Guest routes (no tenant auth required, but tenant must be resolved)
     Route::middleware(['guest:tenant', 'throttle:10,1'])->group(function () {
