@@ -527,24 +527,25 @@
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-semibold text-slate-800 truncate">{{ $entry['patientName'] }}</p>
                                     <p class="text-xs text-slate-500">{{ $entry['doctorName'] }} &middot; {{ ucfirst(str_replace('_', ' ', $entry['visitType'])) }}</p>
-                                    @if($entry['status'] === 'awaiting_checkout')
-                                    <button
-                                        wire:click="openCheckout({{ $entry['id'] }})"
-                                        class="mt-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition">
-                                        Checkout →
-                                    </button>
-                                    @endif
                                 </div>
 
-                                {{-- Status badge --}}
-                                <span class="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold
-                                    {{ $entry['status'] === 'waiting'            ? 'bg-amber-100 text-amber-800' : '' }}
-                                    {{ $entry['status'] === 'with_nurse'         ? 'bg-violet-100 text-violet-800' : '' }}
-                                    {{ $entry['status'] === 'awaiting_doctor'    ? 'bg-orange-100 text-orange-800' : '' }}
-                                    {{ $entry['status'] === 'with_doctor'        ? 'bg-emerald-100 text-emerald-800' : '' }}
-                                    {{ $entry['status'] === 'awaiting_checkout'  ? 'bg-purple-100 text-purple-800' : '' }}">
-                                    {{ $entry['statusLabel'] }}
-                                </span>
+                                {{-- Checkout button OR status badge --}}
+                                @if($entry['status'] === 'awaiting_checkout')
+                                    <button
+                                        wire:click="openCheckout({{ $entry['id'] }})"
+                                        class="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold border-2 border-purple-600 text-purple-700 hover:bg-purple-600 hover:text-white transition"
+                                        style="background:transparent;">
+                                        Checkout →
+                                    </button>
+                                @else
+                                    <span class="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold
+                                        {{ $entry['status'] === 'waiting'            ? 'bg-amber-100 text-amber-800' : '' }}
+                                        {{ $entry['status'] === 'with_nurse'         ? 'bg-violet-100 text-violet-800' : '' }}
+                                        {{ $entry['status'] === 'awaiting_doctor'    ? 'bg-orange-100 text-orange-800' : '' }}
+                                        {{ $entry['status'] === 'with_doctor'        ? 'bg-emerald-100 text-emerald-800' : '' }}">
+                                        {{ $entry['statusLabel'] }}
+                                    </span>
+                                @endif
 
                                 {{-- Remove button --}}
                                 <button
