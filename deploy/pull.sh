@@ -12,7 +12,7 @@ echo "→ Pulling latest code..."
 $GIT pull origin main
 
 echo "→ Clearing all caches..."
-$PHP $APP/artisan optimize:clear
+$PHP $APP/artisan optimize:clear 2>/dev/null || $PHP $APP/artisan cache:clear || true
 
 echo "→ Clearing event cache..."
 $PHP $APP/artisan event:clear 2>/dev/null || true
