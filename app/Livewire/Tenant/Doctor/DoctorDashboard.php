@@ -8,12 +8,15 @@ use App\Models\Tenant\Encounter;
 use App\Models\Tenant\Icd10Code;
 use App\Models\Tenant\ImagingOrder;
 use App\Models\Tenant\ImagingReport;
+use App\Models\Tenant\Invoice;
 use App\Models\Tenant\LabOrder;
 use App\Models\Tenant\PatientAllergy;
 use App\Models\Tenant\PatientMedication;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\Referral;
+use App\Models\Tenant\Service;
 use App\Models\Tenant\VitalSign;
+use App\Services\BillingService;
 use App\Services\ConsultationService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -86,6 +89,14 @@ class DoctorDashboard extends Component
     public string $referralReason      = '';
     public string $clinicalSummary     = '';
     public string $patientInstructions = '';
+
+    // -------------------------------------------------------------------------
+    // Billing selector (pre-checkout service selection)
+    // -------------------------------------------------------------------------
+    public bool   $showBillingSelector  = false;
+    public array  $billingCatalog       = [];   // all active services for picker
+    public array  $selectedServiceIds   = [];   // IDs the doctor has ticked
+    public string $billingSearchQuery   = '';
 
     // -------------------------------------------------------------------------
     // UI state
@@ -412,6 +423,174 @@ class DoctorDashboard extends Component
             $this->successMessage = 'Note finalized.';
             $this->errorMessage   = '';
         } catch (\LogicException|\InvalidArgumentException $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Billing selector
+    // -------------------------------------------------------------------------
+
+    public function openBillingSelector(): void
+    {
+        $this->checkPermission('encounters.view');
+
+        if (!$this->activeEntryId || !$this->activeEncounterId) {
+            $this->errorMessage = 'No active patient selected.';
+            return;
+        }
+
+        $note = ConsultationNote::on('tenant')
+            ->where('encounter_id', $this->activeEncounterId)
+            ->first();
+
+        if (!$note || !$note->isFinalized()) {
+            $this->errorMessage = 'Finalize the consultation note before completing the encounter.';
+            return;
+        }
+
+        $this->billingCatalog = Service::on('tenant')
+            ->where('is_active', true)
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($s) => [
+                'id'       => $s->id,
+                'name'     => $s->name,
+                'category' => $s->category ?? 'General',
+                'price'    => $s->price,
+            ])
+            ->toArray();
+
+        // Auto-select a consultation service matching the visit type
+        $entry = QueueEntry::on('tenant')->find($this->activeEntryId);
+        $visitType = $entry?->visit_type ?? 'walk_in';
+
+        $autoSelect = Service::on('tenant')
+            ->where('is_active', true)
+            ->where('name', 'like', '%consultation%')
+            ->when(
+                in_array($visitType, ['follow_up']),
+                fn ($q) => $q->orderByRaw("CASE WHEN name LIKE '%follow%' THEN 0 ELSE 1 END"),
+                fn ($q) => $q->orderByRaw("CASE WHEN name LIKE '%general%' THEN 0 ELSE 1 END"),
+            )
+            ->first();
+
+        $this->selectedServiceIds = $autoSelect ? [$autoSelect->id] : [];
+        $this->billingSearchQuery = '';
+        $this->showBillingSelector = true;
+    }
+
+    public function toggleBillingService(int $serviceId): void
+    {
+        if (in_array($serviceId, $this->selectedServiceIds)) {
+            $this->selectedServiceIds = array_values(
+                array_filter($this->selectedServiceIds, fn ($id) => $id !== $serviceId)
+            );
+        } else {
+            $this->selectedServiceIds[] = $serviceId;
+        }
+    }
+
+    public function closeBillingSelector(): void
+    {
+        $this->showBillingSelector = false;
+        $this->selectedServiceIds  = [];
+        $this->billingCatalog      = [];
+        $this->billingSearchQuery  = '';
+    }
+
+    public function completeEncounterWithBilling(): void
+    {
+        $this->checkPermission('encounters.view');
+
+        if (!$this->activeEntryId || !$this->activeEncounterId) {
+            $this->errorMessage = 'No active patient selected.';
+            return;
+        }
+
+        $note = ConsultationNote::on('tenant')
+            ->where('encounter_id', $this->activeEncounterId)
+            ->first();
+
+        if (!$note || !$note->isFinalized()) {
+            $this->errorMessage = 'Finalize the consultation note before completing the encounter.';
+            return;
+        }
+
+        $entry = QueueEntry::on('tenant')
+            ->where('branch_id', $this->branchId)
+            ->findOrFail($this->activeEntryId);
+
+        $user = Auth::guard('tenant')->user();
+
+        try {
+            // Build the invoice if services were selected
+            if (!empty($this->selectedServiceIds)) {
+                $existing = Invoice::on('tenant')
+                    ->where('encounter_id', $this->activeEncounterId)
+                    ->whereIn('status', ['draft', 'finalized', 'partially_paid'])
+                    ->latest()
+                    ->first();
+
+                if (!$existing) {
+                    $billing = app(BillingService::class);
+                    $invoice = $billing->createInvoice(
+                        patientId:   $entry->patient_id,
+                        branchId:    $entry->branch_id,
+                        createdBy:   $user->id,
+                        encounterId: $this->activeEncounterId,
+                    );
+
+                    $services = Service::on('tenant')
+                        ->whereIn('id', $this->selectedServiceIds)
+                        ->get();
+
+                    foreach ($services as $svc) {
+                        $billing->addItem(
+                            invoice:        $invoice,
+                            serviceId:      $svc->id,
+                            description:    $svc->name,
+                            quantity:       1,
+                            unitPriceCents: $svc->price,
+                            taxRate:        $svc->taxable ? (float) $svc->tax_rate : 0.0,
+                            discountCents:  0,
+                        );
+                    }
+
+                    $invoice->refresh();
+
+                    if ($invoice->total > 0) {
+                        $billing->finalizeInvoice($invoice, $user->id);
+                    }
+                }
+            }
+
+            $this->consultationService->completeConsultationAndTransition(
+                $note,
+                $entry,
+                $user->id,
+            );
+
+            $this->showBillingSelector = false;
+            $this->selectedServiceIds  = [];
+            $this->billingCatalog      = [];
+            $this->successMessage      = 'Encounter completed.';
+            $this->activeEntryId       = null;
+            $this->activeEncounterId   = null;
+            $this->activePatientId     = null;
+            $this->activePatientName   = '';
+            $this->activeEntryStatus   = '';
+            $this->patientHistory      = [];
+            $this->historyLimit        = 3;
+            $this->historyTotal        = 0;
+            $this->allergies           = [];
+            $this->medications         = [];
+            $this->compareReportIds    = [];
+            $this->showComparisonModal = false;
+            $this->resetForms();
+            $this->loadQueue();
+        } catch (\LogicException $e) {
             $this->errorMessage = $e->getMessage();
         }
     }

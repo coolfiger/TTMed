@@ -425,10 +425,13 @@ class PatientProfile extends Component
             priorityReason: null,
         );
 
-        app(AuditService::class)->log(
+        app(AuditService::class)->logTenant(
             'queue.checkin',
+            'queue_entry',
+            $entry->id,
+            null,
+            null,
             "Patient {$this->patient->display_name} checked in — Queue #{$entry->queue_number}",
-            ['queue_entry_id' => $entry->id, 'patient_id' => $this->patient->id]
         );
 
         $this->reset(['queueDoctorId', 'queueVisitType', 'queueComplaint', 'queuePriority', 'showQueueForm']);

@@ -157,8 +157,7 @@
                                 Prescribe
                             </a>
                         @endif
-                        <button wire:click="completeEncounter"
-                                wire:confirm="Complete consultation and send patient to reception for checkout?"
+                        <button wire:click="openBillingSelector"
                                 class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
                             Complete &amp; Send to Reception
                         </button>
@@ -956,4 +955,92 @@
             </div>
         </div>
     </div>
+@endif
+
+{{-- ── Billing selector modal ── --}}
+@if($showBillingSelector)
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]"
+         x-data="{ search: '' }">
+
+        {{-- Header --}}
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+            <div>
+                <p class="text-base font-semibold text-slate-800">Services to Bill</p>
+                <p class="text-xs text-slate-500 mt-0.5">Select everything done during this visit. The receptionist will collect payment.</p>
+            </div>
+            <button wire:click="closeBillingSelector" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+        </div>
+
+        {{-- Search --}}
+        <div class="px-6 pt-4 flex-shrink-0">
+            <input type="text"
+                   x-model="search"
+                   placeholder="Search services…"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10">
+        </div>
+
+        {{-- Service list --}}
+        <div class="flex-1 overflow-y-auto px-6 py-4 space-y-1">
+            @php
+                $grouped = collect($billingCatalog)->groupBy('category');
+            @endphp
+            @foreach($grouped as $category => $services)
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide pt-2 pb-1"
+                   x-show="{{ collect($services)->pluck('name')->map(fn($n) => "search===''||'".strtolower($n)."'.includes(search.toLowerCase())")->join('||') }}">
+                   {{ $category }}
+                </p>
+                @foreach($services as $svc)
+                <label class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-slate-50 transition"
+                       x-show="search === '' || '{{ strtolower($svc['name']) }}'.includes(search.toLowerCase())">
+                    <input type="checkbox"
+                           wire:click="toggleBillingService({{ $svc['id'] }})"
+                           @checked(in_array($svc['id'], $selectedServiceIds))
+                           class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-slate-800">{{ $svc['name'] }}</p>
+                    </div>
+                    <span class="text-sm font-semibold text-slate-600 flex-shrink-0">
+                        ${{ number_format($svc['price'] / 100, 2) }}
+                    </span>
+                </label>
+                @endforeach
+            @endforeach
+
+            @if(count($billingCatalog) === 0)
+                <p class="text-sm text-slate-400 italic text-center py-6">No active services found. Add services under Settings → Services.</p>
+            @endif
+        </div>
+
+        {{-- Selected summary + confirm --}}
+        <div class="px-6 py-4 border-t border-slate-100 flex-shrink-0">
+            @php
+                $selectedTotal = collect($billingCatalog)
+                    ->whereIn('id', $selectedServiceIds)
+                    ->sum('price');
+            @endphp
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-sm text-slate-500">
+                    {{ count($selectedServiceIds) }} service(s) selected
+                </span>
+                <span class="text-base font-bold text-slate-800">
+                    ${{ number_format($selectedTotal / 100, 2) }}
+                </span>
+            </div>
+            <div class="flex gap-3">
+                <button wire:click="closeBillingSelector"
+                        class="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
+                    Cancel
+                </button>
+                <button wire:click="completeEncounterWithBilling"
+                        wire:loading.attr="disabled"
+                        wire:target="completeEncounterWithBilling"
+                        class="flex-1 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
+                    <span wire:loading.remove wire:target="completeEncounterWithBilling">Send to Reception</span>
+                    <span wire:loading wire:target="completeEncounterWithBilling">Processing…</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endif
