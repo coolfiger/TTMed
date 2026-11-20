@@ -156,19 +156,18 @@
     ];
   }
 
-  /* ── Load HTML into GrapesJS (handles embedded <style>) ─ */
-  function loadHtml(editor, html) {
+  /* ── Extract CSS from embedded <style> in body_html ── */
+  function extractParts(html) {
     var css  = '';
-    var body = html;
-    if (html && html.trim().indexOf('<style>') === 0) {
-      var end = html.indexOf('</style>');
+    var body = html || '';
+    if (body.trim().indexOf('<style>') === 0) {
+      var end = body.indexOf('</style>');
       if (end !== -1) {
-        css  = html.substring('<style>'.length, end).trim();
-        body = html.substring(end + '</style>'.length).trim();
+        css  = body.substring('<style>'.length, end).trim();
+        body = body.substring(end + '</style>'.length).trim();
       }
     }
-    if (body) editor.setComponents(body);
-    if (css)  editor.setStyle(css);
+    return { css: css, body: body };
   }
 
   /* ── Boot editor ───────────────────────────────────── */
@@ -184,7 +183,8 @@
       ? window.gjsBlocksBasic
       : 'gjs-blocks-basic';
 
-    var editor = grapesjs.init({
+    // Build init config — pass content directly so GrapesJS renders it on init
+    var cfg = {
       container: '#gjs',
       fromElement: false,
       storageManager: false,
@@ -198,23 +198,34 @@
       pluginsOpts: {
         'gjs-blocks-basic': { flexGrid: true, addBasicStyle: false, category: 'Basic' },
       },
-    });
+    };
 
-    // Wait for canvas iframe to be ready before loading content or injecting CSS
-    editor.on('load', function () {
+    if (gjsData && Object.keys(gjsData).length > 0) {
+      cfg.projectData = gjsData;
+    } else if (bodyHtml) {
+      var parts = extractParts(bodyHtml);
+      cfg.components = parts.body;
+      if (parts.css) cfg.style = parts.css;
+    }
+
+    var editor = grapesjs.init(cfg);
+
+    // Inject canvas CSS once the iframe document is accessible
+    var injectCss = function () {
       try {
         var canvasDoc = editor.Canvas.getDocument();
+        if (!canvasDoc || !canvasDoc.head) { setTimeout(injectCss, 80); return; }
         var s = canvasDoc.createElement('style');
         s.textContent = CANVAS_CSS;
         canvasDoc.head.appendChild(s);
-      } catch (e) {}
+      } catch (e) { setTimeout(injectCss, 80); }
+    };
+    setTimeout(injectCss, 150);
 
-      if (gjsData && Object.keys(gjsData).length > 0) {
-        try { editor.loadProjectData(gjsData); } catch (e) { loadHtml(editor, bodyHtml); }
-      } else if (bodyHtml) {
-        loadHtml(editor, bodyHtml);
-      }
-    });
+    // If gjsData was passed via projectData config, it may not apply in all versions
+    if (gjsData && Object.keys(gjsData).length > 0) {
+      try { editor.loadProjectData(gjsData); } catch (e) {}
+    }
 
     window._ttGjsEditor = editor;
   }
