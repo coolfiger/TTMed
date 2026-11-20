@@ -30,4 +30,7 @@ $PHP $APP/artisan route:cache
 echo "→ Pre-compiling views..."
 $PHP $APP/artisan view:cache
 
+echo "→ Restarting PHP-FPM to flush OPcache..."
+sudo systemctl restart php8.3-fpm
+
 echo "✓ Deploy complete."
