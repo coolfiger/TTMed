@@ -108,111 +108,183 @@
                 </div>
 
             @else
-                {{-- Check-in wizard --}}
-                <div class="flex-1 flex flex-col"
-                     x-data="{ step: 1 }">
+                {{-- Patient card --}}
+                <div class="flex-1 flex flex-col overflow-y-auto">
 
-                    {{-- Patient selected header --}}
-                    <div class="px-6 pt-5 pb-4 border-b border-slate-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs text-slate-500 mb-0.5">Checking in</p>
-                                <p class="text-base font-semibold text-slate-800">{{ $selectedPatientName }}</p>
+                    {{-- Gradient identity card --}}
+                    <div class="px-5 py-4 bg-gradient-to-br from-blue-600 to-blue-700 text-white flex-shrink-0">
+                        <div class="flex items-start gap-3">
+                            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                                @php
+                                    $parts = explode(' ', $selectedPatientName);
+                                    echo mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . mb_substr(end($parts), 0, 1));
+                                @endphp
                             </div>
-                            <button wire:click="cancelCheckin"
-                                    class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div>
+                                        <h2 class="text-sm font-bold leading-tight">{{ $selectedPatientName }}</h2>
+                                        <p class="text-blue-200 text-xs mt-0.5">#{{ $selectedPatientNumber }}</p>
+                                    </div>
+                                    <button wire:click="cancelCheckin"
+                                            class="text-white/60 hover:text-white p-0.5 mt-0.5 flex-shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 mt-2">
+                                    @if($selectedPatientAllergyCount > 0)
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold bg-red-500 text-white px-2 py-0.5 rounded-full">
+                                            ⚠ {{ $selectedPatientAllergyCount }} {{ Str::plural('Allergy', $selectedPatientAllergyCount) }}
+                                        </span>
+                                    @else
+                                        <span class="text-xs bg-white/20 text-blue-100 px-2 py-0.5 rounded-full">NKDA</span>
+                                    @endif
+                                    @if($selectedPatientBloodType)
+                                        <span class="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-semibold">{{ $selectedPatientBloodType }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Quick actions --}}
+                        <div class="flex gap-2 mt-3 pt-3 border-t border-blue-500">
+                            <button wire:click="startQueueWizard"
+                                    class="flex-1 text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-white py-1.5 rounded-lg transition text-center">
+                                + Queue
                             </button>
-                        </div>
-
-                        {{-- Step indicators --}}
-                        <div class="flex items-center gap-2 mt-3">
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center transition"
-                                      :class="step >= 1 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'">1</span>
-                                <span class="text-xs" :class="step >= 1 ? 'text-blue-600 font-medium' : 'text-slate-400'">Visit Type</span>
-                            </div>
-                            <div class="flex-1 h-px bg-slate-200"></div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center transition"
-                                      :class="step >= 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'">2</span>
-                                <span class="text-xs" :class="step >= 2 ? 'text-blue-600 font-medium' : 'text-slate-400'">Details</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Step 1: Visit type --}}
-                    <div x-show="step === 1" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0"
-                         class="flex-1 p-6">
-                        <p class="text-sm font-medium text-slate-700 mb-4">What brings them in today?</p>
-                        <div class="grid grid-cols-2 gap-3">
-                            @foreach(['walk_in' => ['Walk-in', 'M17 20h5m-9 0H3m9 0v-9m0 0a3 3 0 100-6 3 3 0 000 6z', 'blue'], 'follow_up' => ['Follow-up', 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15', 'violet'], 'emergency' => ['Emergency', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', 'red'], 'appointment' => ['Appointment', 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', 'emerald']] as $type => [$label, $icon, $color])
-                                <button @click="$wire.set('visitType', '{{ $type }}'); step = 2"
-                                        class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition
-                                            {{ $visitType === $type
-                                                ? ($color === 'blue' ? 'border-blue-500 bg-blue-50' : ($color === 'violet' ? 'border-violet-500 bg-violet-50' : ($color === 'red' ? 'border-red-500 bg-red-50' : 'border-emerald-500 bg-emerald-50')))
-                                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
-                                    <svg class="w-7 h-7 {{ $color === 'blue' ? 'text-blue-600' : ($color === 'violet' ? 'text-violet-600' : ($color === 'red' ? 'text-red-600' : 'text-emerald-600')) }}"
-                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $icon }}"/>
-                                    </svg>
-                                    <span class="text-xs font-semibold text-slate-700">{{ $label }}</span>
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    {{-- Step 2: Details --}}
-                    <div x-show="step === 2" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0"
-                         class="flex-1 flex flex-col p-6 gap-4">
-
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Assign Doctor <span class="text-slate-400 font-normal">(optional)</span></label>
-                            <select wire:model="selectedDoctorId"
-                                    class="w-full text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="0">— Unassigned —</option>
-                                @foreach($activeDoctors as $doc)
-                                    <option value="{{ $doc->id }}">{{ $doc->staffProfile?->full_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Chief Complaint <span class="text-slate-400 font-normal">(optional)</span></label>
-                            <input wire:model="chiefComplaint" type="text"
-                                   placeholder="Reason for visit..."
-                                   class="w-full text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500" />
-                        </div>
-
-                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 transition">
-                            <input wire:model.live="isPriority" type="checkbox"
-                                   class="rounded border-slate-300 text-red-600 focus:ring-red-500" />
-                            <div>
-                                <span class="text-sm font-medium text-slate-700">Mark as Priority</span>
-                                <p class="text-xs text-slate-500">Moves to top of queue</p>
-                            </div>
-                        </label>
-
-                        @if($isPriority)
-                            <div x-show="true" x-transition>
-                                <input wire:model="priorityReason" type="text"
-                                       placeholder="Priority reason (e.g. chest pain)..."
-                                       class="w-full text-sm rounded-lg border-red-300 focus:ring-red-500 focus:border-red-500" />
-                            </div>
-                        @endif
-
-                        <div class="mt-auto flex gap-3">
-                            <button @click="step = 1"
-                                    class="flex-1 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition">
-                                Back
-                            </button>
-                            <button wire:click="checkIn" wire:loading.attr="disabled"
-                                    class="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition disabled:opacity-60">
-                                <span wire:loading.remove wire:target="checkIn">Check In</span>
-                                <span wire:loading wire:target="checkIn">Processing...</span>
+                            <a href="{{ route('tenant.patients.edit', $selectedPatientId) }}"
+                               class="flex-1 text-xs font-semibold bg-white/20 hover:bg-white/30 text-white py-1.5 rounded-lg transition text-center">
+                                Edit Full
+                            </a>
+                            <button wire:click="generatePatientQr"
+                                    class="flex-1 text-xs font-semibold bg-indigo-500 hover:bg-indigo-400 text-white py-1.5 rounded-lg transition text-center">
+                                QR Form
                             </button>
                         </div>
                     </div>
+
+                    {{-- QR Panel --}}
+                    @if($showQrPanel)
+                        <div class="px-4 py-4 bg-indigo-50 border-b border-indigo-200 flex-shrink-0">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm font-semibold text-indigo-800">Patient Self-Service Form</p>
+                                <button wire:click="dismissQr" class="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 text-center">
+                                {!! $qrSvg !!}
+                                <p class="text-xs text-slate-500 mt-2">Scan to open the patient's form</p>
+                                <div class="mt-2 bg-indigo-100 rounded-lg px-4 py-2">
+                                    <p class="text-xs text-indigo-500 uppercase tracking-wide font-semibold mb-0.5">One-Time PIN</p>
+                                    <p class="text-2xl font-black tracking-widest text-indigo-800">{{ $qrPin }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Queue wizard --}}
+                    @if($showQueueWizard)
+                        <div class="flex-1 flex flex-col" x-data="{ step: 1 }">
+
+                            {{-- Step indicators --}}
+                            <div class="px-5 py-3 border-b border-slate-100 bg-slate-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center transition"
+                                              :class="step >= 1 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'">1</span>
+                                        <span class="text-xs" :class="step >= 1 ? 'text-blue-600 font-medium' : 'text-slate-400'">Visit Type</span>
+                                    </div>
+                                    <div class="flex-1 h-px bg-slate-200"></div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center transition"
+                                              :class="step >= 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'">2</span>
+                                        <span class="text-xs" :class="step >= 2 ? 'text-blue-600 font-medium' : 'text-slate-400'">Details</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Step 1: Visit type --}}
+                            <div x-show="step === 1"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 translate-x-4"
+                                 x-transition:enter-end="opacity-100 translate-x-0"
+                                 class="flex-1 p-5">
+                                <p class="text-sm font-medium text-slate-700 mb-4">What brings them in today?</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    @foreach(['walk_in' => ['Walk-in', 'M17 20h5m-9 0H3m9 0v-9m0 0a3 3 0 100-6 3 3 0 000 6z', 'blue'], 'follow_up' => ['Follow-up', 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15', 'violet'], 'emergency' => ['Emergency', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', 'red'], 'appointment' => ['Appointment', 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', 'emerald']] as $type => [$label, $icon, $color])
+                                        <button @click="$wire.set('visitType', '{{ $type }}'); step = 2"
+                                                class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition
+                                                    {{ $visitType === $type
+                                                        ? ($color === 'blue' ? 'border-blue-500 bg-blue-50' : ($color === 'violet' ? 'border-violet-500 bg-violet-50' : ($color === 'red' ? 'border-red-500 bg-red-50' : 'border-emerald-500 bg-emerald-50')))
+                                                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                                            <svg class="w-7 h-7 {{ $color === 'blue' ? 'text-blue-600' : ($color === 'violet' ? 'text-violet-600' : ($color === 'red' ? 'text-red-600' : 'text-emerald-600')) }}"
+                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $icon }}"/>
+                                            </svg>
+                                            <span class="text-xs font-semibold text-slate-700">{{ $label }}</span>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            {{-- Step 2: Details --}}
+                            <div x-show="step === 2"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 translate-x-4"
+                                 x-transition:enter-end="opacity-100 translate-x-0"
+                                 class="flex-1 flex flex-col p-5 gap-4">
+
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">Assign Doctor <span class="text-slate-400 font-normal">(optional)</span></label>
+                                    <select wire:model="selectedDoctorId"
+                                            class="w-full text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="0">— Unassigned —</option>
+                                        @foreach($activeDoctors as $doc)
+                                            <option value="{{ $doc->id }}">{{ $doc->staffProfile?->full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">Chief Complaint <span class="text-slate-400 font-normal">(optional)</span></label>
+                                    <input wire:model="chiefComplaint" type="text"
+                                           placeholder="Reason for visit..."
+                                           class="w-full text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500" />
+                                </div>
+
+                                <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 transition">
+                                    <input wire:model.live="isPriority" type="checkbox"
+                                           class="rounded border-slate-300 text-red-600 focus:ring-red-500" />
+                                    <div>
+                                        <span class="text-sm font-medium text-slate-700">Mark as Priority</span>
+                                        <p class="text-xs text-slate-500">Moves to top of queue</p>
+                                    </div>
+                                </label>
+
+                                @if($isPriority)
+                                    <div x-show="true" x-transition>
+                                        <input wire:model="priorityReason" type="text"
+                                               placeholder="Priority reason (e.g. chest pain)..."
+                                               class="w-full text-sm rounded-lg border-red-300 focus:ring-red-500 focus:border-red-500" />
+                                    </div>
+                                @endif
+
+                                <div class="mt-auto flex gap-3">
+                                    <button @click="step = 1"
+                                            class="flex-1 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition">
+                                        Back
+                                    </button>
+                                    <button wire:click="checkIn" wire:loading.attr="disabled"
+                                            class="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition disabled:opacity-60">
+                                        <span wire:loading.remove wire:target="checkIn">Check In</span>
+                                        <span wire:loading wire:target="checkIn">Processing...</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    @endif
 
                 </div>
             @endif

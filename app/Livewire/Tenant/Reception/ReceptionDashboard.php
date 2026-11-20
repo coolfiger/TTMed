@@ -7,10 +7,17 @@ use App\Models\Tenant\Branch;
 use App\Models\Tenant\Doctor;
 use App\Models\Tenant\DoctorAvailability;
 use App\Models\Tenant\Patient;
+use App\Models\Tenant\PatientIntakeToken;
 use App\Models\Tenant\QueueEntry;
 use App\Services\AuditService;
 use App\Services\QueueService;
 use App\Tenancy\TenantContext;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -21,14 +28,26 @@ class ReceptionDashboard extends Component
     public array  $searchResults = [];
     public bool   $showCheckinForm = false;
 
-    // Check-in form state
-    public int    $selectedPatientId = 0;
-    public string $selectedPatientName = '';
+    // Patient card state (shown after selection, before queue wizard)
+    public int    $selectedPatientId        = 0;
+    public string $selectedPatientName      = '';
+    public string $selectedPatientNumber    = '';
+    public int    $selectedPatientAllergyCount = 0;
+    public string $selectedPatientBloodType = '';
+
+    // Queue wizard state
+    public bool   $showQueueWizard = false;
     public int    $selectedDoctorId  = 0;
     public string $visitType         = 'walk_in';
     public string $chiefComplaint    = '';
     public bool   $isPriority        = false;
     public string $priorityReason    = '';
+
+    // QR panel state
+    public bool   $showQrPanel = false;
+    public string $qrSvg       = '';
+    public string $qrPin       = '';
+    public string $qrUrl       = '';
 
     // Queue display
     public array  $queueEntries      = [];
@@ -66,17 +85,75 @@ class ReceptionDashboard extends Component
 
     public function selectPatient(int $id): void
     {
-        $patient = Patient::on('tenant')->find($id);
+        $patient = Patient::on('tenant')
+            ->with('allergies')
+            ->find($id);
 
         if (!$patient) {
             return;
         }
 
-        $this->selectedPatientId   = $patient->id;
-        $this->selectedPatientName = $patient->display_name . ' (' . $patient->patient_number . ')';
-        $this->patientSearch       = '';
-        $this->searchResults       = [];
-        $this->showCheckinForm     = true;
+        $this->selectedPatientId           = $patient->id;
+        $this->selectedPatientName         = $patient->display_name;
+        $this->selectedPatientNumber       = $patient->patient_number;
+        $this->selectedPatientAllergyCount = $patient->allergies->count();
+        $this->selectedPatientBloodType    = $patient->blood_type ?? '';
+        $this->patientSearch               = '';
+        $this->searchResults               = [];
+        $this->showCheckinForm             = true;
+        $this->showQueueWizard             = false;
+        $this->showQrPanel                 = false;
+    }
+
+    public function startQueueWizard(): void
+    {
+        $this->showQueueWizard = true;
+        $this->showQrPanel     = false;
+    }
+
+    public function generatePatientQr(): void
+    {
+        $this->checkPermission('queue.view');
+
+        $patient = Patient::on('tenant')->find($this->selectedPatientId);
+        if (!$patient) return;
+
+        PatientIntakeToken::on('tenant')
+            ->where('patient_id', $patient->id)
+            ->whereNull('used_at')
+            ->delete();
+
+        $token = Str::random(48);
+        $pin   = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+
+        PatientIntakeToken::on('tenant')->create([
+            'patient_id'  => $patient->id,
+            'token'       => $token,
+            'pin'         => $pin,
+            'expires_at'  => now()->addHours(24),
+            'created_by'  => Auth::guard('tenant')->id(),
+        ]);
+
+        $url = route('tenant.patient.intake', $token);
+
+        $renderer = new ImageRenderer(
+            new RendererStyle(220),
+            new SvgImageBackEnd()
+        );
+        $writer = new Writer($renderer);
+
+        $this->qrSvg       = $writer->writeString($url);
+        $this->qrPin       = $pin;
+        $this->qrUrl       = $url;
+        $this->showQrPanel = true;
+        $this->showQueueWizard = false;
+    }
+
+    public function dismissQr(): void
+    {
+        $this->showQrPanel = false;
+        $this->qrSvg       = '';
+        $this->qrPin       = '';
     }
 
     public function checkIn(): void
@@ -119,7 +196,7 @@ class ReceptionDashboard extends Component
 
         $this->resetCheckinForm();
         $this->loadQueue();
-        session()->flash('success', "Patient {$patient->display_name} checked in as Queue #{$entry->queue_number}.");
+        session()->flash('success', "{$patient->display_name} checked in — Queue #{$entry->queue_number}.");
     }
 
     public function cancelCheckin(): void
@@ -129,14 +206,21 @@ class ReceptionDashboard extends Component
 
     private function resetCheckinForm(): void
     {
-        $this->selectedPatientId   = 0;
-        $this->selectedPatientName = '';
-        $this->selectedDoctorId    = 0;
-        $this->visitType           = 'walk_in';
-        $this->chiefComplaint      = '';
-        $this->isPriority          = false;
-        $this->priorityReason      = '';
-        $this->showCheckinForm     = false;
+        $this->selectedPatientId           = 0;
+        $this->selectedPatientName         = '';
+        $this->selectedPatientNumber       = '';
+        $this->selectedPatientAllergyCount = 0;
+        $this->selectedPatientBloodType    = '';
+        $this->selectedDoctorId            = 0;
+        $this->visitType                   = 'walk_in';
+        $this->chiefComplaint              = '';
+        $this->isPriority                  = false;
+        $this->priorityReason              = '';
+        $this->showCheckinForm             = false;
+        $this->showQueueWizard             = false;
+        $this->showQrPanel                 = false;
+        $this->qrSvg                       = '';
+        $this->qrPin                       = '';
     }
 
     public function loadQueue(): void
