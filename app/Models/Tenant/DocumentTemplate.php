@@ -17,6 +17,8 @@ class DocumentTemplate extends Model
         'imaging_report'  => 'Imaging Report',
         'certificate'     => 'Medical Certificate',
         'referral'        => 'Referral Letter',
+        'sick_leave'      => 'Sick Leave',
+        'fit_to_work'     => 'Fit to Work',
         'generic'         => 'Generic Document',
     ];
 

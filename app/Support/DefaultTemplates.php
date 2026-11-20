@@ -14,6 +14,8 @@ class DefaultTemplates
             'imaging_report' => self::imagingReport(),
             'certificate'    => self::certificate(),
             'referral'       => self::referral(),
+            'sick_leave'     => self::sickLeave(),
+            'fit_to_work'    => self::fitToWork(),
             default          => self::generic(),
         };
     }
@@ -167,6 +169,64 @@ class DefaultTemplates
             . '<div style="margin-bottom:14px;"><strong>Re: {{patient_name}}</strong><br><span style="color:#555;">Patient #: {{patient_number}} &bull; DOB: {{patient_dob}}</span></div>'
             . '<div style="margin-bottom:30px;line-height:1.8;">{{content}}</div>'
             . '<div style="margin-bottom:4px;">Yours sincerely,</div>'
+            . self::signature()
+            . self::footer()
+            . '</div>';
+    }
+
+    private static function sickLeave(): string
+    {
+        return '<div class="doc-page" style="font-family:DejaVu Sans,sans-serif;font-size:11px;color:#1a1a2e;padding:32px 40px;">'
+            . '<div style="text-align:center;margin-bottom:28px;">'
+            . '<div style="font-size:22px;font-weight:700;color:#1e40af;">{{branch_name}}</div>'
+            . '<div style="font-size:10px;color:#555;margin-top:3px;">{{branch_address}} &bull; Tel: {{branch_phone}} &bull; {{branch_email}}</div>'
+            . '<div style="margin-top:18px;font-size:19px;font-weight:700;color:#1e40af;letter-spacing:2px;border-bottom:3px solid #1e40af;padding-bottom:10px;display:inline-block;">SICK LEAVE CERTIFICATE</div>'
+            . '<div style="font-size:10px;color:#777;margin-top:8px;">Certificate No. {{document_number}} &bull; {{date}}</div>'
+            . '</div>'
+            . '<div style="margin-bottom:18px;line-height:2.0;font-size:11px;">'
+            . 'This is to certify that <strong>{{patient_name}}</strong> (Patient #: {{patient_number}}, DOB: {{patient_dob}}) '
+            . 'was examined on <strong>{{date}}</strong> by <strong>{{doctor_name}}</strong> and is found to be unfit for duty.'
+            . '</div>'
+            . '<div style="background:#f8f9fb;border:1px solid #dde;border-radius:4px;padding:14px 18px;margin-bottom:18px;">'
+            . '<div style="font-size:9px;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-bottom:8px;">Medical Details</div>'
+            . '<div style="min-height:80px;">{{content}}</div>'
+            . '</div>'
+            . '<div style="margin-bottom:18px;line-height:2.0;font-size:11px;">'
+            . 'The patient is recommended to rest and is excused from work / school / duties for the period as indicated above. '
+            . 'A follow-up review should be conducted as advised by the attending physician.'
+            . '</div>'
+            . '<div style="font-size:8.5px;color:#aaa;font-style:italic;margin-bottom:24px;">'
+            . 'This certificate is issued in good faith based on the clinical examination conducted on the date stated above.'
+            . '</div>'
+            . self::signature()
+            . self::footer()
+            . '</div>';
+    }
+
+    private static function fitToWork(): string
+    {
+        return '<div class="doc-page" style="font-family:DejaVu Sans,sans-serif;font-size:11px;color:#1a1a2e;padding:32px 40px;">'
+            . '<div style="text-align:center;margin-bottom:28px;">'
+            . '<div style="font-size:22px;font-weight:700;color:#1e40af;">{{branch_name}}</div>'
+            . '<div style="font-size:10px;color:#555;margin-top:3px;">{{branch_address}} &bull; Tel: {{branch_phone}} &bull; {{branch_email}}</div>'
+            . '<div style="margin-top:18px;font-size:19px;font-weight:700;color:#1e40af;letter-spacing:2px;border-bottom:3px solid #1e40af;padding-bottom:10px;display:inline-block;">FIT TO WORK CERTIFICATE</div>'
+            . '<div style="font-size:10px;color:#777;margin-top:8px;">Certificate No. {{document_number}} &bull; {{date}}</div>'
+            . '</div>'
+            . '<div style="margin-bottom:18px;line-height:2.0;font-size:11px;">'
+            . 'This is to certify that <strong>{{patient_name}}</strong> (Patient #: {{patient_number}}, DOB: {{patient_dob}}) '
+            . 'was examined on <strong>{{date}}</strong> by <strong>{{doctor_name}}</strong> and is found to be <strong>fit to resume normal duties</strong>.'
+            . '</div>'
+            . '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:14px 18px;margin-bottom:18px;">'
+            . '<div style="font-size:9px;text-transform:uppercase;color:#166534;letter-spacing:.5px;margin-bottom:8px;">Clinical Notes &amp; Conditions</div>'
+            . '<div style="min-height:80px;">{{content}}</div>'
+            . '</div>'
+            . '<div style="margin-bottom:18px;line-height:2.0;font-size:11px;">'
+            . 'The above-named individual has been assessed as medically fit to return to work / resume normal activities. '
+            . 'Any specific restrictions or accommodations, if applicable, are noted above.'
+            . '</div>'
+            . '<div style="font-size:8.5px;color:#aaa;font-style:italic;margin-bottom:24px;">'
+            . 'This certificate is issued in good faith based on the clinical examination conducted on the date stated above.'
+            . '</div>'
             . self::signature()
             . self::footer()
             . '</div>';
