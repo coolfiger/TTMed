@@ -1,6 +1,4 @@
-<div class="flex flex-col h-full" x-data>
-
-    @livewire('tenant.reception.checkout-panel', key('checkout-panel'))
+<div class="flex flex-col h-full">
 
     {{-- Top bar --}}
     <div class="flex-shrink-0 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
@@ -531,7 +529,7 @@
                                     <p class="text-xs text-slate-500">{{ $entry['doctorName'] }} &middot; {{ ucfirst(str_replace('_', ' ', $entry['visitType'])) }}</p>
                                     @if($entry['status'] === 'awaiting_checkout')
                                     <button
-                                        wire:click="$dispatch('open-checkout', { id: {{ $entry['id'] }}, name: '{{ addslashes($entry['patientName']) }}' })"
+                                        wire:click="openCheckout({{ $entry['id'] }})"
                                         class="mt-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition">
                                         Checkout →
                                     </button>
@@ -583,4 +581,98 @@
             @endif
         });
     </script>
+
+    {{-- ── Checkout slide-over ── --}}
+    @if($showCheckout)
+    <div class="fixed inset-0 z-40 bg-black/40" wire:click="closeCheckout"></div>
+    <div class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col">
+
+        <div class="flex-shrink-0 px-6 py-4 bg-purple-600 flex items-center justify-between">
+            <div>
+                <p class="text-base font-semibold text-white">Checkout</p>
+                <p class="text-sm text-purple-200 mt-0.5">{{ $checkoutPatientName }}</p>
+            </div>
+            <button wire:click="closeCheckout" class="text-purple-200 hover:text-white text-2xl leading-none">&times;</button>
+        </div>
+
+        @if($checkoutPaid)
+        <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+            <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <p class="text-lg font-semibold text-slate-800">Payment Complete</p>
+            <p class="text-sm text-slate-500 mt-1">{{ $checkoutPatientName }} has been checked out.</p>
+            <button wire:click="closeCheckout" class="mt-6 px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition">Done</button>
+        </div>
+        @else
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+            {{-- Line items --}}
+            @if(count($checkoutItems))
+            <div class="rounded-xl border border-slate-200 overflow-hidden">
+                @foreach($checkoutItems as $item)
+                <div class="flex items-center justify-between px-4 py-3 {{ !$loop->last ? 'border-b border-slate-100' : '' }}">
+                    <p class="text-sm text-slate-700">{{ $item['description'] }}@if($item['quantity'] > 1) × {{ $item['quantity'] }}@endif</p>
+                    <p class="text-sm font-semibold text-slate-800">${{ number_format($item['line_total'] / 100, 2) }}</p>
+                </div>
+                @endforeach
+            </div>
+            @endif
+
+            {{-- Total --}}
+            <div class="rounded-xl border border-slate-200 px-4 py-3 flex justify-between items-center">
+                <span class="text-sm font-bold text-slate-800">Total Due</span>
+                <span class="text-lg font-bold text-purple-700">${{ number_format($checkoutAmountDue / 100, 2) }}</span>
+            </div>
+
+            @if($checkoutError)
+            <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{{ $checkoutError }}</div>
+            @endif
+
+            {{-- Payment form --}}
+            <div class="space-y-4">
+                <div>
+                    <label class="form-label">Method</label>
+                    <select wire:model="checkoutMethod" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/10">
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="linx">LINX</option>
+                        <option value="cheque">Cheque</option>
+                        <option value="insurance">Insurance</option>
+                        <option value="waiver">Waiver</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Amount ($)</label>
+                    <input type="number" step="0.01" min="0.01" wire:model="checkoutAmountInput"
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/10" />
+                </div>
+                @if(in_array($checkoutMethod, ['card','linx','cheque']))
+                <div>
+                    <label class="form-label">Reference / Auth No. <span class="text-slate-400 font-normal">(optional)</span></label>
+                    <input type="text" wire:model="checkoutReference"
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/10" />
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="flex-shrink-0 px-6 py-4 border-t border-slate-200 flex gap-3">
+            <button wire:click="closeCheckout" class="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">Cancel</button>
+            <button wire:click="collectCheckoutPayment"
+                    wire:loading.attr="disabled"
+                    wire:target="collectCheckoutPayment"
+                    class="flex-1 px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition disabled:opacity-50">
+                <span wire:loading.remove wire:target="collectCheckoutPayment">Collect Payment</span>
+                <span wire:loading wire:target="collectCheckoutPayment">Processing…</span>
+            </button>
+        </div>
+        @endif
+
+    </div>
+    @endif
+
 </div>

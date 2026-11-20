@@ -6,10 +6,13 @@ use App\Events\QueueUpdated;
 use App\Models\Tenant\Branch;
 use App\Models\Tenant\Doctor;
 use App\Models\Tenant\DoctorAvailability;
+use App\Models\Tenant\Invoice;
 use App\Models\Tenant\Patient;
 use App\Models\Tenant\PatientIntakeToken;
 use App\Models\Tenant\QueueEntry;
+use App\Models\Tenant\Service;
 use App\Services\AuditService;
+use App\Services\BillingService;
 use App\Services\DocumentService;
 use App\Services\QueueService;
 use App\Tenancy\TenantContext;
@@ -63,6 +66,20 @@ class ReceptionDashboard extends Component
     // Queue display
     public array  $queueEntries      = [];
     public array  $doctorStatuses    = [];
+
+    // Checkout panel
+    public bool    $showCheckout        = false;
+    public ?int    $checkoutEntryId     = null;
+    public string  $checkoutPatientName = '';
+    public ?int    $checkoutInvoiceId   = null;
+    public int     $checkoutTotal       = 0;    // cents
+    public int     $checkoutAmountDue   = 0;    // cents
+    public string  $checkoutMethod      = 'cash';
+    public string  $checkoutAmountInput = '';
+    public string  $checkoutReference   = '';
+    public string  $checkoutError       = '';
+    public bool    $checkoutPaid        = false;
+    public array   $checkoutItems       = [];
 
     // Document upload step (shown after successful check-in)
     public bool   $showDocumentUpload   = false;
@@ -335,6 +352,145 @@ class ReceptionDashboard extends Component
         );
 
         $this->loadQueue();
+    }
+
+    public function openCheckout(int $entryId): void
+    {
+        $this->checkPermission('billing.create');
+
+        $entry = QueueEntry::on('tenant')
+            ->where('branch_id', $this->branchId)
+            ->where('status', QueueEntry::STATUS_AWAITING_CHECKOUT)
+            ->find($entryId);
+
+        if (!$entry) {
+            return;
+        }
+
+        $user = auth()->guard('tenant')->user();
+
+        // Find or create a draft invoice for this encounter
+        $invoice = Invoice::on('tenant')
+            ->where('encounter_id', $entry->encounter_id)
+            ->whereIn('status', ['draft', 'finalized', 'partially_paid'])
+            ->latest()
+            ->first();
+
+        if (!$invoice) {
+            $billing = app(BillingService::class);
+            $invoice = $billing->createInvoice(
+                patientId:   $entry->patient_id,
+                branchId:    $entry->branch_id,
+                createdBy:   $user->id,
+                encounterId: $entry->encounter_id,
+            );
+
+            $service = Service::on('tenant')
+                ->where('is_active', true)
+                ->where('name', 'like', '%consultation%')
+                ->orderByRaw("CASE WHEN name LIKE '%general%' THEN 0 ELSE 1 END")
+                ->first();
+
+            if ($service) {
+                $billing->addItem(
+                    invoice:        $invoice,
+                    serviceId:      $service->id,
+                    description:    $service->name,
+                    quantity:       1,
+                    unitPriceCents: $service->price,
+                    taxRate:        $service->taxable ? (float) $service->tax_rate : 0.0,
+                    discountCents:  0,
+                );
+                $invoice->refresh();
+            }
+
+            if ($invoice->total > 0) {
+                $billing->finalizeInvoice($invoice, $user->id);
+                $invoice->refresh();
+            }
+        }
+
+        $items = $invoice->items()->get()->map(fn ($i) => [
+            'description' => $i->description,
+            'quantity'    => $i->quantity,
+            'line_total'  => $i->line_total,
+        ])->toArray();
+
+        $this->checkoutEntryId     = $entryId;
+        $this->checkoutPatientName = $entry->patient?->display_name ?? '';
+        $this->checkoutInvoiceId   = $invoice->id;
+        $this->checkoutTotal       = $invoice->total;
+        $this->checkoutAmountDue   = $invoice->amount_due;
+        $this->checkoutItems       = $items;
+        $this->checkoutAmountInput = number_format($invoice->amount_due / 100, 2);
+        $this->checkoutMethod      = 'cash';
+        $this->checkoutReference   = '';
+        $this->checkoutError       = '';
+        $this->checkoutPaid        = false;
+        $this->showCheckout        = true;
+    }
+
+    public function collectCheckoutPayment(): void
+    {
+        $this->checkPermission('billing.create');
+        $this->checkoutError = '';
+
+        $invoice = Invoice::on('tenant')->find($this->checkoutInvoiceId);
+        if (!$invoice) {
+            $this->checkoutError = 'Invoice not found.';
+            return;
+        }
+
+        $amountCents = (int) round((float) str_replace(',', '', $this->checkoutAmountInput) * 100);
+        if ($amountCents <= 0) {
+            $this->checkoutError = 'Enter a valid amount.';
+            return;
+        }
+        if ($amountCents > $invoice->amount_due) {
+            $this->checkoutError = 'Amount exceeds balance due of $' . number_format($invoice->amount_due / 100, 2) . '.';
+            return;
+        }
+
+        $user = auth()->guard('tenant')->user();
+
+        try {
+            app(BillingService::class)->collectPayment(
+                invoice:         $invoice,
+                amountCents:     $amountCents,
+                method:          $this->checkoutMethod,
+                collectedBy:     $user->id,
+                referenceNumber: $this->checkoutReference ?: null,
+            );
+
+            $invoice->refresh();
+            $this->checkoutAmountDue = $invoice->amount_due;
+
+            if ($invoice->amount_due === 0) {
+                $entry = QueueEntry::on('tenant')
+                    ->where('branch_id', $this->branchId)
+                    ->find($this->checkoutEntryId);
+
+                if ($entry) {
+                    app(QueueService::class)->transition($entry, QueueEntry::STATUS_COMPLETED, $user->id, 'Checked out');
+                }
+
+                $this->checkoutPaid = true;
+                $this->loadQueue();
+            } else {
+                $this->checkoutAmountInput = number_format($invoice->amount_due / 100, 2);
+                $this->checkoutError = 'Partial payment recorded. Balance: $' . number_format($invoice->amount_due / 100, 2);
+            }
+        } catch (\Throwable $e) {
+            $this->checkoutError = $e->getMessage();
+        }
+    }
+
+    public function closeCheckout(): void
+    {
+        $this->showCheckout    = false;
+        $this->checkoutEntryId = null;
+        $this->checkoutPaid    = false;
+        $this->checkoutError   = '';
     }
 
     public function completeCheckout(int $entryId): void
