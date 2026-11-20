@@ -26,7 +26,7 @@
         {{-- ══════════════════════════════════════════════════════════
              LEFT PANEL — Check-in wizard
         ══════════════════════════════════════════════════════════ --}}
-        <div class="w-96 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
+        <div class="w-96 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col overflow-y-auto">
 
             @if(!$showCheckinForm)
                 {{-- Search state --}}
@@ -376,7 +376,7 @@
 
             {{-- ── Document Upload Panel (shown after check-in) ── --}}
             @if($showDocumentUpload)
-                <div class="mt-4 mx-4 mb-4 rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
+                <div class="mt-4 mx-4 mb-4 rounded-xl border border-blue-200 bg-blue-50">
                     <div class="px-4 py-3 bg-blue-600 flex items-center justify-between">
                         <div>
                             <p class="text-sm font-semibold text-white">Attach Documents for {{ $uploadPatientName }}</p>
