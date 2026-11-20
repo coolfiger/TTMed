@@ -51,6 +51,8 @@ class TemplateManager extends Component
     public string $bodyHtml = '';
     public string $gjsData  = ''; // JSON string
 
+    public bool $isSystemTemplate = false; // true when editing a seeded default
+
     public        $logoFile = null;
 
     public string $successMessage = '';
@@ -104,6 +106,7 @@ class TemplateManager extends Component
         $this->marginBottom     = (string) $template->margin_bottom;
         $this->marginLeft       = (string) $template->margin_left;
         $this->editing          = true;
+        $this->isSystemTemplate = $template->is_default && is_null($template->created_by);
 
         $this->bodyHtml = $template->body_html
             ?? DefaultTemplates::forType($template->type);
@@ -125,6 +128,18 @@ class TemplateManager extends Component
         $user = Auth::guard('tenant')->user();
         if (!$user || !$user->hasPermission('settings.manage')) {
             abort(403);
+        }
+
+        // If editing a system default (seeded, no owner), fork it rather than overwrite
+        if ($this->editingId) {
+            $original = DocumentTemplate::on('tenant')->find($this->editingId);
+            if ($original && $original->is_default && is_null($original->created_by)) {
+                $this->editingId = null;
+                if (!str_ends_with(trim($this->name), ' Custom')) {
+                    $this->name = trim($this->name) . ' Custom';
+                }
+                $this->isDefault = false;
+            }
         }
 
         $this->validate([
@@ -260,8 +275,9 @@ class TemplateManager extends Component
         $this->marginRight      = '20';
         $this->marginBottom     = '20';
         $this->marginLeft       = '20';
-        $this->logoFile         = null;
-        $this->errorMessage     = '';
+        $this->logoFile          = null;
+        $this->isSystemTemplate  = false;
+        $this->errorMessage      = '';
     }
 
     public function render(): \Illuminate\View\View

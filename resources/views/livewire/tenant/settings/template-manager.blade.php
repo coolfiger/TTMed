@@ -190,7 +190,7 @@
       storageManager: false,
       undoManager: { trackChanges: true },
       panels: { defaults: [] },
-      canvas: { styles: [CANVAS_CSS] },
+      canvas: {},
       blockManager: { appendTo: '#gjs-blocks', blocks: medicalBlocks() },
       styleManager: { appendTo: '#gjs-styles', sectors: styleSectors() },
       layerManager:  { appendTo: '#gjs-layers' },
@@ -200,11 +200,21 @@
       },
     });
 
-    if (gjsData && Object.keys(gjsData).length > 0) {
-      try { editor.loadProjectData(gjsData); } catch (e) { loadHtml(editor, bodyHtml); }
-    } else if (bodyHtml) {
-      loadHtml(editor, bodyHtml);
-    }
+    // Wait for canvas iframe to be ready before loading content or injecting CSS
+    editor.on('load', function () {
+      try {
+        var canvasDoc = editor.Canvas.getDocument();
+        var s = canvasDoc.createElement('style');
+        s.textContent = CANVAS_CSS;
+        canvasDoc.head.appendChild(s);
+      } catch (e) {}
+
+      if (gjsData && Object.keys(gjsData).length > 0) {
+        try { editor.loadProjectData(gjsData); } catch (e) { loadHtml(editor, bodyHtml); }
+      } else if (bodyHtml) {
+        loadHtml(editor, bodyHtml);
+      }
+    });
 
     window._ttGjsEditor = editor;
   }
@@ -365,6 +375,14 @@
       }
     }"
   >
+
+    {{-- System default notice --}}
+    @if($isSystemTemplate)
+    <div class="flex-shrink-0 bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-800 flex items-center gap-2">
+      <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>You are editing a system default. Saving will create a new <strong>Custom</strong> copy — the original default is preserved.</span>
+    </div>
+    @endif
 
     {{-- Top toolbar --}}
     <div class="flex-shrink-0 bg-slate-900 text-white px-3 py-2 flex items-center gap-2 flex-wrap">
