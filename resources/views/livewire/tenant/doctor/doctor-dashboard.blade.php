@@ -637,7 +637,10 @@
             <button class="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-slate-50 transition"
                     @click="open.history = !open.history">
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                    Visit History ({{ count($patientHistory) }})
+                    Visit History
+                    @if($historyTotal > 0)
+                        <span class="normal-case font-normal text-slate-400">({{ count($patientHistory) }} of {{ $historyTotal }})</span>
+                    @endif
                 </span>
                 <svg class="w-3.5 h-3.5 text-slate-400 transition-transform" :class="open.history ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -683,6 +686,19 @@
                 @empty
                     <p class="text-xs text-slate-400 italic">No previous visits on record.</p>
                 @endforelse
+
+                @if(count($patientHistory) < $historyTotal)
+                    <button wire:click="loadMoreHistory"
+                            wire:loading.attr="disabled"
+                            wire:target="loadMoreHistory"
+                            class="w-full mt-2 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition border border-blue-100">
+                        <span wire:loading.remove wire:target="loadMoreHistory">
+                            Show {{ min(5, $historyTotal - count($patientHistory)) }} more
+                            ({{ $historyTotal - count($patientHistory) }} remaining)
+                        </span>
+                        <span wire:loading wire:target="loadMoreHistory">Loading…</span>
+                    </button>
+                @endif
             </div>
         </div>
 

@@ -38,7 +38,9 @@ class DoctorDashboard extends Component
     // -------------------------------------------------------------------------
     // Patient context (loaded on selectPatient)
     // -------------------------------------------------------------------------
-    public array  $patientHistory   = [];   // last 20 completed encounters
+    public array  $patientHistory   = [];
+    public int    $historyLimit     = 3;    // initially show 3; "load more" bumps by 5
+    public int    $historyTotal     = 0;    // total completed encounters for this patient
     public array  $allergies        = [];
     public array  $medications      = [];
 
@@ -213,37 +215,8 @@ class DoctorDashboard extends Component
             return;
         }
 
-        // Last 20 completed encounters (excluding current)
-        $pastEncounters = Encounter::on('tenant')
-            ->where('patient_id', $this->activePatientId)
-            ->where('status', 'completed')
-            ->when($this->activeEncounterId, fn ($q) =>
-                $q->where('id', '!=', $this->activeEncounterId)
-            )
-            ->orderByDesc('encounter_date')
-            ->limit(20)
-            ->get();
-
-        $this->patientHistory = $pastEncounters->map(function ($enc) {
-            $note = ConsultationNote::on('tenant')
-                ->where('encounter_id', $enc->id)
-                ->first();
-
-            $diagnoses = Diagnosis::on('tenant')
-                ->where('encounter_id', $enc->id)
-                ->where('diagnosis_type', 'primary')
-                ->pluck('diagnosis_text')
-                ->toArray();
-
-            return [
-                'id'              => $enc->id,
-                'encounter_date'  => $enc->encounter_date?->format('d M Y'),
-                'chief_complaint' => $enc->chief_complaint,
-                'assessment'      => $note?->assessment,
-                'plan'            => $note?->plan,
-                'diagnoses'       => $diagnoses,
-            ];
-        })->toArray();
+        $this->historyLimit = 3;
+        $this->reloadHistory();
 
         // Current allergies
         $this->allergies = PatientAllergy::on('tenant')
@@ -269,6 +242,51 @@ class DoctorDashboard extends Component
                 'route'           => $m->route,
             ])
             ->toArray();
+    }
+
+    public function loadMoreHistory(): void
+    {
+        $this->checkPermission('encounters.view');
+        $this->historyLimit += 5;
+        $this->reloadHistory();
+    }
+
+    private function reloadHistory(): void
+    {
+        if (!$this->activePatientId) return;
+
+        $base = Encounter::on('tenant')
+            ->where('patient_id', $this->activePatientId)
+            ->where('status', 'completed')
+            ->when($this->activeEncounterId, fn ($q) =>
+                $q->where('id', '!=', $this->activeEncounterId)
+            );
+
+        $this->historyTotal = $base->count();
+
+        $this->patientHistory = $base->orderByDesc('encounter_date')
+            ->limit($this->historyLimit)
+            ->get()
+            ->map(function ($enc) {
+                $note = ConsultationNote::on('tenant')
+                    ->where('encounter_id', $enc->id)
+                    ->first();
+
+                $diagnoses = Diagnosis::on('tenant')
+                    ->where('encounter_id', $enc->id)
+                    ->where('diagnosis_type', 'primary')
+                    ->pluck('diagnosis_text')
+                    ->toArray();
+
+                return [
+                    'id'              => $enc->id,
+                    'encounter_date'  => $enc->encounter_date?->format('d M Y'),
+                    'chief_complaint' => $enc->chief_complaint,
+                    'assessment'      => $note?->assessment,
+                    'plan'            => $note?->plan,
+                    'diagnoses'       => $diagnoses,
+                ];
+            })->toArray();
     }
 
     // -------------------------------------------------------------------------
@@ -404,6 +422,8 @@ class DoctorDashboard extends Component
             $this->activePatientName   = '';
             $this->activeEntryStatus   = '';
             $this->patientHistory      = [];
+            $this->historyLimit        = 3;
+            $this->historyTotal        = 0;
             $this->allergies           = [];
             $this->medications         = [];
             $this->compareReportIds    = [];
