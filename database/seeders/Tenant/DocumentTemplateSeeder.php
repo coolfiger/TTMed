@@ -12,6 +12,27 @@ class DocumentTemplateSeeder extends Seeder
     public function run(): void
     {
         foreach (DocumentTemplate::TYPES as $type => $label) {
+            // Update existing default if it has no body_html yet (pre-dates the editor)
+            $blank = DB::connection('tenant')
+                ->table('document_templates')
+                ->where('type', $type)
+                ->whereNull('branch_id')
+                ->where('is_default', true)
+                ->whereNull('body_html')
+                ->first();
+
+            if ($blank) {
+                DB::connection('tenant')
+                    ->table('document_templates')
+                    ->where('id', $blank->id)
+                    ->update([
+                        'body_html'  => DefaultTemplates::forType($type),
+                        'updated_at' => now(),
+                    ]);
+                continue;
+            }
+
+            // Skip if a fully-populated default already exists
             $exists = DB::connection('tenant')
                 ->table('document_templates')
                 ->where('type', $type)
@@ -20,7 +41,7 @@ class DocumentTemplateSeeder extends Seeder
                 ->exists();
 
             if ($exists) {
-                continue; // don't overwrite custom templates
+                continue;
             }
 
             DB::connection('tenant')->table('document_templates')->insert([
