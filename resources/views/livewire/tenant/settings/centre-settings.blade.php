@@ -5,7 +5,7 @@
 
     {{-- Tab navigation --}}
     <div class="flex border-b border-slate-200 mb-6 gap-1">
-        @foreach(['general' => 'General', 'email' => 'Email', 'backups' => 'Backups'] as $tab => $label)
+        @foreach(['general' => 'General', 'email' => 'Email', 'branding' => 'Branding', 'backups' => 'Backups'] as $tab => $label)
         <button wire:click="$set('activeTab', '{{ $tab }}')"
             class="px-4 py-2 text-sm font-medium rounded-t-md -mb-px
                 {{ $activeTab === $tab
@@ -162,6 +162,79 @@
                 <p class="mt-2 text-sm text-red-600">{{ substr($testEmailStatus, 6) }}</p>
             @endif
         </div>
+    </div>
+    @endif
+
+    {{-- Branding --}}
+    @if($activeTab === 'branding')
+    <div class="space-y-6">
+
+        @if(session('branding_saved'))
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 text-sm text-emerald-700">
+                {{ session('branding_saved') }}
+            </div>
+        @endif
+
+        <div class="bg-white rounded-lg border border-slate-200 p-6">
+            <h3 class="text-sm font-semibold text-slate-800 mb-1">White Label Branding</h3>
+            <p class="text-xs text-slate-400 mb-5">Logos and colours appear on the login screen and sidebar for your subdomain. Changes are live immediately.</p>
+
+            <div class="space-y-5">
+
+                {{-- Primary colour --}}
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Brand Colour</label>
+                    <div class="flex items-center gap-3">
+                        <input type="color" wire:model="brandingPrimaryColor"
+                               class="h-10 w-14 rounded-lg border border-slate-200 cursor-pointer p-0.5" />
+                        <input type="text" wire:model="brandingPrimaryColor" placeholder="#1e40af"
+                               class="w-28 border border-slate-200 rounded-xl px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none transition" />
+                        <span class="text-xs text-slate-400">Used on buttons and accents (future documents)</span>
+                    </div>
+                </div>
+
+                {{-- Login logo --}}
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Login Screen Logo</label>
+                    <p class="text-xs text-slate-400 mb-2">Shown at the top of the sign-in page. Max 2MB, PNG/JPG/SVG. Recommended: transparent background, max height 80px.</p>
+                    <div class="flex items-center gap-4">
+                        <input type="file" wire:model="loginLogoFile" accept="image/*"
+                               class="text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                        @if($hasLoginLogo)
+                            <span class="text-xs text-emerald-600 font-semibold">✓ Logo set</span>
+                            <button wire:click="removeLogo('login')" wire:confirm="Remove login logo?"
+                                    class="text-xs text-red-500 hover:text-red-700">Remove</button>
+                        @endif
+                    </div>
+                    @error('loginLogoFile') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Sidebar logo --}}
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Sidebar Logo</label>
+                    <p class="text-xs text-slate-400 mb-2">Replaces the practice name text in the left sidebar. Max 2MB. Recommended: landscape, transparent background, max height 32px.</p>
+                    <div class="flex items-center gap-4">
+                        <input type="file" wire:model="sidebarLogoFile" accept="image/*"
+                               class="text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                        @if($hasSidebarLogo)
+                            <span class="text-xs text-emerald-600 font-semibold">✓ Logo set</span>
+                            <button wire:click="removeLogo('sidebar')" wire:confirm="Remove sidebar logo?"
+                                    class="text-xs text-red-500 hover:text-red-700">Remove</button>
+                        @endif
+                    </div>
+                    @error('sidebarLogoFile') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="pt-2">
+                    <button wire:click="saveBranding"
+                            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl shadow-sm transition">
+                        Save Branding
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
     </div>
     @endif
 

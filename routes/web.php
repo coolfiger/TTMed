@@ -17,8 +17,10 @@ use App\Livewire\Tenant\Branches\BranchList;
 use App\Livewire\Tenant\Branches\BranchForm;
 use App\Livewire\Tenant\Settings\CentreSettings;
 use App\Livewire\Tenant\Settings\IntegrationSettings;
+use App\Livewire\Tenant\Settings\TemplateManager;
 use App\Livewire\Tenant\Imaging\ImagingWorkqueue;
 use App\Livewire\Tenant\Documents\DocumentTracker;
+use App\Http\Controllers\Tenant\BrandingLogoController;
 use App\Livewire\Tenant\Staff\StaffList;
 use App\Livewire\Tenant\Staff\StaffForm;
 use App\Livewire\Tenant\Services\ServiceList;
@@ -86,6 +88,16 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
     Route::post('/intake/{token}', [PatientIntakeController::class, 'submit'])->name('tenant.patient.intake.submit')
         ->middleware('throttle:10,5');
 
+    // New patient registration via QR — public, single-use tokenised link
+    Route::get('/register/{token}',  [PatientIntakeController::class, 'showRegistration'])->name('tenant.patient.register');
+    Route::post('/register/{token}', [PatientIntakeController::class, 'submitRegistration'])->name('tenant.patient.register.submit')
+        ->middleware('throttle:10,5');
+
+    // Branding logo — public within tenant (non-sensitive)
+    Route::get('/branding/logo/{type}', BrandingLogoController::class)
+        ->where('type', 'login|sidebar')
+        ->name('tenant.branding.logo');
+
     // Guest routes (no tenant auth required, but tenant must be resolved)
     Route::middleware(['guest:tenant', 'throttle:10,1'])->group(function () {
         Route::get('/login',           TenantLogin::class)->name('tenant.login');
@@ -150,6 +162,7 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         });
         Route::middleware('permission:settings.manage')->group(function () {
             Route::get('/settings/integrations', IntegrationSettings::class)->name('tenant.settings.integrations');
+            Route::get('/settings/templates',    TemplateManager::class)->name('tenant.settings.templates');
         });
 
         // Staff management

@@ -13,12 +13,21 @@
     {{-- Sidebar --}}
     <div class="fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-sm border-r border-slate-200">
         <div class="flex h-16 shrink-0 items-center px-6 border-b border-slate-200">
-            <div>
-                <p class="font-semibold text-slate-800 text-sm leading-tight">
-                    {{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? 'TTMed' }}
-                </p>
-                <p class="text-xs text-slate-500">Medical Practice</p>
-            </div>
+            @php
+                $sidebarLogo = app(\App\Services\CentreSettingsService::class)->get('branding_sidebar_logo_path');
+            @endphp
+            @if($sidebarLogo && file_exists(storage_path('app/' . $sidebarLogo)))
+                <img src="{{ route('tenant.branding.logo', ['type' => 'sidebar']) }}"
+                     alt="{{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? 'TTMed' }}"
+                     class="h-8 max-w-36 object-contain" />
+            @else
+                <div>
+                    <p class="font-semibold text-slate-800 text-sm leading-tight">
+                        {{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? 'TTMed' }}
+                    </p>
+                    <p class="text-xs text-slate-500">Medical Practice</p>
+                </div>
+            @endif
         </div>
         <nav class="flex flex-1 flex-col px-3 py-4 overflow-y-auto">
             <ul class="space-y-1 text-sm">

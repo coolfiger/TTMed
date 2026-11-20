@@ -10,7 +10,7 @@ class PatientIntakeToken extends Model
     protected $connection = 'tenant';
 
     protected $fillable = [
-        'patient_id', 'token', 'pin', 'expires_at', 'used_at', 'created_by',
+        'type', 'patient_id', 'token', 'pin', 'expires_at', 'used_at', 'created_by',
     ];
 
     protected $casts = [
@@ -26,5 +26,20 @@ class PatientIntakeToken extends Model
     public function isValid(): bool
     {
         return $this->used_at === null && $this->expires_at->isFuture();
+    }
+
+    // For registration tokens: patient_id is null until patient submits the form.
+    // After submission, patient_id is set to the new patient's ID and used_at is set.
+    public function isValidRegistration(): bool
+    {
+        return $this->type === 'registration'
+            && $this->patient_id === null
+            && $this->used_at === null
+            && $this->expires_at->isFuture();
+    }
+
+    public function isRegistrationComplete(): bool
+    {
+        return $this->type === 'registration' && $this->patient_id !== null;
     }
 }

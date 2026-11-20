@@ -9,10 +9,12 @@ use App\Services\CentreSettingsService;
 use App\Tenancy\TenantContext;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.app')]
 class CentreSettings extends Component
 {
+    use WithFileUploads;
     // General
     public string $centreName = '';
     public string $centreAddress = '';
@@ -44,6 +46,13 @@ class CentreSettings extends Component
     public ?string $testEmailStatus = null;
     public ?string $backupStatus    = null;
 
+    // Branding
+    public        $loginLogoFile   = null;
+    public        $sidebarLogoFile = null;
+    public string $brandingPrimaryColor = '#1e40af';
+    public bool   $hasSidebarLogo  = false;
+    public bool   $hasLoginLogo    = false;
+
     public function mount(TenantContext $tenantContext): void
     {
         $settings = app(CentreSettingsService::class);
@@ -71,6 +80,68 @@ class CentreSettings extends Component
         $this->smtpFromAddress = $settings->get('smtp_from_address', '');
         $this->smtpFromName    = $settings->get('smtp_from_name', '');
         // smtp_password is encrypted — never load into the component
+
+        $this->brandingPrimaryColor = $settings->get('branding_primary_color', '#1e40af');
+        $this->hasSidebarLogo = (bool) $settings->get('branding_sidebar_logo_path');
+        $this->hasLoginLogo   = (bool) $settings->get('branding_login_logo_path');
+    }
+
+    public function saveBranding(): void
+    {
+        $this->validate([
+            'brandingPrimaryColor' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'loginLogoFile'        => 'nullable|image|max:2048',
+            'sidebarLogoFile'      => 'nullable|image|max:2048',
+        ]);
+
+        $settings = app(CentreSettingsService::class);
+
+        if ($this->brandingPrimaryColor) {
+            $settings->set('branding_primary_color', $this->brandingPrimaryColor);
+        }
+
+        $tenantCode = app(TenantContext::class)->get()?->code ?? 'default';
+
+        if ($this->loginLogoFile) {
+            $ext  = $this->loginLogoFile->getClientOriginalExtension();
+            $path = $this->loginLogoFile->storeAs(
+                "public/tenants/{$tenantCode}/branding",
+                "login_logo.{$ext}"
+            );
+            $settings->set('branding_login_logo_path', $path);
+            $this->hasLoginLogo = true;
+        }
+
+        if ($this->sidebarLogoFile) {
+            $ext  = $this->sidebarLogoFile->getClientOriginalExtension();
+            $path = $this->sidebarLogoFile->storeAs(
+                "public/tenants/{$tenantCode}/branding",
+                "sidebar_logo.{$ext}"
+            );
+            $settings->set('branding_sidebar_logo_path', $path);
+            $this->hasSidebarLogo = true;
+        }
+
+        $this->loginLogoFile   = null;
+        $this->sidebarLogoFile = null;
+
+        session()->flash('branding_saved', 'Branding settings saved.');
+    }
+
+    public function removeLogo(string $type): void
+    {
+        $settings = app(CentreSettingsService::class);
+        $key = $type === 'login' ? 'branding_login_logo_path' : 'branding_sidebar_logo_path';
+        $path = $settings->get($key);
+        if ($path && file_exists(storage_path('app/' . $path))) {
+            @unlink(storage_path('app/' . $path));
+        }
+        $settings->set($key, '');
+        if ($type === 'login') {
+            $this->hasLoginLogo = false;
+        } else {
+            $this->hasSidebarLogo = false;
+        }
     }
 
     public function saveGeneral(): void
