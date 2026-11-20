@@ -337,6 +337,35 @@ class ReceptionDashboard extends Component
         $this->loadQueue();
     }
 
+    public function completeCheckout(int $entryId): void
+    {
+        $this->checkPermission('queue.checkin');
+
+        $entry = QueueEntry::on('tenant')
+            ->forBranchToday($this->branchId)
+            ->where('status', QueueEntry::STATUS_AWAITING_CHECKOUT)
+            ->find($entryId);
+
+        if (!$entry) {
+            return;
+        }
+
+        $userId = auth()->guard('tenant')->id();
+
+        app(QueueService::class)->transition($entry, QueueEntry::STATUS_COMPLETED, $userId, 'Checked out by receptionist');
+
+        app(AuditService::class)->logTenant(
+            'queue.checkout',
+            'Patient',
+            $entry->patient_id,
+            null,
+            null,
+            "Queue #{$entry->queue_number} checked out"
+        );
+
+        $this->loadQueue();
+    }
+
     public function addDocument(): void
     {
         $this->docUploadError = '';

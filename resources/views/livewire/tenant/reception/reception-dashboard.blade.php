@@ -530,12 +530,24 @@
 
                                 {{-- Status badge --}}
                                 <span class="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold
-                                    {{ $entry['status'] === 'waiting'         ? 'bg-amber-100 text-amber-800' : '' }}
-                                    {{ $entry['status'] === 'with_nurse'      ? 'bg-violet-100 text-violet-800' : '' }}
-                                    {{ $entry['status'] === 'awaiting_doctor' ? 'bg-orange-100 text-orange-800' : '' }}
-                                    {{ $entry['status'] === 'with_doctor'     ? 'bg-emerald-100 text-emerald-800' : '' }}">
+                                    {{ $entry['status'] === 'waiting'            ? 'bg-amber-100 text-amber-800' : '' }}
+                                    {{ $entry['status'] === 'with_nurse'         ? 'bg-violet-100 text-violet-800' : '' }}
+                                    {{ $entry['status'] === 'awaiting_doctor'    ? 'bg-orange-100 text-orange-800' : '' }}
+                                    {{ $entry['status'] === 'with_doctor'        ? 'bg-emerald-100 text-emerald-800' : '' }}
+                                    {{ $entry['status'] === 'awaiting_checkout'  ? 'bg-purple-100 text-purple-800' : '' }}">
                                     {{ $entry['statusLabel'] }}
                                 </span>
+
+                                {{-- Complete checkout button (shown only when awaiting checkout) --}}
+                                @if($entry['status'] === 'awaiting_checkout')
+                                <button
+                                    wire:click="completeCheckout({{ $entry['id'] }})"
+                                    wire:confirm="Mark {{ $entry['patientName'] }} as checked out?"
+                                    class="flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition"
+                                    title="Complete checkout">
+                                    Checkout ✓
+                                </button>
+                                @endif
 
                                 {{-- Remove button --}}
                                 <button

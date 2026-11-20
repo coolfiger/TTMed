@@ -168,7 +168,7 @@ class ConsultationService
                 throw new \LogicException('Consultation note must be finalized before completing the encounter.');
             }
 
-            $entry = $this->queueService->transition($queueEntry, 'completed', $userId, $transitionNotes);
+            $entry = $this->queueService->transition($queueEntry, 'awaiting_checkout', $userId, $transitionNotes);
 
             Encounter::on('tenant')
                 ->where('id', $note->encounter_id)
