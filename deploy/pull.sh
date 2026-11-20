@@ -11,19 +11,23 @@ GIT="sudo -u coolfiger git -C $APP"
 echo "→ Pulling latest code..."
 $GIT pull origin main
 
-echo "→ Clearing compiled views..."
-$PHP $APP/artisan view:clear
+echo "→ Clearing all caches..."
+$PHP $APP/artisan optimize:clear
 
-echo "→ Clearing application cache..."
-$PHP $APP/artisan cache:clear
+echo "→ Clearing event cache..."
+$PHP $APP/artisan event:clear 2>/dev/null || true
 
-echo "→ Clearing route cache..."
-$PHP $APP/artisan route:clear
-
-echo "→ Clearing config cache..."
-$PHP $APP/artisan config:clear
+echo "→ Clearing compiled files..."
+$PHP $APP/artisan clear-compiled 2>/dev/null || true
 
 echo "→ Running migrations..."
 $PHP $APP/artisan migrate --force
+
+echo "→ Re-caching config and routes..."
+$PHP $APP/artisan config:cache
+$PHP $APP/artisan route:cache
+
+echo "→ Pre-compiling views..."
+$PHP $APP/artisan view:cache
 
 echo "✓ Deploy complete."
