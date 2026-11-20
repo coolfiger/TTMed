@@ -277,7 +277,7 @@ class NurseDashboard extends Component
             return;
         }
 
-        $assessment = $this->nursingService->getOrCreateAssessment($this->activeEncounterId);
+        $assessment = $this->nursingService->getOrCreateAssessment($this->activeEncounterId, $this->activePatientId);
 
         $this->nursingService->updateAssessment($assessment, [
             'allergies_reviewed'   => $this->allergiesReviewed,
@@ -397,7 +397,7 @@ class NurseDashboard extends Component
 
         // Auto-save assessment with current checkbox state so the nurse
         // doesn't have to click "Save Assessment" separately first.
-        $assessment = $this->nursingService->getOrCreateAssessment($this->activeEncounterId);
+        $assessment = $this->nursingService->getOrCreateAssessment($this->activeEncounterId, $this->activePatientId);
         $this->nursingService->updateAssessment($assessment, [
             'allergies_reviewed'   => $this->allergiesReviewed,
             'medications_reviewed' => $this->medicationsReviewed,

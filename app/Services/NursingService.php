@@ -31,15 +31,21 @@ class NursingService
     // Assessment
     // -------------------------------------------------------------------------
 
-    public function getOrCreateAssessment(int $encounterId): NursingAssessment
+    public function getOrCreateAssessment(int $encounterId, ?int $patientId = null): NursingAssessment
     {
+        $defaults = [
+            'allergies_reviewed'   => false,
+            'medications_reviewed' => false,
+            'status'               => 'in_progress',
+        ];
+
+        if ($patientId) {
+            $defaults['patient_id'] = $patientId;
+        }
+
         return NursingAssessment::on('tenant')->firstOrCreate(
             ['encounter_id' => $encounterId],
-            [
-                'allergies_reviewed'   => false,
-                'medications_reviewed' => false,
-                'status'               => 'in_progress',
-            ]
+            $defaults
         );
     }
 
