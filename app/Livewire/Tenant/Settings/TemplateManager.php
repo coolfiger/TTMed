@@ -61,7 +61,7 @@ class TemplateManager extends Component
     public function mount(): void
     {
         $user = Auth::guard('tenant')->user();
-        if (!$user || !$user->hasAnyPermission(['settings.manage', 'settings.view'])) {
+        if (!$user || (!$user->hasPermission('settings.manage') && !$user->hasPermission('settings.view'))) {
             abort(403);
         }
     }
