@@ -98,21 +98,55 @@
                     <x-nav-item route="tenant.insurance.index" label="Insurance" />
                 @endif
 
-                @if($user?->hasPermission('branches.view'))
-                    <x-nav-item route="tenant.branches.index" label="Branches" />
-                @endif
-
                 @if($user?->hasPermission('settings.view'))
-                    <x-nav-item route="tenant.settings.index" label="Settings" />
-                    <x-nav-item route="tenant.settings.templates" label="Templates" />
-                @endif
-
-                @if($user?->hasPermission('settings.manage'))
-                    <x-nav-item route="tenant.settings.integrations" label="Integrations" />
-                @endif
-
-                @if($user?->hasPermission('users.view'))
-                    <x-nav-item route="tenant.users.index" label="Users" />
+                @php
+                    $inSettings = request()->routeIs('tenant.settings.*')
+                        || request()->routeIs('tenant.users.*')
+                        || request()->routeIs('tenant.branches.*');
+                @endphp
+                <li x-data="{ open: {{ $inSettings ? 'true' : 'false' }} }">
+                    <button @click="open = !open"
+                            class="w-full flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium {{ $inSettings ? 'text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800' }}">
+                        <span>Settings</span>
+                        <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    <ul x-show="open" x-cloak class="mt-0.5 ml-3 border-l border-slate-200 pl-2 space-y-0.5">
+                        <li>
+                            <a href="{{ route('tenant.settings.index') }}"
+                               class="flex rounded-md px-3 py-1.5 text-sm {{ request()->routeIs('tenant.settings.index') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                General
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('tenant.settings.templates') }}"
+                               class="flex rounded-md px-3 py-1.5 text-sm {{ request()->routeIs('tenant.settings.templates') || request()->routeIs('tenant.settings.templates.*') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Templates
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('tenant.users.index') }}"
+                               class="flex rounded-md px-3 py-1.5 text-sm {{ request()->routeIs('tenant.users.*') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Users
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('tenant.branches.index') }}"
+                               class="flex rounded-md px-3 py-1.5 text-sm {{ request()->routeIs('tenant.branches.*') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Branches
+                            </a>
+                        </li>
+                        @if($user?->hasPermission('settings.manage'))
+                        <li>
+                            <a href="{{ route('tenant.settings.integrations') }}"
+                               class="flex rounded-md px-3 py-1.5 text-sm {{ request()->routeIs('tenant.settings.integrations') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Integrations
+                            </a>
+                        </li>
+                        @endif
+                    </ul>
+                </li>
                 @endif
             </ul>
 
