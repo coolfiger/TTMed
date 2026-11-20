@@ -491,7 +491,7 @@
                 @else
                     <div class="space-y-2">
                         @foreach($queueEntries as $entry)
-                            <div class="bg-white rounded-xl border border-slate-200 px-4 py-3.5 flex items-center gap-4 hover:border-slate-300 transition">
+                            <div class="bg-white rounded-xl border {{ $entry['status'] === 'awaiting_checkout' ? 'border-purple-200' : 'border-slate-200' }} px-4 py-3.5 flex items-center gap-4 hover:border-slate-300 transition">
 
                                 {{-- Queue number --}}
                                 <div class="w-10 text-center flex-shrink-0">
@@ -527,6 +527,14 @@
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-semibold text-slate-800 truncate">{{ $entry['patientName'] }}</p>
                                     <p class="text-xs text-slate-500">{{ $entry['doctorName'] }} &middot; {{ ucfirst(str_replace('_', ' ', $entry['visitType'])) }}</p>
+                                    @if($entry['status'] === 'awaiting_checkout')
+                                    <button
+                                        wire:click="completeCheckout({{ $entry['id'] }})"
+                                        wire:confirm="Mark {{ $entry['patientName'] }} as checked out?"
+                                        class="mt-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition">
+                                        Checkout ✓
+                                    </button>
+                                    @endif
                                 </div>
 
                                 {{-- Status badge --}}
@@ -538,17 +546,6 @@
                                     {{ $entry['status'] === 'awaiting_checkout'  ? 'bg-purple-100 text-purple-800' : '' }}">
                                     {{ $entry['statusLabel'] }}
                                 </span>
-
-                                {{-- Complete checkout button (shown only when awaiting checkout) --}}
-                                @if($entry['status'] === 'awaiting_checkout')
-                                <button
-                                    wire:click="completeCheckout({{ $entry['id'] }})"
-                                    wire:confirm="Mark {{ $entry['patientName'] }} as checked out?"
-                                    class="flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition"
-                                    title="Complete checkout">
-                                    Checkout ✓
-                                </button>
-                                @endif
 
                                 {{-- Remove button --}}
                                 <button
