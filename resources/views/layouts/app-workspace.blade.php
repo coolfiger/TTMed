@@ -104,14 +104,11 @@
 
                 @if($user?->hasPermission('settings.view'))
                     <x-nav-item route="tenant.settings.index" label="Settings" />
+                    <x-nav-item route="tenant.settings.templates" label="Templates" />
                 @endif
 
                 @if($user?->hasPermission('settings.manage'))
                     <x-nav-item route="tenant.settings.integrations" label="Integrations" />
-                @endif
-
-                @if($user?->hasPermission('settings.manage') || $user?->hasPermission('settings.view'))
-                    <x-nav-item route="tenant.settings.templates" label="Templates" />
                 @endif
 
                 @if($user?->hasPermission('users.view'))
