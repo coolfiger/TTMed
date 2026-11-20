@@ -90,10 +90,6 @@
                     <x-nav-item route="tenant.staff.index" label="Staff" />
                 @endif
 
-                @if($user?->hasPermission('services.view'))
-                    <x-nav-item route="tenant.services.index" label="Services" />
-                @endif
-
                 @if($user?->hasPermission('insurance.view'))
                     <x-nav-item route="tenant.insurance.index" label="Insurance" />
                 @endif
@@ -102,7 +98,8 @@
                 @php
                     $inSettings = request()->routeIs('tenant.settings.*')
                         || request()->routeIs('tenant.users.*')
-                        || request()->routeIs('tenant.branches.*');
+                        || request()->routeIs('tenant.branches.*')
+                        || request()->routeIs('tenant.services.*');
                 @endphp
                 <li x-data="{ open: {{ $inSettings ? 'true' : 'false' }} }">
                     <button @click="open = !open"
@@ -137,6 +134,14 @@
                                 Branches
                             </a>
                         </li>
+                        @if($user?->hasPermission('services.view'))
+                        <li>
+                            <a href="{{ route('tenant.services.index') }}"
+                               class="flex rounded-md px-3 py-1.5 text-sm {{ request()->routeIs('tenant.services.*') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Services
+                            </a>
+                        </li>
+                        @endif
                         @if($user?->hasPermission('settings.manage'))
                         <li>
                             <a href="{{ route('tenant.settings.integrations') }}"
