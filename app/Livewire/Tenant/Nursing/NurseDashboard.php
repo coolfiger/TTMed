@@ -390,14 +390,21 @@ class NurseDashboard extends Component
             return;
         }
 
-        $assessment = NursingAssessment::on('tenant')
-            ->where('encounter_id', $this->activeEncounterId)
-            ->first();
-
-        if (!$assessment || !$assessment->isComplete()) {
-            $this->errorMessage = 'Mark allergies and medications as reviewed before completing.';
+        if (!$this->allergiesReviewed || !$this->medicationsReviewed) {
+            $this->errorMessage = 'Tick both review checkboxes before sending to doctor.';
             return;
         }
+
+        // Auto-save assessment with current checkbox state so the nurse
+        // doesn't have to click "Save Assessment" separately first.
+        $assessment = $this->nursingService->getOrCreateAssessment($this->activeEncounterId);
+        $this->nursingService->updateAssessment($assessment, [
+            'allergies_reviewed'   => $this->allergiesReviewed,
+            'medications_reviewed' => $this->medicationsReviewed,
+            'assessment_notes'     => $this->assessmentNotes ?: null,
+            'status'               => 'completed',
+        ]);
+        $assessment = $assessment->fresh();
 
         $entry = QueueEntry::on('tenant')
             ->where('branch_id', $this->branchId)
