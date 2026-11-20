@@ -432,6 +432,12 @@ class ReceptionDashboard extends Component
         $this->qrPin                       = '';
     }
 
+    #[On('queue-updated')]
+    public function onQueueUpdated(): void
+    {
+        $this->loadQueue();
+    }
+
     public function loadQueue(): void
     {
         $this->queueEntries = QueueEntry::on('tenant')

@@ -1,4 +1,6 @@
-<div class="flex flex-col h-full">
+<div class="flex flex-col h-full" x-data>
+
+    @livewire('tenant.reception.checkout-panel', key('checkout-panel'))
 
     {{-- Top bar --}}
     <div class="flex-shrink-0 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
@@ -529,10 +531,9 @@
                                     <p class="text-xs text-slate-500">{{ $entry['doctorName'] }} &middot; {{ ucfirst(str_replace('_', ' ', $entry['visitType'])) }}</p>
                                     @if($entry['status'] === 'awaiting_checkout')
                                     <button
-                                        wire:click="completeCheckout({{ $entry['id'] }})"
-                                        wire:confirm="Mark {{ $entry['patientName'] }} as checked out?"
+                                        wire:click="$dispatch('open-checkout', { id: {{ $entry['id'] }}, name: '{{ addslashes($entry['patientName']) }}' })"
                                         class="mt-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition">
-                                        Checkout ✓
+                                        Checkout →
                                     </button>
                                     @endif
                                 </div>
