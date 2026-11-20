@@ -7,6 +7,7 @@ use App\Services\AuditService;
 use App\Services\BackupService;
 use App\Services\CentreSettingsService;
 use App\Tenancy\TenantContext;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -101,25 +102,26 @@ class CentreSettings extends Component
         }
 
         $tenantCode = app(TenantContext::class)->get()?->code ?? 'default';
+        $disk       = Storage::disk('local');
+        $dir        = "public/tenants/{$tenantCode}/branding";
+        $disk->makeDirectory($dir);
 
         if ($this->loginLogoFile) {
-            $ext  = $this->loginLogoFile->getClientOriginalExtension();
-            $path = $this->loginLogoFile->storeAs(
-                "public/tenants/{$tenantCode}/branding",
-                "login_logo.{$ext}"
-            );
-            $settings->set('branding_login_logo_path', $path);
-            $this->hasLoginLogo = true;
+            $ext    = strtolower($this->loginLogoFile->getClientOriginalExtension());
+            $stored = $disk->putFileAs($dir, $this->loginLogoFile, "login_logo.{$ext}");
+            if ($stored) {
+                $settings->set('branding_login_logo_path', $stored);
+                $this->hasLoginLogo = true;
+            }
         }
 
         if ($this->sidebarLogoFile) {
-            $ext  = $this->sidebarLogoFile->getClientOriginalExtension();
-            $path = $this->sidebarLogoFile->storeAs(
-                "public/tenants/{$tenantCode}/branding",
-                "sidebar_logo.{$ext}"
-            );
-            $settings->set('branding_sidebar_logo_path', $path);
-            $this->hasSidebarLogo = true;
+            $ext    = strtolower($this->sidebarLogoFile->getClientOriginalExtension());
+            $stored = $disk->putFileAs($dir, $this->sidebarLogoFile, "sidebar_logo.{$ext}");
+            if ($stored) {
+                $settings->set('branding_sidebar_logo_path', $stored);
+                $this->hasSidebarLogo = true;
+            }
         }
 
         $this->loginLogoFile   = null;
@@ -133,8 +135,8 @@ class CentreSettings extends Component
         $settings = app(CentreSettingsService::class);
         $key = $type === 'login' ? 'branding_login_logo_path' : 'branding_sidebar_logo_path';
         $path = $settings->get($key);
-        if ($path && file_exists(storage_path('app/' . $path))) {
-            @unlink(storage_path('app/' . $path));
+        if ($path) {
+            Storage::disk('local')->delete($path);
         }
         $settings->set($key, '');
         if ($type === 'login') {
