@@ -264,10 +264,13 @@ class ReceptionDashboard extends Component
             priorityReason:  $this->priorityReason ?: null,
         );
 
-        app(AuditService::class)->log(
+        app(AuditService::class)->logTenant(
             'queue.checkin',
-            "Patient {$patient->display_name} checked in — Queue #{$entry->queue_number}",
-            ['queue_entry_id' => $entry->id, 'patient_id' => $patient->id]
+            'Patient',
+            $patient->id,
+            null,
+            null,
+            "Queue #{$entry->queue_number}"
         );
 
         $this->resetCheckinForm();
