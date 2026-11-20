@@ -358,76 +358,90 @@ class ReceptionDashboard extends Component
     {
         $this->checkPermission('billing.create');
 
-        $entry = QueueEntry::on('tenant')
-            ->where('branch_id', $this->branchId)
-            ->where('status', QueueEntry::STATUS_AWAITING_CHECKOUT)
-            ->find($entryId);
-
-        if (!$entry) {
-            return;
-        }
-
-        $user = auth()->guard('tenant')->user();
-
-        // Find or create a draft invoice for this encounter
-        $invoice = Invoice::on('tenant')
-            ->where('encounter_id', $entry->encounter_id)
-            ->whereIn('status', ['draft', 'finalized', 'partially_paid'])
-            ->latest()
-            ->first();
-
-        if (!$invoice) {
-            $billing = app(BillingService::class);
-            $invoice = $billing->createInvoice(
-                patientId:   $entry->patient_id,
-                branchId:    $entry->branch_id,
-                createdBy:   $user->id,
-                encounterId: $entry->encounter_id,
-            );
-
-            $service = Service::on('tenant')
-                ->where('is_active', true)
-                ->where('name', 'like', '%consultation%')
-                ->orderByRaw("CASE WHEN name LIKE '%general%' THEN 0 ELSE 1 END")
-                ->first();
-
-            if ($service) {
-                $billing->addItem(
-                    invoice:        $invoice,
-                    serviceId:      $service->id,
-                    description:    $service->name,
-                    quantity:       1,
-                    unitPriceCents: $service->price,
-                    taxRate:        $service->taxable ? (float) $service->tax_rate : 0.0,
-                    discountCents:  0,
-                );
-                $invoice->refresh();
-            }
-
-            if ($invoice->total > 0) {
-                $billing->finalizeInvoice($invoice, $user->id);
-                $invoice->refresh();
-            }
-        }
-
-        $items = $invoice->items()->get()->map(fn ($i) => [
-            'description' => $i->description,
-            'quantity'    => $i->quantity,
-            'line_total'  => $i->line_total,
-        ])->toArray();
-
+        // Open the slide-over first so any error is visible to the user
         $this->checkoutEntryId     = $entryId;
-        $this->checkoutPatientName = $entry->patient?->display_name ?? '';
-        $this->checkoutInvoiceId   = $invoice->id;
-        $this->checkoutTotal       = $invoice->total;
-        $this->checkoutAmountDue   = $invoice->amount_due;
-        $this->checkoutItems       = $items;
-        $this->checkoutAmountInput = number_format($invoice->amount_due / 100, 2);
+        $this->checkoutPatientName = '';
+        $this->checkoutInvoiceId   = null;
+        $this->checkoutTotal       = 0;
+        $this->checkoutAmountDue   = 0;
+        $this->checkoutItems       = [];
+        $this->checkoutAmountInput = '';
         $this->checkoutMethod      = 'cash';
         $this->checkoutReference   = '';
         $this->checkoutError       = '';
         $this->checkoutPaid        = false;
         $this->showCheckout        = true;
+
+        try {
+            $entry = QueueEntry::on('tenant')
+                ->where('branch_id', $this->branchId)
+                ->where('status', QueueEntry::STATUS_AWAITING_CHECKOUT)
+                ->with('patient')
+                ->find($entryId);
+
+            if (!$entry) {
+                $this->checkoutError = 'Patient not found in awaiting-checkout queue.';
+                return;
+            }
+
+            $this->checkoutPatientName = $entry->patient?->display_name ?? '';
+
+            $user = auth()->guard('tenant')->user();
+
+            $invoice = Invoice::on('tenant')
+                ->where('encounter_id', $entry->encounter_id)
+                ->whereIn('status', ['draft', 'finalized', 'partially_paid'])
+                ->latest()
+                ->first();
+
+            if (!$invoice) {
+                $billing = app(BillingService::class);
+                $invoice = $billing->createInvoice(
+                    patientId:   $entry->patient_id,
+                    branchId:    $entry->branch_id,
+                    createdBy:   $user->id,
+                    encounterId: $entry->encounter_id,
+                );
+
+                $service = Service::on('tenant')
+                    ->where('is_active', true)
+                    ->where('name', 'like', '%consultation%')
+                    ->orderByRaw("CASE WHEN name LIKE '%general%' THEN 0 ELSE 1 END")
+                    ->first();
+
+                if ($service) {
+                    $billing->addItem(
+                        invoice:        $invoice,
+                        serviceId:      $service->id,
+                        description:    $service->name,
+                        quantity:       1,
+                        unitPriceCents: $service->price,
+                        taxRate:        $service->taxable ? (float) $service->tax_rate : 0.0,
+                        discountCents:  0,
+                    );
+                    $invoice->refresh();
+                }
+
+                if ($invoice->total > 0) {
+                    $billing->finalizeInvoice($invoice, $user->id);
+                    $invoice->refresh();
+                }
+            }
+
+            $items = $invoice->items()->get()->map(fn ($i) => [
+                'description' => $i->description,
+                'quantity'    => $i->quantity,
+                'line_total'  => $i->line_total,
+            ])->toArray();
+
+            $this->checkoutInvoiceId   = $invoice->id;
+            $this->checkoutTotal       = $invoice->total;
+            $this->checkoutAmountDue   = $invoice->amount_due;
+            $this->checkoutItems       = $items;
+            $this->checkoutAmountInput = number_format($invoice->amount_due / 100, 2);
+        } catch (\Throwable $e) {
+            $this->checkoutError = 'Could not load invoice: ' . $e->getMessage();
+        }
     }
 
     public function collectCheckoutPayment(): void
