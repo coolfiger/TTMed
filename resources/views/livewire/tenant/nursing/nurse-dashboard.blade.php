@@ -258,29 +258,138 @@
                     @if($activeTab === 'assessment')
                         <form wire:submit="saveAssessment" class="p-6 space-y-5">
 
+                            {{-- ── ALLERGIES ── --}}
                             <div class="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
-                                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Pre-consultation Checklist</h3>
+                                <div class="flex items-center justify-between mb-1">
+                                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Known Allergies</h3>
+                                    <button type="button" wire:click="$set('showAddAllergy', true)"
+                                            class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        Add
+                                    </button>
+                                </div>
 
-                                <label class="flex items-center gap-4 p-3 rounded-lg cursor-pointer transition
+                                @if(count($patientAllergies) > 0)
+                                    <div class="space-y-1.5">
+                                        @foreach($patientAllergies as $a)
+                                            <div class="flex items-center gap-3 rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-sm">
+                                                <span class="font-medium text-red-800">{{ $a['allergen'] }}</span>
+                                                @if($a['reaction'])
+                                                    <span class="text-red-600 text-xs">→ {{ $a['reaction'] }}</span>
+                                                @endif
+                                                <span class="ml-auto text-xs font-semibold
+                                                    {{ $a['severity'] === 'Life-threatening' ? 'text-red-700' :
+                                                       ($a['severity'] === 'Severe' ? 'text-orange-700' : 'text-amber-700') }}">
+                                                    {{ $a['severity'] }}
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-xs text-slate-400 italic">No known allergies on record.</p>
+                                @endif
+
+                                @if($showAddAllergy)
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 mt-2">
+                                        <p class="text-xs font-semibold text-slate-600">Add Allergy</p>
+                                        @error('newAllergen') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div class="col-span-2">
+                                                <input wire:model="newAllergen" type="text" placeholder="Allergen *"
+                                                       class="w-full rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                            </div>
+                                            <input wire:model="newAllergyReaction" type="text" placeholder="Reaction"
+                                                   class="rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                            <select wire:model="newAllergySeverity"
+                                                    class="rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                                <option value="mild">Mild</option>
+                                                <option value="moderate">Moderate</option>
+                                                <option value="severe">Severe</option>
+                                                <option value="life_threatening">Life-threatening</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex gap-2 pt-1">
+                                            <button type="button" wire:click="addAllergy"
+                                                    class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500">Save</button>
+                                            <button type="button" wire:click="$set('showAddAllergy', false)"
+                                                    class="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100">Cancel</button>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <label class="flex items-center gap-4 p-3 rounded-lg cursor-pointer transition mt-2
                                               {{ $allergiesReviewed ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-50 border border-slate-200 hover:border-slate-300' }}">
                                     <input wire:model.live="allergiesReviewed" type="checkbox"
                                            class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                                     <div>
                                         <p class="text-sm font-medium text-slate-800">Allergies reviewed with patient</p>
-                                        <p class="text-xs text-slate-500">Confirm patient's known allergies are documented</p>
+                                        <p class="text-xs text-slate-500">Tick to confirm allergy list is accurate</p>
                                     </div>
                                     @if($allergiesReviewed)
                                         <svg class="w-5 h-5 text-emerald-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                     @endif
                                 </label>
+                            </div>
 
-                                <label class="flex items-center gap-4 p-3 rounded-lg cursor-pointer transition
+                            {{-- ── MEDICATIONS ── --}}
+                            <div class="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Current Medications</h3>
+                                    <button type="button" wire:click="$set('showAddMedication', true)"
+                                            class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        Add
+                                    </button>
+                                </div>
+
+                                @if(count($patientMedications) > 0)
+                                    <div class="space-y-1.5">
+                                        @foreach($patientMedications as $m)
+                                            <div class="flex items-center gap-3 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-sm">
+                                                <span class="font-medium text-blue-800">{{ $m['name'] }}</span>
+                                                @if($m['dosage'])
+                                                    <span class="text-blue-600 text-xs">{{ $m['dosage'] }}</span>
+                                                @endif
+                                                @if($m['frequency'])
+                                                    <span class="ml-auto text-xs text-slate-500">{{ $m['frequency'] }}</span>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-xs text-slate-400 italic">No current medications on record.</p>
+                                @endif
+
+                                @if($showAddMedication)
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 mt-2">
+                                        <p class="text-xs font-semibold text-slate-600">Add Medication</p>
+                                        @error('newMedName') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div class="col-span-2">
+                                                <input wire:model="newMedName" type="text" placeholder="Medication name *"
+                                                       class="w-full rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                            </div>
+                                            <input wire:model="newMedDosage" type="text" placeholder="Dosage (e.g. 10mg)"
+                                                   class="rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                            <input wire:model="newMedFrequency" type="text" placeholder="Frequency (e.g. twice daily)"
+                                                   class="rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        </div>
+                                        <div class="flex gap-2 pt-1">
+                                            <button type="button" wire:click="addMedication"
+                                                    class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500">Save</button>
+                                            <button type="button" wire:click="$set('showAddMedication', false)"
+                                                    class="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100">Cancel</button>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <label class="flex items-center gap-4 p-3 rounded-lg cursor-pointer transition mt-2
                                               {{ $medicationsReviewed ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-50 border border-slate-200 hover:border-slate-300' }}">
                                     <input wire:model.live="medicationsReviewed" type="checkbox"
                                            class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                                     <div>
-                                        <p class="text-sm font-medium text-slate-800">Current medications reviewed</p>
-                                        <p class="text-xs text-slate-500">Confirm patient's medication list is up to date</p>
+                                        <p class="text-sm font-medium text-slate-800">Medications reviewed with patient</p>
+                                        <p class="text-xs text-slate-500">Tick to confirm medication list is up to date</p>
                                     </div>
                                     @if($medicationsReviewed)
                                         <svg class="w-5 h-5 text-emerald-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>

@@ -5,6 +5,8 @@ namespace App\Livewire\Tenant\Nursing;
 use App\Models\Tenant\Encounter;
 use App\Models\Tenant\NursingAssessment;
 use App\Models\Tenant\NursingProcedure;
+use App\Models\Tenant\PatientAllergy;
+use App\Models\Tenant\PatientMedication;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\VitalSign;
 use App\Services\NursingService;
@@ -52,6 +54,20 @@ class NurseDashboard extends Component
     public bool   $medicationsReviewed = false;
     public string $chiefComplaint      = '';
     public string $assessmentNotes     = '';
+
+    // Patient allergies (loaded on patient select)
+    public array  $patientAllergies    = [];
+    public bool   $showAddAllergy      = false;
+    public string $newAllergen         = '';
+    public string $newAllergyReaction  = '';
+    public string $newAllergySeverity  = 'mild';
+
+    // Patient medications (loaded on patient select)
+    public array  $patientMedications  = [];
+    public bool   $showAddMedication   = false;
+    public string $newMedName          = '';
+    public string $newMedDosage        = '';
+    public string $newMedFrequency     = '';
 
     // -------------------------------------------------------------------------
     // Procedure form
@@ -163,6 +179,39 @@ class NurseDashboard extends Component
                 $this->assessmentNotes     = $assessment->assessment_notes ?? '';
             }
         }
+
+        $this->loadPatientAllergiesAndMeds();
+    }
+
+    private function loadPatientAllergiesAndMeds(): void
+    {
+        if (!$this->activePatientId) return;
+
+        $this->patientAllergies = PatientAllergy::on('tenant')
+            ->where('patient_id', $this->activePatientId)
+            ->where('is_active', true)
+            ->orderBy('severity', 'desc')
+            ->get(['id', 'allergen', 'reaction', 'severity'])
+            ->map(fn ($a) => [
+                'id'       => $a->id,
+                'allergen' => $a->allergen,
+                'reaction' => $a->reaction ?? '',
+                'severity' => $a->severity_label,
+            ])
+            ->toArray();
+
+        $this->patientMedications = PatientMedication::on('tenant')
+            ->where('patient_id', $this->activePatientId)
+            ->where('is_current', true)
+            ->orderBy('medication_name')
+            ->get(['id', 'medication_name', 'dosage', 'frequency'])
+            ->map(fn ($m) => [
+                'id'        => $m->id,
+                'name'      => $m->medication_name,
+                'dosage'    => $m->dosage ?? '',
+                'frequency' => $m->frequency ?? '',
+            ])
+            ->toArray();
     }
 
     // -------------------------------------------------------------------------
@@ -237,6 +286,62 @@ class NurseDashboard extends Component
         ]);
 
         $this->successMessage = 'Assessment saved.';
+    }
+
+    public function addAllergy(): void
+    {
+        $this->checkPermission('nursing.assess');
+
+        $this->validate([
+            'newAllergen'        => 'required|string|max:200',
+            'newAllergyReaction' => 'nullable|string|max:300',
+            'newAllergySeverity' => 'required|in:mild,moderate,severe,life_threatening',
+        ]);
+
+        if (!$this->activePatientId) return;
+
+        PatientAllergy::on('tenant')->create([
+            'patient_id'  => $this->activePatientId,
+            'allergen'    => $this->newAllergen,
+            'reaction'    => $this->newAllergyReaction ?: null,
+            'severity'    => $this->newAllergySeverity,
+            'is_active'   => true,
+            'recorded_by' => Auth::guard('tenant')->id(),
+        ]);
+
+        $this->newAllergen        = '';
+        $this->newAllergyReaction = '';
+        $this->newAllergySeverity = 'mild';
+        $this->showAddAllergy     = false;
+        $this->loadPatientAllergiesAndMeds();
+    }
+
+    public function addMedication(): void
+    {
+        $this->checkPermission('nursing.assess');
+
+        $this->validate([
+            'newMedName'      => 'required|string|max:200',
+            'newMedDosage'    => 'nullable|string|max:100',
+            'newMedFrequency' => 'nullable|string|max:100',
+        ]);
+
+        if (!$this->activePatientId) return;
+
+        PatientMedication::on('tenant')->create([
+            'patient_id'      => $this->activePatientId,
+            'medication_name' => $this->newMedName,
+            'dosage'          => $this->newMedDosage ?: null,
+            'frequency'       => $this->newMedFrequency ?: null,
+            'is_current'      => true,
+            'recorded_by'     => Auth::guard('tenant')->id(),
+        ]);
+
+        $this->newMedName         = '';
+        $this->newMedDosage       = '';
+        $this->newMedFrequency    = '';
+        $this->showAddMedication  = false;
+        $this->loadPatientAllergiesAndMeds();
     }
 
     // -------------------------------------------------------------------------
@@ -350,6 +455,16 @@ class NurseDashboard extends Component
         $this->successMessage      = '';
         $this->errorMessage        = '';
         $this->showProcedureForm   = false;
+        $this->patientAllergies    = [];
+        $this->patientMedications  = [];
+        $this->showAddAllergy      = false;
+        $this->showAddMedication   = false;
+        $this->newAllergen         = '';
+        $this->newAllergyReaction  = '';
+        $this->newAllergySeverity  = 'mild';
+        $this->newMedName          = '';
+        $this->newMedDosage        = '';
+        $this->newMedFrequency     = '';
     }
 
     private function resetVitalsForm(): void
