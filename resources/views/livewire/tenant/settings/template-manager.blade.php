@@ -387,10 +387,12 @@
   <div
     class="flex flex-col flex-1 min-h-0"
     x-data="{
+      fs: false,
       init() {
         const bodyHtml = @js($bodyHtml);
         const gjsData  = @js($gjsData ? json_decode($gjsData, true) : null);
         this.$nextTick(() => setTimeout(() => window.boot(gjsData, bodyHtml), 80));
+        this.$watch('fs', () => setTimeout(() => window._ttGjsEditor && window._ttGjsEditor.refresh(), 80));
       },
       async doSave() {
         if (!window._ttGjsEditor) { return; }
@@ -398,6 +400,7 @@
         await $wire.saveWithBody(r.html, r.css, r.gjsJson);
       }
     }"
+    :class="fs ? 'fixed inset-0 z-50 bg-white' : ''"
   >
 
     {{-- System default notice --}}
@@ -413,6 +416,14 @@
 
       <button id="gjs-undo-btn" onclick="window.gjsUndo()" title="Undo" class="text-sm">↩</button>
       <button id="gjs-redo-btn" onclick="window.gjsRedo()" title="Redo" class="text-sm">↪</button>
+
+      <div class="w-px h-5 bg-slate-700 mx-1"></div>
+
+      {{-- Fullscreen toggle --}}
+      <button @click="fs = !fs" :title="fs ? 'Exit fullscreen' : 'Fullscreen'"
+              class="text-slate-300 hover:text-white px-1" style="font-size:15px; line-height:1;">
+        <span x-text="fs ? '✕' : '⛶'"></span>
+      </button>
 
       <div class="w-px h-5 bg-slate-700 mx-1"></div>
 
