@@ -283,6 +283,35 @@ class ReceptionDashboard extends Component
         session()->flash('success', "{$patient->display_name} checked in — Queue #{$entry->queue_number}.");
     }
 
+    public function removeFromQueue(int $entryId): void
+    {
+        $this->checkPermission('queue.checkin');
+
+        $entry = QueueEntry::on('tenant')
+            ->forBranchToday($this->branchId)
+            ->active()
+            ->find($entryId);
+
+        if (!$entry) {
+            return;
+        }
+
+        $userId = auth()->guard('tenant')->id();
+
+        app(QueueService::class)->transition($entry, QueueEntry::STATUS_CANCELLED, $userId, 'Removed by receptionist');
+
+        app(AuditService::class)->logTenant(
+            'queue.removed',
+            'Patient',
+            $entry->patient_id,
+            null,
+            null,
+            "Queue #{$entry->queue_number} cancelled"
+        );
+
+        $this->loadQueue();
+    }
+
     public function cancelCheckin(): void
     {
         $this->resetCheckinForm();
