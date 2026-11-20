@@ -220,6 +220,18 @@
         try { editor.loadProjectData(gjsData); } catch (e) {}
       }
 
+      // Enable scrolling on the canvas iframe so long documents scroll naturally
+      try {
+        var frameEl = editor.Canvas.getFrameEl();
+        if (frameEl) {
+          frameEl.setAttribute('scrolling', 'yes');
+          frameEl.style.overflow = 'auto';
+        }
+        canvasDoc.documentElement.style.overflow = 'auto';
+        canvasDoc.body.style.overflow = 'auto';
+        canvasDoc.body.style.height = 'auto';
+      } catch (e) {}
+
       // Default to 75% so the full A4 document is visible without scrolling
       editor.Canvas.setZoom(75);
       var label = document.getElementById('gjs-zoom-label');
