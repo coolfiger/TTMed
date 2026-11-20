@@ -108,6 +108,9 @@
 
                 @if($user?->hasPermission('settings.manage'))
                     <x-nav-item route="tenant.settings.integrations" label="Integrations" />
+                @endif
+
+                @if($user?->hasAnyPermission(['settings.manage', 'settings.view']))
                     <x-nav-item route="tenant.settings.templates" label="Templates" />
                 @endif
 
