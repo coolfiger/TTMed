@@ -20,4 +20,9 @@ class InsuranceProvider extends Model
     ];
 
     protected $casts = ['is_active' => 'boolean'];
+
+    public function formTemplates(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(InsuranceFormTemplate::class);
+    }
 }

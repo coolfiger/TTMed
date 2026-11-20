@@ -27,6 +27,7 @@ use App\Livewire\Tenant\Services\ServiceList;
 use App\Livewire\Tenant\Services\ServiceForm;
 use App\Livewire\Tenant\Insurance\InsuranceList;
 use App\Livewire\Tenant\Insurance\InsuranceForm;
+use App\Http\Controllers\Tenant\InsuranceFormTemplateController;
 use App\Livewire\Tenant\Reception\ReceptionDashboard;
 use App\Livewire\Tenant\Reception\QueueManager;
 use App\Livewire\Tenant\Nursing\NurseDashboard;
@@ -190,6 +191,11 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         Route::middleware('permission:insurance.manage')->group(function () {
             Route::get('/insurance/create',              InsuranceForm::class)->name('tenant.insurance.create');
             Route::get('/insurance/{provider}/edit',     InsuranceForm::class)->name('tenant.insurance.edit');
+            Route::post('/insurance/{provider}/templates',      [InsuranceFormTemplateController::class, 'upload'])->name('tenant.insurance.templates.upload');
+            Route::delete('/insurance/templates/{template}',   [InsuranceFormTemplateController::class, 'destroy'])->name('tenant.insurance.templates.destroy');
+        });
+        Route::middleware('permission:insurance.view')->group(function () {
+            Route::get('/insurance/templates/{template}/download', [InsuranceFormTemplateController::class, 'download'])->name('tenant.insurance.templates.download');
         });
 
         // Reception and queue
