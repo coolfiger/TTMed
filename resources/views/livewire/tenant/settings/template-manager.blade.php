@@ -366,7 +366,7 @@
       init() {
         const bodyHtml = @js($bodyHtml);
         const gjsData  = @js($gjsData ? json_decode($gjsData, true) : null);
-        this.$nextTick(() => setTimeout(() => boot(gjsData, bodyHtml), 80));
+        this.$nextTick(() => setTimeout(() => window.boot(gjsData, bodyHtml), 80));
       },
       async doSave() {
         if (!window._ttGjsEditor) { return; }
