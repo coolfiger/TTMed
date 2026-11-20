@@ -92,7 +92,7 @@
                         <button wire:click="completeAndSendToDoctor"
                                 wire:confirm="Mark nursing complete and send this patient to the doctor?"
                                 wire:loading.attr="disabled"
-                                class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-60">
+                                class="btn btn-success">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                             <span wire:loading.remove wire:target="completeAndSendToDoctor">Send to Doctor</span>
                             <span wire:loading wire:target="completeAndSendToDoctor">Sending...</span>
@@ -127,25 +127,25 @@
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Systolic <span class="text-slate-400 font-normal">mmHg</span></label>
                                         <input wire:model="systolic" type="number" min="50" max="300"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         @error('systolic') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Diastolic <span class="text-slate-400 font-normal">mmHg</span></label>
                                         <input wire:model="diastolic" type="number" min="20" max="200"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         @error('diastolic') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Pulse <span class="text-slate-400 font-normal">bpm</span></label>
                                         <input wire:model="pulse" type="number" min="20" max="300"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         @error('pulse') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Resp. Rate <span class="text-slate-400 font-normal">br/min</span></label>
                                         <input wire:model="respiratoryRate" type="number" min="1" max="60"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         @error('respiratoryRate') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
@@ -158,17 +158,17 @@
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">SpO₂ <span class="text-slate-400 font-normal">%</span></label>
                                         <input wire:model="oxygenSat" type="number" step="0.1" min="50" max="100"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Temp <span class="text-slate-400 font-normal">°C</span></label>
                                         <input wire:model="temperature" type="number" step="0.1" min="30" max="45"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Site</label>
                                         <select wire:model="tempSite"
-                                                class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
                                             <option value="oral">Oral</option>
                                             <option value="axillary">Axillary</option>
                                             <option value="rectal">Rectal</option>
@@ -178,7 +178,7 @@
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Pain Score <span class="text-slate-400 font-normal">0–10</span></label>
                                         <input wire:model="painScore" type="number" min="0" max="10"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                 </div>
                             </div>
@@ -190,12 +190,12 @@
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Weight <span class="text-slate-400 font-normal">kg</span></label>
                                         <input wire:model.live="weightKg" type="number" step="0.1" min="0.5" max="500"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Height <span class="text-slate-400 font-normal">cm</span></label>
                                         <input wire:model.live="heightCm" type="number" step="0.1" min="20" max="250"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">BMI <span class="text-slate-400 font-normal">(auto)</span></label>
@@ -214,12 +214,12 @@
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Blood Glucose <span class="text-slate-400 font-normal">mmol/L</span></label>
                                         <input wire:model="bloodGlucose" type="number" step="0.1" min="0.5" max="50"
-                                               class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Timing</label>
                                         <select wire:model="glucoseTiming"
-                                                class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
                                             <option value="fasting">Fasting</option>
                                             <option value="random">Random</option>
                                             <option value="post_prandial">Post-prandial</option>
@@ -231,7 +231,7 @@
                             <div class="bg-white rounded-xl border border-slate-200 p-5">
                                 <label class="block text-xs font-medium text-slate-600 mb-1.5">Nursing Notes</label>
                                 <textarea wire:model="vitalsNotes" rows="2"
-                                          class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 resize-none"
                                           placeholder="Any observations..."></textarea>
                             </div>
 
@@ -240,12 +240,12 @@
                                 <div class="flex gap-3">
                                     <button type="submit"
                                             wire:loading.attr="disabled"
-                                            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-60">
+                                            class="btn btn-primary">
                                         <span wire:loading.remove wire:target="saveVitals">Save Vitals</span>
                                         <span wire:loading wire:target="saveVitals">Saving...</span>
                                     </button>
                                     <button type="button" wire:click="$set('activeTab', 'assessment')"
-                                            class="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-xl transition">
+                                            class="btn btn-secondary">
                                         Next: Assessment
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                     </button>
@@ -296,12 +296,12 @@
                                         <div class="grid grid-cols-2 gap-2">
                                             <div class="col-span-2">
                                                 <input wire:model="newAllergen" type="text" placeholder="Allergen *"
-                                                       class="w-full rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                                       class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                             </div>
                                             <input wire:model="newAllergyReaction" type="text" placeholder="Reaction"
-                                                   class="rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                                   class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                             <select wire:model="newAllergySeverity"
-                                                    class="rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                                    class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
                                                 <option value="mild">Mild</option>
                                                 <option value="moderate">Moderate</option>
                                                 <option value="severe">Severe</option>
@@ -310,9 +310,9 @@
                                         </div>
                                         <div class="flex gap-2 pt-1">
                                             <button type="button" wire:click="addAllergy"
-                                                    class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500">Save</button>
+                                                    class="btn btn-primary btn-sm">Save</button>
                                             <button type="button" wire:click="$set('showAddAllergy', false)"
-                                                    class="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100">Cancel</button>
+                                                    class="btn btn-secondary btn-sm">Cancel</button>
                                         </div>
                                     </div>
                                 @endif
@@ -367,18 +367,18 @@
                                         <div class="grid grid-cols-2 gap-2">
                                             <div class="col-span-2">
                                                 <input wire:model="newMedName" type="text" placeholder="Medication name *"
-                                                       class="w-full rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                                       class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                             </div>
                                             <input wire:model="newMedDosage" type="text" placeholder="Dosage (e.g. 10mg)"
-                                                   class="rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                                   class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                             <input wire:model="newMedFrequency" type="text" placeholder="Frequency (e.g. twice daily)"
-                                                   class="rounded-md border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                                   class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         </div>
                                         <div class="flex gap-2 pt-1">
                                             <button type="button" wire:click="addMedication"
-                                                    class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500">Save</button>
+                                                    class="btn btn-primary btn-sm">Save</button>
                                             <button type="button" wire:click="$set('showAddMedication', false)"
-                                                    class="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100">Cancel</button>
+                                                    class="btn btn-secondary btn-sm">Cancel</button>
                                         </div>
                                     </div>
                                 @endif
@@ -400,7 +400,7 @@
                             <div class="bg-white rounded-xl border border-slate-200 p-5">
                                 <label class="block text-xs font-medium text-slate-600 mb-1.5">Assessment Notes</label>
                                 <textarea wire:model="assessmentNotes" rows="4"
-                                          class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 resize-none"
                                           placeholder="Nursing observations, patient concerns, additional notes..."></textarea>
                             </div>
 
@@ -412,21 +412,21 @@
 
                             <div class="flex items-center justify-between">
                                 <button type="button" wire:click="$set('activeTab', 'vitals')"
-                                        class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
+                                        class="btn btn-ghost">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                     Back to Vitals
                                 </button>
                                 <div class="flex gap-3">
                                     <button type="submit"
                                             wire:loading.attr="disabled"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-60">
+                                            class="btn btn-primary">
                                         <span wire:loading.remove wire:target="saveAssessment">Save Assessment</span>
                                         <span wire:loading wire:target="saveAssessment">Saving...</span>
                                     </button>
                                     <button type="button" wire:click="completeAndSendToDoctor"
                                             wire:confirm="Send this patient to the doctor now?"
                                             @disabled(!$allergiesReviewed || !$medicationsReviewed)
-                                            class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+                                            class="btn btn-success">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                         Send to Doctor
                                     </button>
@@ -442,7 +442,7 @@
                             @if(!$showProcedureForm)
                                 <div class="flex justify-end">
                                     <button wire:click="$set('showProcedureForm', true)"
-                                            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition">
+                                            class="btn btn-primary">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                         Add Procedure
                                     </button>
@@ -455,7 +455,7 @@
                                         <div>
                                             <label class="block text-xs font-medium text-slate-600 mb-1.5">Type</label>
                                             <select wire:model="procedureType"
-                                                    class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
                                                 <option value="">Select type...</option>
                                                 @foreach(\App\Models\Tenant\NursingProcedure::TYPES as $key => $label)
                                                     <option value="{{ $key }}">{{ $label }}</option>
@@ -466,32 +466,32 @@
                                         <div>
                                             <label class="block text-xs font-medium text-slate-600 mb-1.5">Name / Description</label>
                                             <input wire:model="procedureName" type="text" maxlength="200"
-                                                   class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                             @error('procedureName') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div>
                                             <label class="block text-xs font-medium text-slate-600 mb-1.5">Site</label>
                                             <input wire:model="procedureSite" type="text"
-                                                   class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         </div>
                                         <div>
                                             <label class="block text-xs font-medium text-slate-600 mb-1.5">Outcome</label>
                                             <input wire:model="procedureOutcome" type="text"
-                                                   class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                                                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         </div>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Details</label>
                                         <textarea wire:model="procedureDetails" rows="2"
-                                                  class="w-full rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                                                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 resize-none"></textarea>
                                     </div>
                                     <div class="flex justify-end gap-3">
                                         <button type="button" wire:click="$set('showProcedureForm', false)"
-                                                class="text-sm text-slate-500 hover:text-slate-700 px-4 py-2">
+                                                class="btn btn-secondary">
                                             Cancel
                                         </button>
                                         <button type="submit"
-                                                class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition">
+                                                class="btn btn-primary">
                                             Save Procedure
                                         </button>
                                     </div>

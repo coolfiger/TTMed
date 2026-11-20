@@ -8,7 +8,7 @@
         </div>
         <div class="flex items-center gap-3">
             <select wire:change="switchBranch($event.target.value)"
-                    class="text-sm rounded-lg border-slate-300 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    class="text-sm rounded-lg border border-slate-300 bg-white px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
                 @foreach($branches as $b)
                     <option value="{{ $b->id }}" {{ $b->id == $branchId ? 'selected' : '' }}>{{ $b->name }}</option>
                 @endforeach
@@ -317,7 +317,7 @@
                                 <div>
                                     <label class="block text-xs font-medium text-slate-600 mb-1.5">Assign Doctor <span class="text-slate-400 font-normal">(optional)</span></label>
                                     <select wire:model="selectedDoctorId"
-                                            class="w-full text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500">
+                                            class="w-full text-sm rounded-lg border border-slate-300 bg-white px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
                                         <option value="0">— Unassigned —</option>
                                         @foreach($activeDoctors as $doc)
                                             <option value="{{ $doc->id }}">{{ $doc->staffProfile?->full_name }}</option>
@@ -329,7 +329,7 @@
                                     <label class="block text-xs font-medium text-slate-600 mb-1.5">Chief Complaint <span class="text-slate-400 font-normal">(optional)</span></label>
                                     <input wire:model="chiefComplaint" type="text"
                                            placeholder="Reason for visit..."
-                                           class="w-full text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500" />
+                                           class="w-full text-sm rounded-lg border border-slate-300 bg-white px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                 </div>
 
                                 <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 transition">
