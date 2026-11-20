@@ -6,6 +6,7 @@
     <title>{{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? config('app.name') }} – @yield('title', 'Dashboard')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    @stack('head')
 </head>
 <body class="h-full bg-slate-50">
 
@@ -134,6 +135,7 @@
 
 </div>
 
+@stack('body-scripts')
 @livewireScripts
 </body>
 </html>

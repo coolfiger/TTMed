@@ -109,6 +109,37 @@ class DocumentTemplateService
     }
 
     /**
+     * Replace tokens in a template's body_html with actual values and return
+     * a full HTML document ready for DOMPDF.
+     *
+     * Token map keys: branch_name, branch_address, branch_phone, branch_email,
+     * patient_name, patient_number, patient_dob, patient_gender,
+     * doctor_name, date, document_number, content, logo_url.
+     */
+    public function renderBody(DocumentTemplate $template, array $tokens = []): string
+    {
+        $body = $template->body_html ?? '';
+        if (!$body) {
+            return '';
+        }
+
+        foreach ($tokens as $key => $value) {
+            $body = str_replace('{{' . $key . '}}', e((string) ($value ?? '')), $body);
+        }
+
+        // Strip any remaining unresolved tokens rather than show raw {{...}} in PDF
+        $body = preg_replace('/\{\{[a-z_]+\}\}/', '', $body);
+
+        $baseStyle = "* { margin:0; padding:0; box-sizing:border-box; }"
+            . " body { font-family:'DejaVu Sans',sans-serif; font-size:11px; color:#1a1a2e; background:#fff; }";
+
+        return "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"
+            . "<meta charset=\"UTF-8\">\n"
+            . "<style>{$baseStyle}</style>\n"
+            . "</head>\n<body>\n{$body}\n</body>\n</html>";
+    }
+
+    /**
      * Render the branch detail block for use in headers/footers.
      */
     public function branchBlock(?Branch $branch): string

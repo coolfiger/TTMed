@@ -24,6 +24,7 @@ class DocumentTemplate extends Model
         'name', 'type', 'branch_id', 'is_default', 'is_active',
         'logo_path', 'primary_color', 'font_family',
         'header_html', 'footer_html', 'custom_css',
+        'body_html', 'gjs_data',
         'watermark_enabled', 'watermark_text', 'watermark_opacity',
         'show_branch_header', 'show_branch_footer',
         'page_size', 'orientation',
@@ -38,6 +39,7 @@ class DocumentTemplate extends Model
         'watermark_opacity' => 'float',
         'show_branch_header'=> 'boolean',
         'show_branch_footer'=> 'boolean',
+        'gjs_data'          => 'array',
     ];
 
     public function branch(): BelongsTo

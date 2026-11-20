@@ -5,6 +5,7 @@ namespace App\Livewire\Tenant\Settings;
 use App\Models\Tenant\Branch;
 use App\Models\Tenant\DocumentTemplate;
 use App\Services\AuditService;
+use App\Support\DefaultTemplates;
 use App\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -18,11 +19,10 @@ class TemplateManager extends Component
 
     public string $activeTypeTab = 'prescription';
 
-    // Editor state
     public bool   $editing   = false;
     public ?int   $editingId = null;
 
-    // Form fields
+    // Metadata fields
     public string $name            = '';
     public string $type            = 'prescription';
     public string $branchId        = '';
@@ -30,21 +30,28 @@ class TemplateManager extends Component
     public bool   $isActive        = true;
     public string $primaryColor    = '#1e40af';
     public string $fontFamily      = 'DejaVu Sans';
-    public string $headerHtml      = '';
-    public string $footerHtml      = '';
-    public string $customCss       = '';
+    public string $pageSize        = 'A4';
+    public string $orientation     = 'portrait';
+    public string $marginTop       = '20';
+    public string $marginRight     = '20';
+    public string $marginBottom    = '20';
+    public string $marginLeft      = '20';
     public bool   $watermarkEnabled = false;
     public string $watermarkText    = '';
     public string $watermarkOpacity = '0.08';
     public bool   $showBranchHeader = true;
     public bool   $showBranchFooter = false;
-    public string $pageSize         = 'A4';
-    public string $orientation      = 'portrait';
-    public string $marginTop        = '20';
-    public string $marginRight      = '20';
-    public string $marginBottom     = '20';
-    public string $marginLeft       = '20';
-    public        $logoFile         = null;
+
+    // Legacy HTML fields (kept for compatibility)
+    public string $headerHtml = '';
+    public string $footerHtml = '';
+    public string $customCss  = '';
+
+    // GrapesJS editor
+    public string $bodyHtml = '';
+    public string $gjsData  = ''; // JSON string
+
+    public        $logoFile = null;
 
     public string $successMessage = '';
     public string $errorMessage   = '';
@@ -61,8 +68,13 @@ class TemplateManager extends Component
     {
         $this->resetForm();
         $this->type    = $this->activeTypeTab;
+        $this->name    = 'New ' . (DocumentTemplate::TYPES[$this->activeTypeTab] ?? 'Template');
         $this->editing = true;
         $this->editingId = null;
+        $this->bodyHtml = DefaultTemplates::forType($this->type);
+        $this->gjsData  = '';
+
+        $this->dispatch('gjs:load', gjsData: null, bodyHtml: $this->bodyHtml);
     }
 
     public function editTemplate(int $id): void
@@ -92,9 +104,23 @@ class TemplateManager extends Component
         $this->marginBottom     = (string) $template->margin_bottom;
         $this->marginLeft       = (string) $template->margin_left;
         $this->editing          = true;
+
+        $this->bodyHtml = $template->body_html
+            ?? DefaultTemplates::forType($template->type);
+
+        $gjsArr = $template->gjs_data;
+        $this->gjsData = ($gjsArr && count($gjsArr)) ? json_encode($gjsArr) : '';
+
+        $this->dispatch('gjs:load',
+            gjsData:  $gjsArr ?: null,
+            bodyHtml: $this->bodyHtml
+        );
     }
 
-    public function save(): void
+    /**
+     * Called from Alpine.js inside the GrapesJS editor when the user clicks Save.
+     */
+    public function saveWithBody(string $html, string $css, string $gjsJson): void
     {
         $user = Auth::guard('tenant')->user();
         if (!$user || !$user->hasPermission('settings.manage')) {
@@ -111,25 +137,35 @@ class TemplateManager extends Component
             'marginRight'     => 'nullable|integer|min:5|max:60',
             'marginBottom'    => 'nullable|integer|min:5|max:60',
             'marginLeft'      => 'nullable|integer|min:5|max:60',
-            'logoFile'        => 'nullable|image|max:2048',
         ]);
 
+        // Build self-contained body HTML (CSS embedded)
+        $fullBodyHtml = $css ? "<style>\n{$css}\n</style>\n{$html}" : $html;
+
+        $gjsArr = [];
+        if ($gjsJson) {
+            $decoded = json_decode($gjsJson, true);
+            if (is_array($decoded)) {
+                $gjsArr = $decoded;
+            }
+        }
+
+        // Handle logo upload
         $logoPath = null;
         if ($this->logoFile) {
             $tenantCode = app(TenantContext::class)->get()?->code;
             $ext        = $this->logoFile->getClientOriginalExtension();
             $logoPath   = $this->logoFile->storeAs(
                 "public/tenants/{$tenantCode}/templates",
-                "logo_" . time() . ".{$ext}"
+                'logo_' . time() . '.' . $ext
             );
         }
 
-        // If marking as default, unset other defaults for same type+branch
         if ($this->isDefault) {
             DocumentTemplate::on('tenant')
                 ->where('type', $this->type)
                 ->where('branch_id', $this->branchId ?: null)
-                ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
+                ->when($this->editingId, fn($q) => $q->where('id', '!=', $this->editingId))
                 ->update(['is_default' => false]);
         }
 
@@ -141,9 +177,8 @@ class TemplateManager extends Component
             'is_active'         => $this->isActive,
             'primary_color'     => $this->primaryColor ?: '#1e40af',
             'font_family'       => $this->fontFamily ?: 'DejaVu Sans',
-            'header_html'       => $this->headerHtml ?: null,
-            'footer_html'       => $this->footerHtml ?: null,
-            'custom_css'        => $this->customCss ?: null,
+            'body_html'         => $fullBodyHtml,
+            'gjs_data'          => $gjsArr ?: null,
             'watermark_enabled' => $this->watermarkEnabled,
             'watermark_text'    => $this->watermarkText ?: null,
             'watermark_opacity' => (float) ($this->watermarkOpacity ?: 0.08),
@@ -164,7 +199,7 @@ class TemplateManager extends Component
 
         if ($this->editingId) {
             DocumentTemplate::on('tenant')->findOrFail($this->editingId)->update($data);
-            $this->successMessage = 'Template updated.';
+            $this->successMessage = 'Template saved.';
         } else {
             DocumentTemplate::on('tenant')->create($data);
             $this->successMessage = 'Template created.';
@@ -212,6 +247,8 @@ class TemplateManager extends Component
         $this->headerHtml       = '';
         $this->footerHtml       = '';
         $this->customCss        = '';
+        $this->bodyHtml         = '';
+        $this->gjsData          = '';
         $this->watermarkEnabled = false;
         $this->watermarkText    = '';
         $this->watermarkOpacity = '0.08';
