@@ -632,6 +632,56 @@
             </div>
         </div>
 
+        {{-- Latest Vitals (current encounter) --}}
+        @if(count($vitals) > 0)
+        @php $v = $vitals[0]; @endphp
+        <div class="border-b border-slate-100 px-4 py-3">
+            <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Latest Vitals</p>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                @if(!empty($v['systolic_bp']) && !empty($v['diastolic_bp']))
+                @php $hypertensive = $v['systolic_bp'] >= 140 || $v['diastolic_bp'] >= 90; @endphp
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400">BP</span>
+                    <span class="text-sm font-semibold {{ $hypertensive ? 'text-red-600' : 'text-slate-800' }}">
+                        {{ $v['systolic_bp'] }}/{{ $v['diastolic_bp'] }}
+                        @if($hypertensive)<span class="text-xs font-normal ml-0.5">↑</span>@endif
+                    </span>
+                </div>
+                @endif
+                @if(!empty($v['pulse_rate']))
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400">HR</span>
+                    <span class="text-sm font-semibold text-slate-800">{{ $v['pulse_rate'] }} <span class="text-xs font-normal text-slate-500">bpm</span></span>
+                </div>
+                @endif
+                @if(!empty($v['temperature']))
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400">Temp</span>
+                    <span class="text-sm font-semibold {{ $v['temperature'] >= 38 ? 'text-orange-600' : 'text-slate-800' }}">{{ $v['temperature'] }}°C</span>
+                </div>
+                @endif
+                @if(!empty($v['oxygen_saturation']))
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400">SpO₂</span>
+                    <span class="text-sm font-semibold {{ $v['oxygen_saturation'] < 95 ? 'text-red-600' : 'text-slate-800' }}">{{ $v['oxygen_saturation'] }}%</span>
+                </div>
+                @endif
+                @if(!empty($v['weight_kg']))
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400">Weight</span>
+                    <span class="text-sm font-semibold text-slate-800">{{ $v['weight_kg'] }} <span class="text-xs font-normal text-slate-500">kg</span></span>
+                </div>
+                @endif
+                @if(!empty($v['blood_glucose']))
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400">Glucose{{ !empty($v['blood_glucose_timing']) ? ' ('.$v['blood_glucose_timing'].')' : '' }}</span>
+                    <span class="text-sm font-semibold {{ $v['blood_glucose'] > 11.1 ? 'text-red-600' : ($v['blood_glucose'] > 7.8 ? 'text-orange-500' : 'text-slate-800') }}">{{ $v['blood_glucose'] }} <span class="text-xs font-normal text-slate-500">mmol/L</span></span>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
         {{-- Past Visits --}}
         <div class="border-b border-slate-100">
             <button class="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-slate-50 transition"
@@ -656,12 +706,46 @@
                                 @if($visit['chief_complaint'])
                                     <p class="text-xs text-slate-500 italic truncate max-w-[200px]">{{ $visit['chief_complaint'] }}</p>
                                 @endif
+                                {{-- Inline vitals summary on header for quick scanning --}}
+                                @if(!empty($visit['vitals']))
+                                @php $hv = $visit['vitals']; $hHtn = (!empty($hv['systolic_bp']) && ($hv['systolic_bp'] >= 140 || $hv['diastolic_bp'] >= 90)); @endphp
+                                <p class="text-xs text-slate-400 mt-0.5 space-x-2">
+                                    @if(!empty($hv['systolic_bp']))<span class="{{ $hHtn ? 'text-red-500 font-medium' : '' }}">{{ $hv['systolic_bp'] }}/{{ $hv['diastolic_bp'] }}</span>@endif
+                                    @if(!empty($hv['pulse_rate']))<span>{{ $hv['pulse_rate'] }}bpm</span>@endif
+                                    @if(!empty($hv['blood_glucose']))<span class="{{ $hv['blood_glucose'] > 7.8 ? 'text-orange-500 font-medium' : '' }}">{{ $hv['blood_glucose'] }}mmol</span>@endif
+                                </p>
+                                @endif
                             </div>
                             <svg class="w-3 h-3 text-slate-400 transition-transform flex-shrink-0 ml-2" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         <div x-show="expanded" class="pl-2 border-l-2 border-slate-200 mt-1 space-y-1.5">
+                            {{-- Per-visit vitals grid --}}
+                            @if(!empty($visit['vitals']))
+                            @php $hv = $visit['vitals']; @endphp
+                            <div class="bg-slate-50 rounded px-2 py-1.5 grid grid-cols-3 gap-x-2 gap-y-1">
+                                @if(!empty($hv['systolic_bp']))
+                                @php $hHtn = $hv['systolic_bp'] >= 140 || $hv['diastolic_bp'] >= 90; @endphp
+                                <div><p class="text-xs text-slate-400">BP</p><p class="text-xs font-semibold {{ $hHtn ? 'text-red-600' : 'text-slate-700' }}">{{ $hv['systolic_bp'] }}/{{ $hv['diastolic_bp'] }}</p></div>
+                                @endif
+                                @if(!empty($hv['pulse_rate']))
+                                <div><p class="text-xs text-slate-400">HR</p><p class="text-xs font-semibold text-slate-700">{{ $hv['pulse_rate'] }}bpm</p></div>
+                                @endif
+                                @if(!empty($hv['temperature']))
+                                <div><p class="text-xs text-slate-400">Temp</p><p class="text-xs font-semibold {{ $hv['temperature'] >= 38 ? 'text-orange-600' : 'text-slate-700' }}">{{ $hv['temperature'] }}°C</p></div>
+                                @endif
+                                @if(!empty($hv['oxygen_saturation']))
+                                <div><p class="text-xs text-slate-400">SpO₂</p><p class="text-xs font-semibold {{ $hv['oxygen_saturation'] < 95 ? 'text-red-600' : 'text-slate-700' }}">{{ $hv['oxygen_saturation'] }}%</p></div>
+                                @endif
+                                @if(!empty($hv['weight_kg']))
+                                <div><p class="text-xs text-slate-400">Wt</p><p class="text-xs font-semibold text-slate-700">{{ $hv['weight_kg'] }}kg</p></div>
+                                @endif
+                                @if(!empty($hv['blood_glucose']))
+                                <div><p class="text-xs text-slate-400">Glucose</p><p class="text-xs font-semibold {{ $hv['blood_glucose'] > 7.8 ? 'text-orange-500' : 'text-slate-700' }}">{{ $hv['blood_glucose'] }}</p></div>
+                                @endif
+                            </div>
+                            @endif
                             @if(count($visit['diagnoses']) > 0)
                                 <div class="flex flex-wrap gap-1">
                                     @foreach($visit['diagnoses'] as $dx)

@@ -278,6 +278,25 @@ class DoctorDashboard extends Component
                     ->pluck('diagnosis_text')
                     ->toArray();
 
+                $vs = VitalSign::on('tenant')
+                    ->where('encounter_id', $enc->id)
+                    ->orderByDesc('recorded_at')
+                    ->first();
+
+                $vitals = null;
+                if ($vs) {
+                    $vitals = [
+                        'systolic_bp'       => $vs->systolic_bp,
+                        'diastolic_bp'      => $vs->diastolic_bp,
+                        'pulse_rate'        => $vs->pulse_rate,
+                        'temperature'       => $vs->temperature,
+                        'oxygen_saturation' => $vs->oxygen_saturation,
+                        'weight_kg'         => $vs->weight_kg,
+                        'blood_glucose'     => $vs->blood_glucose,
+                        'blood_glucose_timing' => $vs->blood_glucose_timing,
+                    ];
+                }
+
                 return [
                     'id'              => $enc->id,
                     'encounter_date'  => $enc->encounter_date?->format('d M Y'),
@@ -285,6 +304,7 @@ class DoctorDashboard extends Component
                     'assessment'      => $note?->assessment,
                     'plan'            => $note?->plan,
                     'diagnoses'       => $diagnoses,
+                    'vitals'          => $vitals,
                 ];
             })->toArray();
     }
