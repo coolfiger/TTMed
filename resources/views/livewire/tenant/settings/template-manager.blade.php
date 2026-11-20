@@ -183,8 +183,7 @@
       ? window.gjsBlocksBasic
       : 'gjs-blocks-basic';
 
-    // Build init config — pass content directly so GrapesJS renders it on init
-    var cfg = {
+    var editor = grapesjs.init({
       container: '#gjs',
       fromElement: false,
       storageManager: false,
@@ -198,34 +197,31 @@
       pluginsOpts: {
         'gjs-blocks-basic': { flexGrid: true, addBasicStyle: false, category: 'Basic' },
       },
-    };
+    });
 
-    if (gjsData && Object.keys(gjsData).length > 0) {
-      cfg.projectData = gjsData;
-    } else if (bodyHtml) {
-      var parts = extractParts(bodyHtml);
-      cfg.components = parts.body;
-      if (parts.css) cfg.style = parts.css;
-    }
-
-    var editor = grapesjs.init(cfg);
-
-    // Inject canvas CSS once the iframe document is accessible
-    var injectCss = function () {
+    // canvas:frame:load fires when the iframe DOM is ready — the only safe time to set content
+    editor.on('canvas:frame:load', function () {
+      // Inject canvas CSS into iframe
       try {
         var canvasDoc = editor.Canvas.getDocument();
-        if (!canvasDoc || !canvasDoc.head) { setTimeout(injectCss, 80); return; }
         var s = canvasDoc.createElement('style');
         s.textContent = CANVAS_CSS;
         canvasDoc.head.appendChild(s);
-      } catch (e) { setTimeout(injectCss, 80); }
-    };
-    setTimeout(injectCss, 150);
+      } catch (e) {}
 
-    // If gjsData was passed via projectData config, it may not apply in all versions
-    if (gjsData && Object.keys(gjsData).length > 0) {
-      try { editor.loadProjectData(gjsData); } catch (e) {}
-    }
+      // Load content
+      if (gjsData && Object.keys(gjsData).length > 0) {
+        try { editor.loadProjectData(gjsData); } catch (e) {
+          var parts = extractParts(bodyHtml);
+          editor.setComponents(parts.body);
+          if (parts.css) editor.setStyle(parts.css);
+        }
+      } else if (bodyHtml) {
+        var parts = extractParts(bodyHtml);
+        editor.setComponents(parts.body);
+        if (parts.css) editor.setStyle(parts.css);
+      }
+    });
 
     window._ttGjsEditor = editor;
   }
