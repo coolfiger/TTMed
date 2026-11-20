@@ -176,7 +176,7 @@ class NurseDashboard extends Component
             if ($assessment) {
                 $this->allergiesReviewed   = $assessment->allergies_reviewed;
                 $this->medicationsReviewed = $assessment->medications_reviewed;
-                $this->assessmentNotes     = $assessment->assessment_notes ?? '';
+                $this->assessmentNotes     = $assessment->nursing_notes ?? '';
             }
         }
 
@@ -282,7 +282,7 @@ class NurseDashboard extends Component
         $this->nursingService->updateAssessment($assessment, [
             'allergies_reviewed'   => $this->allergiesReviewed,
             'medications_reviewed' => $this->medicationsReviewed,
-            'assessment_notes'     => $this->assessmentNotes ?: null,
+            'nursing_notes'        => $this->assessmentNotes ?: null,
         ]);
 
         $this->successMessage = 'Assessment saved.';
@@ -401,7 +401,7 @@ class NurseDashboard extends Component
         $this->nursingService->updateAssessment($assessment, [
             'allergies_reviewed'   => $this->allergiesReviewed,
             'medications_reviewed' => $this->medicationsReviewed,
-            'assessment_notes'     => $this->assessmentNotes ?: null,
+            'nursing_notes'        => $this->assessmentNotes ?: null,
             'status'               => 'completed',
         ]);
         $assessment = $assessment->fresh();
