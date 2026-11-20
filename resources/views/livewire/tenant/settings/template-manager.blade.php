@@ -513,7 +513,7 @@
           ] as $token => $desc)
           <div class="flex items-start gap-2 py-1.5 border-b border-slate-50">
             <code class="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 font-mono whitespace-nowrap flex-shrink-0">
-              {{'{{'}}{{ $token }}{{'}}'}}
+              &#123;&#123;{{ $token }}&#125;&#125;
             </code>
             <span class="text-xs text-slate-500">{{ $desc }}</span>
           </div>
