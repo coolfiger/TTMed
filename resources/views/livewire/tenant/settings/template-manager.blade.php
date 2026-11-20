@@ -171,7 +171,7 @@
   }
 
   /* ── Boot editor ───────────────────────────────────── */
-  function boot(gjsData, bodyHtml) {
+  window.boot = function boot(gjsData, bodyHtml) {
     if (!document.getElementById('gjs')) return;
 
     if (window._ttGjsEditor) {
