@@ -568,7 +568,7 @@ class DoctorDashboard extends Component
             // All lab orders for the patient, flagged if from current encounter
             $labOrders = LabOrder::on('tenant')
                 ->where('patient_id', $this->activePatientId)
-                ->with(['items.results', 'attachments'])
+                ->with(['items.result', 'attachments'])
                 ->orderByDesc('created_at')
                 ->get()
                 ->map(fn ($order) => array_merge($order->toArray(), [
