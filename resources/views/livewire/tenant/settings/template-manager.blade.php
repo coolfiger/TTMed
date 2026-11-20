@@ -237,6 +237,14 @@
   };
   window.gjsUndo   = function () { if (window._ttGjsEditor) window._ttGjsEditor.UndoManager.undo(); };
   window.gjsRedo   = function () { if (window._ttGjsEditor) window._ttGjsEditor.UndoManager.redo(); };
+  window.gjsZoom   = function (delta) {
+    if (!window._ttGjsEditor) return;
+    var current = window._ttGjsEditor.Canvas.getZoom();
+    var next    = Math.min(150, Math.max(30, current + delta));
+    window._ttGjsEditor.Canvas.setZoom(next);
+    var label = document.getElementById('gjs-zoom-label');
+    if (label) label.textContent = next + '%';
+  };
 
 }());
 </script>
@@ -389,6 +397,15 @@
 
       <button id="gjs-undo-btn" onclick="window.gjsUndo()" title="Undo" class="text-sm">↩</button>
       <button id="gjs-redo-btn" onclick="window.gjsRedo()" title="Redo" class="text-sm">↪</button>
+
+      <div class="w-px h-5 bg-slate-700 mx-1"></div>
+
+      {{-- Zoom --}}
+      <button onclick="window.gjsZoom(-10)" title="Zoom out"
+              class="text-slate-300 hover:text-white text-sm font-bold leading-none px-1">−</button>
+      <span id="gjs-zoom-label" class="text-xs text-slate-400 w-10 text-center">100%</span>
+      <button onclick="window.gjsZoom(10)" title="Zoom in"
+              class="text-slate-300 hover:text-white text-sm font-bold leading-none px-1">+</button>
 
       <div class="w-px h-5 bg-slate-700 mx-1"></div>
 
