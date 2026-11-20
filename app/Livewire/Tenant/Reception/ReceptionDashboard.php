@@ -10,6 +10,7 @@ use App\Models\Tenant\Patient;
 use App\Models\Tenant\PatientIntakeToken;
 use App\Models\Tenant\QueueEntry;
 use App\Services\AuditService;
+use App\Services\DocumentService;
 use App\Services\QueueService;
 use App\Tenancy\TenantContext;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
@@ -20,9 +21,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ReceptionDashboard extends Component
 {
+    use WithFileUploads;
     public int    $branchId     = 0;
     public string $patientSearch = '';
     public array  $searchResults = [];
@@ -60,6 +63,17 @@ class ReceptionDashboard extends Component
     // Queue display
     public array  $queueEntries      = [];
     public array  $doctorStatuses    = [];
+
+    // Document upload step (shown after successful check-in)
+    public bool   $showDocumentUpload   = false;
+    public ?int   $uploadPatientId      = null;
+    public ?int   $uploadEncounterId    = null;
+    public string $uploadPatientName    = '';
+    public array  $pendingDocuments     = [];   // [{tmpPath, name, size, type}]
+    public        $docFile              = null; // Livewire temp upload
+    public string $docTitle             = '';
+    public string $docUploadError       = '';
+    public array  $uploadedDocNames     = [];
 
     public function mount(): void
     {
@@ -278,8 +292,19 @@ class ReceptionDashboard extends Component
             "Queue #{$entry->queue_number}"
         );
 
+        // Store context for the optional document upload step
+        $this->uploadPatientId   = $patient->id;
+        $this->uploadEncounterId = $entry->encounter_id;
+        $this->uploadPatientName = $patient->display_name;
+        $this->uploadedDocNames  = [];
+        $this->pendingDocuments  = [];
+        $this->docTitle          = '';
+        $this->docFile           = null;
+        $this->docUploadError    = '';
+
         $this->resetCheckinForm();
         $this->loadQueue();
+        $this->showDocumentUpload = true;
         session()->flash('success', "{$patient->display_name} checked in — Queue #{$entry->queue_number}.");
     }
 
@@ -310,6 +335,48 @@ class ReceptionDashboard extends Component
         );
 
         $this->loadQueue();
+    }
+
+    public function addDocument(): void
+    {
+        $this->docUploadError = '';
+
+        if (!$this->docFile) {
+            $this->docUploadError = 'Please choose a file first.';
+            return;
+        }
+
+        try {
+            $userId  = auth()->guard('tenant')->id();
+            $title   = trim($this->docTitle) ?: $this->docFile->getClientOriginalName();
+
+            app(DocumentService::class)->upload(
+                file:        $this->docFile,
+                patientId:   $this->uploadPatientId,
+                uploadedBy:  $userId,
+                encounterId: $this->uploadEncounterId,
+                title:       $title,
+                description: 'Uploaded at reception during check-in',
+            );
+
+            $this->uploadedDocNames[] = $title;
+            $this->docFile            = null;
+            $this->docTitle           = '';
+        } catch (\InvalidArgumentException $e) {
+            $this->docUploadError = $e->getMessage();
+        }
+    }
+
+    public function doneUploading(): void
+    {
+        $this->showDocumentUpload = false;
+        $this->uploadPatientId    = null;
+        $this->uploadEncounterId  = null;
+        $this->uploadPatientName  = '';
+        $this->uploadedDocNames   = [];
+        $this->docFile            = null;
+        $this->docTitle           = '';
+        $this->docUploadError     = '';
     }
 
     public function cancelCheckin(): void

@@ -374,6 +374,69 @@
                 </div>
             @endif
 
+            {{-- ── Document Upload Panel (shown after check-in) ── --}}
+            @if($showDocumentUpload)
+                <div class="mt-4 mx-4 mb-4 rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
+                    <div class="px-4 py-3 bg-blue-600 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-white">Attach Documents for {{ $uploadPatientName }}</p>
+                            <p class="text-xs text-blue-200 mt-0.5">X-rays, blood results, referral letters, photos — optional</p>
+                        </div>
+                        <button wire:click="doneUploading" class="text-blue-200 hover:text-white transition text-lg leading-none">&times;</button>
+                    </div>
+
+                    <div class="p-4 space-y-4">
+
+                        {{-- Uploaded so far --}}
+                        @if(count($uploadedDocNames) > 0)
+                            <div class="space-y-1">
+                                @foreach($uploadedDocNames as $name)
+                                    <div class="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
+                                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span class="truncate">{{ $name }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        {{-- Error --}}
+                        @if($docUploadError)
+                            <p class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ $docUploadError }}</p>
+                        @endif
+
+                        {{-- File picker --}}
+                        <div>
+                            <label class="form-label">File <span class="text-slate-400 font-normal">(image, PDF, Word — max 20 MB)</span></label>
+                            <input type="file" wire:model="docFile"
+                                   accept="image/*,application/pdf,.doc,.docx"
+                                   capture="environment"
+                                   class="w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" />
+                            <div wire:loading wire:target="docFile" class="text-xs text-slate-500 mt-1">Reading file…</div>
+                        </div>
+
+                        {{-- Optional title --}}
+                        <div>
+                            <label class="form-label">Title <span class="text-slate-400 font-normal">(optional — defaults to filename)</span></label>
+                            <input type="text" wire:model="docTitle" placeholder="e.g. Chest X-ray Jan 2025" class="w-full" />
+                        </div>
+
+                        <div class="flex gap-3 pt-1">
+                            <button wire:click="addDocument"
+                                    wire:loading.attr="disabled"
+                                    wire:target="addDocument"
+                                    class="btn btn-primary btn-sm flex-1">
+                                <span wire:loading.remove wire:target="addDocument">+ Add File</span>
+                                <span wire:loading wire:target="addDocument">Uploading…</span>
+                            </button>
+                            <button wire:click="doneUploading" class="btn btn-secondary btn-sm flex-1">
+                                {{ count($uploadedDocNames) > 0 ? 'Done' : 'Skip' }}
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            @endif
+
         </div>
 
         {{-- ══════════════════════════════════════════════════════════
