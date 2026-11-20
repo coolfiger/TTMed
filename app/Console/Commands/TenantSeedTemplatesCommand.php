@@ -32,7 +32,8 @@ class TenantSeedTemplatesCommand extends Command
         $seeder->setCommand($this);
         $seeder->run();
 
-        $this->info('Done. Default templates created for all 8 document types.');
+        $count = count(\App\Models\Tenant\DocumentTemplate::TYPES);
+        $this->info("Done. Default templates created for all {$count} document types.");
 
         return self::SUCCESS;
     }
