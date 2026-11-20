@@ -226,17 +226,7 @@
     window._ttGjsEditor = editor;
   }
 
-  /* ── Livewire event listener ───────────────────────── */
-  document.addEventListener('livewire:initialized', function () {
-    Livewire.on('gjs:load', function (params) {
-      var p        = (params && params[0]) ? params[0] : {};
-      var gjsData  = p.gjsData  || {};
-      var bodyHtml = p.bodyHtml || '';
-      requestAnimationFrame(function () {
-        setTimeout(function () { boot(gjsData, bodyHtml); }, 100);
-      });
-    });
-  });
+  /* boot() is called from Alpine x-init on the editor wrapper div */
 
   /* ── Public API for Alpine.js ──────────────────────── */
   window.gjsSave   = function () {
@@ -375,6 +365,11 @@
   <div
     class="flex flex-col flex-1 min-h-0"
     x-data="{
+      init() {
+        const bodyHtml = @js($bodyHtml);
+        const gjsData  = @js($gjsData ? json_decode($gjsData, true) : null);
+        this.$nextTick(() => setTimeout(() => boot(gjsData, bodyHtml), 80));
+      },
       async doSave() {
         if (!window._ttGjsEditor) { return; }
         const r = window.gjsSave();
