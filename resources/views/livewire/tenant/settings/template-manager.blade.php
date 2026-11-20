@@ -183,10 +183,18 @@
       ? window.gjsBlocksBasic
       : 'gjs-blocks-basic';
 
+    // For plain HTML templates (no gjs_data), pass content in init config so
+    // GrapesJS sets it before the canvas iframe loads — avoids all race conditions.
+    var parts = extractParts(bodyHtml || '');
+    var initComponents = (gjsData && Object.keys(gjsData).length > 0) ? undefined : (parts.body || '<div></div>');
+    var initStyle     = (gjsData && Object.keys(gjsData).length > 0) ? undefined : (parts.css || '');
+
     var editor = grapesjs.init({
       container: '#gjs',
       fromElement: false,
       storageManager: false,
+      components: initComponents,
+      style: initStyle,
       undoManager: { trackChanges: true },
       panels: { defaults: [] },
       canvas: {},
@@ -199,9 +207,8 @@
       },
     });
 
-    // canvas:frame:load fires when the iframe DOM is ready — the only safe time to set content
+    // Inject canvas CSS and load gjs_data (if any) once iframe is ready
     editor.on('canvas:frame:load', function () {
-      // Inject canvas CSS into iframe
       try {
         var canvasDoc = editor.Canvas.getDocument();
         var s = canvasDoc.createElement('style');
@@ -209,17 +216,8 @@
         canvasDoc.head.appendChild(s);
       } catch (e) {}
 
-      // Load content
       if (gjsData && Object.keys(gjsData).length > 0) {
-        try { editor.loadProjectData(gjsData); } catch (e) {
-          var parts = extractParts(bodyHtml);
-          editor.setComponents(parts.body);
-          if (parts.css) editor.setStyle(parts.css);
-        }
-      } else if (bodyHtml) {
-        var parts = extractParts(bodyHtml);
-        editor.setComponents(parts.body);
-        if (parts.css) editor.setStyle(parts.css);
+        try { editor.loadProjectData(gjsData); } catch (e) {}
       }
     });
 
