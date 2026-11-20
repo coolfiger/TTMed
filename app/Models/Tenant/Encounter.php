@@ -4,6 +4,7 @@ namespace App\Models\Tenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Encounter extends Model
@@ -58,5 +59,30 @@ class Encounter extends Model
     public function queueEntry(): HasOne
     {
         return $this->hasOne(QueueEntry::class);
+    }
+
+    public function consultationNote(): HasOne
+    {
+        return $this->hasOne(ConsultationNote::class);
+    }
+
+    public function diagnoses(): HasMany
+    {
+        return $this->hasMany(Diagnosis::class)->orderBy('diagnosis_type');
+    }
+
+    public function vitalSigns(): HasMany
+    {
+        return $this->hasMany(VitalSign::class)->orderBy('recorded_at');
+    }
+
+    public function prescriptions(): HasMany
+    {
+        return $this->hasMany(Prescription::class)->orderByDesc('created_at');
+    }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class)->orderByDesc('created_at');
     }
 }

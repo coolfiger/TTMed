@@ -773,76 +773,275 @@
 
             {{-- ── VISIT HISTORY TAB ── --}}
             @if($activeTab === 'history')
-                <div class="max-w-3xl">
-                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                        <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">All Visits ({{ $encounters->count() }})</p>
-                        </div>
-                        <div class="divide-y divide-slate-100">
-                            @forelse($encounters as $enc)
-                                @php
-                                    $note = \App\Models\Tenant\ConsultationNote::on('tenant')
-                                        ->where('encounter_id', $enc->id)->first();
-                                @endphp
-                                <div class="px-4 py-4" x-data="{ expanded: {{ $loop->first ? 'true' : 'false' }} }">
-                                    <button class="w-full flex items-start justify-between gap-4 text-left"
-                                            @click="expanded = !expanded">
+                <div class="max-w-3xl space-y-3">
+
+                    @forelse($encounters as $enc)
+                    @php
+                        $note     = $enc->consultationNote;
+                        $vitals   = $enc->vitalSigns->last(); // most recent reading per visit
+                        $diagnoses = $enc->diagnoses;
+                        $rxList   = $enc->prescriptions;
+                        $refs     = $enc->referrals;
+                        $isRecent = $loop->index < 2;
+                        $docName  = $enc->doctor?->staffProfile?->full_name ?? 'Unknown';
+                        $branch   = $enc->branch?->name ?? '';
+                    @endphp
+
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden"
+                         x-data="{ open: {{ $isRecent ? 'true' : 'false' }} }">
+
+                        {{-- Header row - always visible --}}
+                        <button @click="open = !open"
+                                class="w-full px-5 py-4 flex items-start justify-between gap-4 text-left hover:bg-slate-50 transition">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-sm font-bold text-slate-800">{{ $enc->encounter_date?->format('d M Y') }}</span>
+                                    <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                                        {{ $enc->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                        {{ ucfirst(str_replace('_', ' ', $enc->status)) }}
+                                    </span>
+                                    @if($enc->visit_type)
+                                    <span class="text-xs text-slate-400 font-medium">{{ ucfirst(str_replace('_', ' ', $enc->visit_type)) }}</span>
+                                    @endif
+                                    @if($branch)
+                                    <span class="text-xs text-slate-400">· {{ $branch }}</span>
+                                    @endif
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Dr. {{ $docName }}
+                                    @if($enc->chief_complaint) · <span class="italic">{{ $enc->chief_complaint }}</span>@endif
+                                </p>
+                                {{-- Inline vitals summary always visible --}}
+                                @if($vitals)
+                                <div class="flex flex-wrap gap-3 mt-2">
+                                    @if($vitals->systolic_bp && $vitals->diastolic_bp)
+                                    @php $highBP = $vitals->systolic_bp >= 140 || $vitals->diastolic_bp >= 90; @endphp
+                                    <span class="text-xs font-semibold {{ $highBP ? 'text-red-600' : 'text-slate-600' }}">
+                                        BP {{ $vitals->systolic_bp }}/{{ $vitals->diastolic_bp }} mmHg{{ $highBP ? ' ▲' : '' }}
+                                    </span>
+                                    @endif
+                                    @if($vitals->pulse_rate)
+                                    <span class="text-xs text-slate-500">HR {{ $vitals->pulse_rate }} bpm</span>
+                                    @endif
+                                    @if($vitals->temperature)
+                                    <span class="text-xs text-slate-500">Temp {{ $vitals->temperature }}°C</span>
+                                    @endif
+                                    @if($vitals->weight_kg)
+                                    <span class="text-xs text-slate-500">{{ $vitals->weight_kg }} kg</span>
+                                    @endif
+                                    @if($vitals->oxygen_saturation)
+                                    <span class="text-xs text-slate-500">SpO₂ {{ $vitals->oxygen_saturation }}%</span>
+                                    @endif
+                                    @if($vitals->blood_glucose)
+                                    <span class="text-xs text-slate-500">Glucose {{ $vitals->blood_glucose }} mmol/L</span>
+                                    @endif
+                                </div>
+                                @endif
+                            </div>
+                            <svg class="w-4 h-4 text-slate-400 flex-shrink-0 mt-1 transition-transform duration-150"
+                                 :class="open ? 'rotate-180' : ''"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        {{-- Expanded detail --}}
+                        <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+
+                            {{-- Full vitals --}}
+                            @if($vitals)
+                            <div class="px-5 py-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Vitals
+                                    <span class="font-normal normal-case text-slate-400 ml-1">recorded {{ $vitals->recorded_at?->format('d M Y H:i') }}</span>
+                                </p>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                                    @if($vitals->systolic_bp && $vitals->diastolic_bp)
+                                    @php $highBP = $vitals->systolic_bp >= 140 || $vitals->diastolic_bp >= 90; @endphp
+                                    <div>
+                                        <p class="text-xs text-slate-400">Blood Pressure</p>
+                                        <p class="font-semibold {{ $highBP ? 'text-red-600' : 'text-slate-800' }}">
+                                            {{ $vitals->systolic_bp }}/{{ $vitals->diastolic_bp }} mmHg
+                                        </p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->pulse_rate)
+                                    <div>
+                                        <p class="text-xs text-slate-400">Heart Rate</p>
+                                        <p class="font-semibold text-slate-800">{{ $vitals->pulse_rate }} bpm {{ $vitals->pulse_rhythm ? '('.$vitals->pulse_rhythm.')' : '' }}</p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->respiratory_rate)
+                                    <div>
+                                        <p class="text-xs text-slate-400">Respiratory Rate</p>
+                                        <p class="font-semibold text-slate-800">{{ $vitals->respiratory_rate }} /min</p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->temperature)
+                                    <div>
+                                        <p class="text-xs text-slate-400">Temperature</p>
+                                        <p class="font-semibold text-slate-800">{{ $vitals->temperature }}°C {{ $vitals->temperature_site ? '('.$vitals->temperature_site.')' : '' }}</p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->oxygen_saturation)
+                                    <div>
+                                        <p class="text-xs text-slate-400">SpO₂</p>
+                                        <p class="font-semibold {{ $vitals->oxygen_saturation < 95 ? 'text-red-600' : 'text-slate-800' }}">{{ $vitals->oxygen_saturation }}%</p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->weight_kg)
+                                    <div>
+                                        <p class="text-xs text-slate-400">Weight</p>
+                                        <p class="font-semibold text-slate-800">{{ $vitals->weight_kg }} kg</p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->height_cm)
+                                    <div>
+                                        <p class="text-xs text-slate-400">Height</p>
+                                        <p class="font-semibold text-slate-800">{{ $vitals->height_cm }} cm</p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->bmi)
+                                    <div>
+                                        <p class="text-xs text-slate-400">BMI</p>
+                                        <p class="font-semibold text-slate-800">{{ number_format($vitals->bmi, 1) }}</p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->blood_glucose)
+                                    <div>
+                                        <p class="text-xs text-slate-400">Blood Glucose {{ $vitals->blood_glucose_timing ? '('.$vitals->blood_glucose_timing.')' : '' }}</p>
+                                        <p class="font-semibold text-slate-800">{{ $vitals->blood_glucose }} mmol/L</p>
+                                    </div>
+                                    @endif
+                                    @if($vitals->pain_score !== null)
+                                    <div>
+                                        <p class="text-xs text-slate-400">Pain Score</p>
+                                        <p class="font-semibold text-slate-800">{{ $vitals->pain_score }}/10</p>
+                                    </div>
+                                    @endif
+                                </div>
+                                @if($vitals->notes)
+                                <p class="text-xs text-slate-500 mt-2 italic">{{ $vitals->notes }}</p>
+                                @endif
+                            </div>
+                            @endif
+
+                            {{-- Doctor notes (SOAP) --}}
+                            @if($note)
+                            <div class="px-5 py-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+                                    Doctor Notes
+                                    @if($note->is_finalized)
+                                    <span class="ml-2 text-emerald-600 font-medium normal-case">✓ Finalized</span>
+                                    @endif
+                                </p>
+                                <div class="space-y-3">
+                                    @foreach([
+                                        ['Subjective (History)',   $note->subjective],
+                                        ['Objective / Findings',   $note->objective],
+                                        ['Examination Findings',   $note->examination_findings],
+                                        ['Assessment',             $note->assessment],
+                                        ['Plan',                   $note->plan],
+                                        ['Investigations Ordered', $note->investigations_ordered],
+                                        ['Follow-up Instructions', $note->follow_up_instructions],
+                                    ] as [$label, $value])
+                                        @if($value)
                                         <div>
-                                            <div class="flex items-center gap-2 flex-wrap">
-                                                <p class="text-sm font-semibold text-slate-800">{{ $enc->encounter_date?->format('d M Y') }}</p>
-                                                <span class="text-xs px-2 py-0.5 rounded-full {{ $enc->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
-                                                    {{ ucfirst(str_replace('_', ' ', $enc->status)) }}
-                                                </span>
-                                                @if($enc->visit_type)
-                                                    <span class="text-xs text-slate-400">{{ ucfirst(str_replace('_', ' ', $enc->visit_type)) }}</span>
-                                                @endif
-                                            </div>
-                                            @if($enc->chief_complaint)
-                                                <p class="text-sm text-slate-500 mt-0.5">{{ $enc->chief_complaint }}</p>
-                                            @endif
+                                            <p class="text-xs font-semibold text-slate-400 mb-0.5">{{ $label }}</p>
+                                            <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ $value }}</p>
                                         </div>
-                                        <svg class="w-4 h-4 text-slate-400 transition-transform flex-shrink-0 mt-0.5"
-                                             :class="expanded ? 'rotate-180' : ''"
-                                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                    <div x-show="expanded" class="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-3 text-sm">
-                                        @if($note?->assessment)
-                                            <div>
-                                                <p class="text-xs font-semibold uppercase text-slate-400 mb-1">Assessment</p>
-                                                <p class="text-slate-700">{{ $note->assessment }}</p>
-                                            </div>
                                         @endif
-                                        @if($note?->plan)
-                                            <div>
-                                                <p class="text-xs font-semibold uppercase text-slate-400 mb-1">Plan</p>
-                                                <p class="text-slate-700">{{ $note->plan }}</p>
-                                            </div>
-                                        @endif
-                                        @php
-                                            $dxList = \App\Models\Tenant\Diagnosis::on('tenant')
-                                                ->where('encounter_id', $enc->id)
-                                                ->where('diagnosis_type', 'primary')
-                                                ->pluck('diagnosis_text');
-                                        @endphp
-                                        @if($dxList->count() > 0)
-                                            <div class="col-span-2">
-                                                <p class="text-xs font-semibold uppercase text-slate-400 mb-1">Diagnoses</p>
-                                                <div class="flex flex-wrap gap-1">
-                                                    @foreach($dxList as $dx)
-                                                        <span class="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">{{ $dx }}</span>
-                                                    @endforeach
-                                                </div>
-                                            </div>
+                                    @endforeach
+                                    @if($note->follow_up_days)
+                                    <p class="text-xs text-slate-500">Follow-up in <strong>{{ $note->follow_up_days }}</strong> day(s)</p>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- Diagnoses --}}
+                            @if($diagnoses->count())
+                            <div class="px-5 py-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Diagnoses</p>
+                                <div class="space-y-1.5">
+                                    @foreach($diagnoses as $dx)
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0
+                                            {{ $dx->diagnosis_type === 'primary' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600' }}">
+                                            {{ ucfirst($dx->diagnosis_type) }}
+                                        </span>
+                                        <span class="text-sm text-slate-700">{{ $dx->diagnosis_text }}
+                                            @if($dx->icd10_code) <span class="text-xs text-slate-400">({{ $dx->icd10_code }})</span>@endif
+                                        </span>
+                                        @if($dx->certainty && $dx->certainty !== 'confirmed')
+                                        <span class="text-xs text-slate-400 italic flex-shrink-0">{{ $dx->certainty }}</span>
                                         @endif
                                     </div>
+                                    @endforeach
                                 </div>
-                            @empty
-                                <p class="px-4 py-10 text-center text-sm text-slate-400 italic">No visits on record.</p>
-                            @endforelse
-                        </div>
+                            </div>
+                            @endif
+
+                            {{-- Prescriptions --}}
+                            @if($rxList->count())
+                            <div class="px-5 py-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Prescriptions</p>
+                                @foreach($rxList as $rx)
+                                <div class="{{ !$loop->first ? 'mt-3 pt-3 border-t border-slate-100' : '' }}">
+                                    <p class="text-xs text-slate-500 mb-1">{{ $rx->prescription_number }}
+                                        <span class="ml-1 {{ $rx->status === 'issued' ? 'text-emerald-600' : 'text-amber-600' }}">{{ ucfirst($rx->status) }}</span>
+                                    </p>
+                                    <div class="space-y-1">
+                                        @foreach($rx->items as $item)
+                                        <p class="text-sm text-slate-700">
+                                            <strong>{{ $item->medication_name }}</strong>
+                                            @if($item->strength) {{ $item->strength }}@endif
+                                            @if($item->form) · {{ $item->form }}@endif
+                                            @if($item->dose && $item->frequency) — {{ $item->dose }} {{ $item->frequency }}@endif
+                                            @if($item->duration) for {{ $item->duration }} {{ $item->duration_unit }}@endif
+                                        </p>
+                                        @if($item->instructions)
+                                        <p class="text-xs text-slate-400 pl-2">{{ $item->instructions }}</p>
+                                        @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            @endif
+
+                            {{-- Referrals --}}
+                            @if($refs->count())
+                            <div class="px-5 py-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Referrals</p>
+                                <div class="space-y-2">
+                                    @foreach($refs as $ref)
+                                    <div class="text-sm text-slate-700">
+                                        <span class="font-semibold">{{ $ref->referred_to_name }}</span>
+                                        @if($ref->referred_to_specialty) · {{ $ref->referred_to_specialty }}@endif
+                                        @if($ref->urgency && $ref->urgency !== 'routine')
+                                        <span class="ml-1 text-xs font-medium text-amber-600 uppercase">{{ $ref->urgency }}</span>
+                                        @endif
+                                        @if($ref->reason)
+                                        <p class="text-xs text-slate-500 mt-0.5">{{ $ref->reason }}</p>
+                                        @endif
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- Nothing captured --}}
+                            @if(!$vitals && !$note && $diagnoses->isEmpty() && $rxList->isEmpty() && $refs->isEmpty())
+                            <div class="px-5 py-4 text-sm text-slate-400 italic">No clinical details recorded for this visit.</div>
+                            @endif
+
+                        </div>{{-- end expanded --}}
                     </div>
+                    @empty
+                    <div class="bg-white rounded-xl border border-slate-200 px-5 py-12 text-center">
+                        <p class="text-sm text-slate-400 italic">No visits on record.</p>
+                    </div>
+                    @endforelse
+
                 </div>
             @endif
 

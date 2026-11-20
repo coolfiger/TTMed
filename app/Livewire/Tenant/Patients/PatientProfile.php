@@ -488,8 +488,17 @@ class PatientProfile extends Component
 
         $encounters = Encounter::on('tenant')
             ->where('patient_id', $this->patient->id)
+            ->with([
+                'doctor.staffProfile',
+                'branch',
+                'consultationNote',
+                'diagnoses',
+                'vitalSigns',
+                'prescriptions.items',
+                'referrals',
+            ])
             ->orderByDesc('encounter_date')
-            ->limit(20)
+            ->limit(50)
             ->get();
 
         $imagingOrders = ImagingOrder::on('tenant')
