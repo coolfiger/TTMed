@@ -2,7 +2,6 @@
 <link rel="stylesheet" href="https://unpkg.com/grapesjs@0.21.7/dist/css/grapes.min.css">
 <style>
   .gjs-cv-canvas { background: #e2e8f0 !important; overflow: auto !important; }
-  .gjs-frame-wrapper { position: relative !important; }
   .gjs-block-category .gjs-title { background:#f1f5f9!important;color:#334155!important;font-size:11px!important;font-weight:700!important;letter-spacing:.5px!important; }
   .gjs-block { border:1px solid #e2e8f0!important;border-radius:8px!important;padding:10px 8px!important;font-size:11px!important; }
   .gjs-block:hover { border-color:#3b82f6!important;background:#eff6ff!important; }
