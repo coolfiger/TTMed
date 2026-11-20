@@ -43,11 +43,19 @@ class ReceptionDashboard extends Component
     public bool   $isPriority        = false;
     public string $priorityReason    = '';
 
-    // QR panel state
+    // QR panel state (existing patient intake)
     public bool   $showQrPanel = false;
     public string $qrSvg       = '';
     public string $qrPin       = '';
     public string $qrUrl       = '';
+
+    // New patient registration QR
+    public bool    $showRegisterPanel  = false;
+    public ?string $regQrSvg           = null;
+    public ?string $regToken           = null;
+    public string  $regStatus          = '';  // '' | 'pending' | 'complete'
+    public ?int    $regPatientId       = null;
+    public string  $regExpiresAt       = '';
 
     // Queue display
     public array  $queueEntries      = [];
@@ -154,6 +162,74 @@ class ReceptionDashboard extends Component
         $this->showQrPanel = false;
         $this->qrSvg       = '';
         $this->qrPin       = '';
+    }
+
+    public function openRegisterPanel(): void
+    {
+        $this->showRegisterPanel = true;
+        $this->regQrSvg          = null;
+        $this->regToken          = null;
+        $this->regStatus         = '';
+        $this->regPatientId      = null;
+    }
+
+    public function closeRegisterPanel(): void
+    {
+        $this->showRegisterPanel = false;
+        $this->regQrSvg          = null;
+        $this->regToken          = null;
+        $this->regStatus         = '';
+        $this->regPatientId      = null;
+    }
+
+    public function generateRegQr(): void
+    {
+        $user = Auth::guard('tenant')->user();
+        if (!$user || !$user->hasPermission('patients.create')) {
+            abort(403);
+        }
+
+        // Expire any previous pending registration tokens for this user
+        PatientIntakeToken::on('tenant')
+            ->where('type', 'registration')
+            ->where('created_by', $user->id)
+            ->whereNull('patient_id')
+            ->whereNull('used_at')
+            ->update(['used_at' => now()]);
+
+        $token     = Str::random(40);
+        $expiresAt = now()->addHours(24);
+
+        PatientIntakeToken::on('tenant')->create([
+            'type'       => 'registration',
+            'patient_id' => null,
+            'pin'        => null,
+            'token'      => $token,
+            'expires_at' => $expiresAt,
+            'created_by' => $user->id,
+        ]);
+
+        $url = route('tenant.patient.register', $token);
+
+        $renderer = new ImageRenderer(new RendererStyle(220), new SvgImageBackEnd());
+        $this->regQrSvg    = (new Writer($renderer))->writeString($url);
+        $this->regToken    = $token;
+        $this->regStatus   = 'pending';
+        $this->regExpiresAt = $expiresAt->format('d M Y, H:i');
+    }
+
+    public function checkRegComplete(): void
+    {
+        if (!$this->regToken) return;
+
+        $record = PatientIntakeToken::on('tenant')
+            ->where('token', $this->regToken)
+            ->first();
+
+        if ($record && $record->patient_id) {
+            $this->regPatientId = $record->patient_id;
+            $this->regStatus    = 'complete';
+        }
     }
 
     public function checkIn(): void
