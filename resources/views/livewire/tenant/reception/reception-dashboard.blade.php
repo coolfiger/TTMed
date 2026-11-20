@@ -508,9 +508,10 @@
                                         ['with_nurse', 'N'],
                                         ['awaiting_doctor', 'A'],
                                         ['with_doctor', 'D'],
+                                        ['awaiting_checkout', 'P'],
                                     ] as $i => [$s, $letter])
                                         @php
-                                            $stages = ['waiting', 'with_nurse', 'awaiting_doctor', 'with_doctor'];
+                                            $stages = ['waiting', 'with_nurse', 'awaiting_doctor', 'with_doctor', 'awaiting_checkout'];
                                             $currentIdx = array_search($entry['status'], $stages);
                                             $thisIdx = $i;
                                         @endphp
@@ -518,7 +519,7 @@
                                             {{ $thisIdx < $currentIdx ? 'bg-slate-200 text-slate-500' : ($thisIdx === $currentIdx ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400') }}">
                                             {{ $letter }}
                                         </span>
-                                        @if($i < 3)<span class="w-3 h-px bg-slate-200"></span>@endif
+                                        @if($i < 4)<span class="w-3 h-px bg-slate-200"></span>@endif
                                     @endforeach
                                 </div>
 
