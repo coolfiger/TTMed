@@ -20,8 +20,11 @@ $PHP $APP/artisan event:clear 2>/dev/null || true
 echo "→ Clearing compiled files..."
 $PHP $APP/artisan clear-compiled 2>/dev/null || true
 
-echo "→ Running migrations..."
+echo "→ Running platform migrations..."
 $PHP $APP/artisan migrate --force
+
+echo "→ Running tenant migrations (all tenants)..."
+$PHP $APP/artisan tenants:migrate
 
 echo "→ Re-caching config and routes..."
 $PHP $APP/artisan config:cache
