@@ -253,16 +253,21 @@ class ReceptionDashboard extends Component
 
         $userId = auth()->guard('tenant')->id();
 
-        $entry = app(QueueService::class)->checkIn(
-            patient:         $patient,
-            branchId:        $this->branchId,
-            userId:          $userId,
-            doctorId:        $this->selectedDoctorId ?: null,
-            visitType:       $this->visitType,
-            chiefComplaint:  $this->chiefComplaint ?: null,
-            isPriority:      $this->isPriority,
-            priorityReason:  $this->priorityReason ?: null,
-        );
+        try {
+            $entry = app(QueueService::class)->checkIn(
+                patient:         $patient,
+                branchId:        $this->branchId,
+                userId:          $userId,
+                doctorId:        $this->selectedDoctorId ?: null,
+                visitType:       $this->visitType,
+                chiefComplaint:  $this->chiefComplaint ?: null,
+                isPriority:      $this->isPriority,
+                priorityReason:  $this->priorityReason ?: null,
+            );
+        } catch (\RuntimeException $e) {
+            $this->addError('selectedPatientId', $e->getMessage());
+            return;
+        }
 
         app(AuditService::class)->logTenant(
             'queue.checkin',

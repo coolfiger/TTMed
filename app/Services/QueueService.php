@@ -28,6 +28,18 @@ class QueueService
         bool    $isPriority   = false,
         ?string $priorityReason = null,
     ): QueueEntry {
+        $existing = QueueEntry::on('tenant')
+            ->forBranchToday($branchId)
+            ->active()
+            ->where('patient_id', $patient->id)
+            ->first();
+
+        if ($existing) {
+            throw new \RuntimeException(
+                "{$patient->display_name} is already in today's queue (#{$existing->queue_number})."
+            );
+        }
+
         return DB::connection('tenant')->transaction(function () use (
             $patient, $branchId, $userId, $doctorId, $visitType, $chiefComplaint,
             $isPriority, $priorityReason

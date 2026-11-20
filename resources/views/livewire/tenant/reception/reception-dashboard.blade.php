@@ -349,6 +349,12 @@
                                     </div>
                                 @endif
 
+                                @error('selectedPatientId')
+                                    <div class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
                                 <div class="mt-auto flex gap-3">
                                     <button @click="step = 1"
                                             class="flex-1 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition">
