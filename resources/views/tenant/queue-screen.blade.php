@@ -343,7 +343,7 @@
 
     <script>
     (function () {
-        const DATA_URL    = '{{ route("tenant.queue.screen.data", $branch->id) }}';
+        const DATA_URL    = '{{ route("tenant.queue.screen.data", $branch->screen_code ?? $branch->id) }}';
         const POLL_MS     = 6000;
         const FLASH_SECS  = 90;
 

@@ -17,6 +17,7 @@ class Branch extends Model
         'email',
         'is_main',
         'is_active',
+        'screen_code',
     ];
 
     protected $casts = [

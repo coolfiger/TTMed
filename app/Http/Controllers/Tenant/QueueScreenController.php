@@ -11,22 +11,26 @@ use Illuminate\Http\Response;
 
 class QueueScreenController extends Controller
 {
-    public function show(int $branchId): \Illuminate\View\View
+    private function resolveBranch(string $code): Branch
     {
-        $branch = Branch::on('tenant')
-            ->where('id', $branchId)
+        return Branch::on('tenant')
             ->where('is_active', true)
+            ->where(function ($q) use ($code) {
+                $q->whereRaw('UPPER(screen_code) = ?', [strtoupper($code)])
+                  ->orWhere('id', is_numeric($code) ? (int) $code : 0);
+            })
             ->firstOrFail();
+    }
 
+    public function show(string $code): \Illuminate\View\View
+    {
+        $branch = $this->resolveBranch($code);
         return view('tenant.queue-screen', compact('branch'));
     }
 
-    public function data(int $branchId): JsonResponse
+    public function data(string $code): JsonResponse
     {
-        $branch = Branch::on('tenant')
-            ->where('id', $branchId)
-            ->where('is_active', true)
-            ->firstOrFail();
+        $branch = $this->resolveBranch($code);
 
         $today       = today();
         $flashWindow = now()->subSeconds(90);

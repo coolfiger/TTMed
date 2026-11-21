@@ -18,6 +18,7 @@ class BranchForm extends Component
     public string $city = '';
     public string $phone = '';
     public string $email = '';
+    public string $screenCode = '';
     public bool $isMain = false;
     public bool $isActive = true;
 
@@ -31,13 +32,14 @@ class BranchForm extends Component
         if ($id) {
             $this->branch = Branch::with('operatingHours')->findOrFail($id);
             $this->fill([
-                'name'     => $this->branch->name,
-                'address'  => $this->branch->address ?? '',
-                'city'     => $this->branch->city ?? '',
-                'phone'    => $this->branch->phone ?? '',
-                'email'    => $this->branch->email ?? '',
-                'isMain'   => $this->branch->is_main,
-                'isActive' => $this->branch->is_active,
+                'name'       => $this->branch->name,
+                'address'    => $this->branch->address ?? '',
+                'city'       => $this->branch->city ?? '',
+                'phone'      => $this->branch->phone ?? '',
+                'email'      => $this->branch->email ?? '',
+                'screenCode' => $this->branch->screen_code ?? '',
+                'isMain'     => $this->branch->is_main,
+                'isActive'   => $this->branch->is_active,
             ]);
 
             foreach ($this->branch->operatingHours as $hour) {
@@ -52,19 +54,25 @@ class BranchForm extends Component
 
     public function save(): void
     {
+        $uniqueRule = $this->branch
+            ? 'unique:tenant.branches,screen_code,' . $this->branch->id
+            : 'unique:tenant.branches,screen_code';
+
         $this->validate([
-            'name'  => 'required|string|max:150',
-            'phone' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:150',
+            'name'       => 'required|string|max:150',
+            'phone'      => 'nullable|string|max:30',
+            'email'      => 'nullable|email|max:150',
+            'screenCode' => ['nullable', 'string', 'max:20', 'alpha_num', $uniqueRule],
         ]);
 
         $data = [
-            'name'      => $this->name,
-            'address'   => $this->address,
-            'city'      => $this->city,
-            'phone'     => $this->phone,
-            'email'     => $this->email ?: null,
-            'is_active' => $this->isActive,
+            'name'        => $this->name,
+            'address'     => $this->address,
+            'city'        => $this->city,
+            'phone'       => $this->phone,
+            'email'       => $this->email ?: null,
+            'screen_code' => $this->screenCode ? strtoupper($this->screenCode) : null,
+            'is_active'   => $this->isActive,
         ];
 
         // Only allow changing is_main if creating or not currently main

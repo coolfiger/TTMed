@@ -97,9 +97,12 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         ->middleware('throttle:10,5');
 
     // Queue display screen — public within tenant, no login required (waiting room TVs)
-    Route::get('/screen/{branch}', [QueueScreenController::class, 'show'])->name('tenant.queue.screen');
-    Route::get('/screen/{branch}/data', [QueueScreenController::class, 'data'])
+    Route::get('/screen/{code}', [QueueScreenController::class, 'show'])
+        ->name('tenant.queue.screen')
+        ->where('code', '[A-Za-z0-9]+');
+    Route::get('/screen/{code}/data', [QueueScreenController::class, 'data'])
         ->name('tenant.queue.screen.data')
+        ->where('code', '[A-Za-z0-9]+')
         ->middleware('throttle:30,1');
 
     // Branding logo — public within tenant (non-sensitive)

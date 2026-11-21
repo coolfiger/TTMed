@@ -29,6 +29,19 @@
                     class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
                 @error('email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Queue Screen Code
+                    <span class="ml-1 text-xs font-normal text-slate-400">(e.g. SHMED01 — used in the waiting room screen URL)</span>
+                </label>
+                <input wire:model="screenCode" type="text" maxlength="20" placeholder="e.g. SHMED01"
+                    class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none uppercase">
+                @if($branch && $branch->screen_code)
+                    <p class="mt-1 text-xs text-slate-500">
+                        Screen URL: <span class="font-mono">{{ request()->getSchemeAndHttpHost() }}/screen/{{ $branch->screen_code }}</span>
+                    </p>
+                @endif
+                @error('screenCode') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
             <div class="flex items-center gap-2">
                 <input wire:model="isActive" id="isActive" type="checkbox" class="rounded border-slate-300 text-blue-600">
                 <label for="isActive" class="text-sm text-slate-700">Branch active</label>
