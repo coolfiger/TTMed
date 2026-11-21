@@ -86,8 +86,9 @@ class ReceptionDashboard extends Component
     public ?int   $uploadPatientId      = null;
     public ?int   $uploadEncounterId    = null;
     public string $uploadPatientName    = '';
-    public array  $pendingDocuments     = [];   // [{tmpPath, name, size, type}]
+    public array  $pendingDocuments     = [];
     public        $docFile              = null; // Livewire temp upload
+    public bool   $docFileReady         = false; // file chosen, awaiting description
     public string $docTitle             = '';
     public string $docUploadError       = '';
     public array  $uploadedDocNames     = [];
@@ -539,8 +540,18 @@ class ReceptionDashboard extends Component
     public function updatedDocFile(): void
     {
         if ($this->docFile) {
-            $this->addDocument();
+            $this->docFileReady   = true;
+            $this->docTitle       = '';
+            $this->docUploadError = '';
         }
+    }
+
+    public function cancelDocFile(): void
+    {
+        $this->docFile      = null;
+        $this->docFileReady = false;
+        $this->docTitle     = '';
+        $this->docUploadError = '';
     }
 
     public function addDocument(): void
@@ -552,9 +563,14 @@ class ReceptionDashboard extends Component
             return;
         }
 
+        if (!trim($this->docTitle)) {
+            $this->docUploadError = 'Please add a description before saving (e.g. Chest X-ray, Blood work).';
+            return;
+        }
+
         try {
-            $userId  = auth()->guard('tenant')->id();
-            $title   = trim($this->docTitle) ?: $this->docFile->getClientOriginalName();
+            $userId = auth()->guard('tenant')->id();
+            $title  = trim($this->docTitle);
 
             app(DocumentService::class)->upload(
                 file:        $this->docFile,
@@ -567,6 +583,7 @@ class ReceptionDashboard extends Component
 
             $this->uploadedDocNames[] = $title;
             $this->docFile            = null;
+            $this->docFileReady       = false;
             $this->docTitle           = '';
         } catch (\Throwable $e) {
             $this->docUploadError = $e->getMessage();
@@ -581,6 +598,7 @@ class ReceptionDashboard extends Component
         $this->uploadPatientName  = '';
         $this->uploadedDocNames   = [];
         $this->docFile            = null;
+        $this->docFileReady       = false;
         $this->docTitle           = '';
         $this->docUploadError     = '';
     }
