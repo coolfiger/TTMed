@@ -104,6 +104,10 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
         ->name('tenant.queue.screen.data')
         ->where('code', '[A-Za-z0-9]+')
         ->middleware('throttle:30,1');
+    Route::get('/screen/{code}/news', [QueueScreenController::class, 'news'])
+        ->name('tenant.queue.screen.news')
+        ->where('code', '[A-Za-z0-9]+')
+        ->middleware('throttle:4,1');
 
     // Branding logo — public within tenant (non-sensitive)
     Route::get('/branding/logo/{type}', BrandingLogoController::class)

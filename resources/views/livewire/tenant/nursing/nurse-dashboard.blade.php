@@ -36,25 +36,29 @@
 
             <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
                 @forelse($queue as $entry)
-                    <button wire:click="selectPatient({{ $entry['id'] }})"
-                            class="w-full text-left px-4 py-4 hover:bg-slate-50 transition group
-                                   {{ $activeEntryId === $entry['id'] ? 'bg-blue-50 border-l-2 border-l-blue-600' : 'border-l-2 border-l-transparent' }}">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-1.5 mb-1">
+                    <div class="px-4 py-3 border-l-2 transition
+                               {{ $activeEntryId === $entry['id'] ? 'bg-blue-50 border-l-blue-600' : 'border-l-transparent hover:bg-slate-50' }}">
+                        <div class="flex items-center justify-between gap-2">
+                            <button wire:click="selectPatient({{ $entry['id'] }})" class="flex-1 text-left min-w-0">
+                                <div class="flex items-center gap-1.5 mb-0.5">
                                     <span class="text-xs font-mono font-bold {{ $activeEntryId === $entry['id'] ? 'text-blue-600' : 'text-slate-400' }}">#{{ $entry['queue_number'] }}</span>
                                     @if($entry['is_priority'])
                                         <span class="text-xs font-bold text-red-600">PRIORITY</span>
                                     @endif
                                 </div>
                                 <p class="text-sm font-semibold {{ $activeEntryId === $entry['id'] ? 'text-blue-800' : 'text-slate-800' }} truncate">{{ $entry['patient_name'] }}</p>
-                            </div>
-                            <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                                {{ $entry['status'] === 'with_nurse' ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-700' }}">
-                                {{ $entry['status_label'] }}
-                            </span>
+                                <span class="text-xs {{ $entry['status'] === 'with_nurse' ? 'text-violet-600' : 'text-amber-600' }}">{{ $entry['status_label'] }}</span>
+                            </button>
+                            @if($entry['status'] === 'waiting')
+                                <button wire:click="callInPatient({{ $entry['id'] }})"
+                                        wire:loading.attr="disabled"
+                                        wire:target="callInPatient({{ $entry['id'] }})"
+                                        class="flex-shrink-0 px-2.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition">
+                                    Call In
+                                </button>
+                            @endif
                         </div>
-                    </button>
+                    </div>
                 @empty
                     <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
                         <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

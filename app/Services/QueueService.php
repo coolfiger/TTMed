@@ -100,6 +100,7 @@ class QueueService
             }
 
             if ($newStatus === QueueEntry::STATUS_WITH_NURSE) {
+                $entry->called_at = now();
                 $entry->encounter?->update(['seen_by_nurse_at' => now()]);
             }
 

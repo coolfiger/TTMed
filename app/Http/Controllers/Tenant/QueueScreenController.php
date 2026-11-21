@@ -7,7 +7,7 @@ use App\Models\Tenant\Branch;
 use App\Models\Tenant\Patient;
 use App\Models\Tenant\QueueEntry;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Http;
 
 class QueueScreenController extends Controller
 {
@@ -30,55 +30,53 @@ class QueueScreenController extends Controller
 
     public function data(string $code): JsonResponse
     {
-        $branch = $this->resolveBranch($code);
+        $branch  = $this->resolveBranch($code);
+        $id      = $branch->id;
+        $today   = today();
+        $flashAt = now()->subSeconds(90);
 
-        $today       = today();
-        $flashWindow = now()->subSeconds(90);
-
-        // Patients currently being called (called within last 90 seconds)
-        $calling = QueueEntry::on('tenant')
-            ->with('patient:id,first_name,last_name')
-            ->where('branch_id', $branchId)
+        // Patients called in the last 90 seconds — flash these on screen
+        $callingNow = QueueEntry::on('tenant')
+            ->with(['patient:id,first_name,last_name', 'doctor.staffProfile:id,first_name,last_name'])
+            ->where('branch_id', $id)
             ->whereDate('queue_date', $today)
-            ->whereIn('status', [
-                QueueEntry::STATUS_WITH_NURSE,
-                QueueEntry::STATUS_WITH_DOCTOR,
-            ])
-            ->where('called_at', '>=', $flashWindow)
+            ->whereIn('status', [QueueEntry::STATUS_WITH_NURSE, QueueEntry::STATUS_WITH_DOCTOR])
+            ->where('called_at', '>=', $flashAt)
             ->orderByDesc('called_at')
             ->get()
-            ->map(fn ($e) => [
-                'id'           => $e->id,
-                'queue_number' => $e->queue_number,
-                'name'         => $this->screenName($e->patient),
-                'destination'  => $e->status === QueueEntry::STATUS_WITH_NURSE
-                    ? 'Nurse Station'
-                    : 'Consultation Room',
-                'called_at'    => $e->called_at?->toIso8601String(),
-            ]);
+            ->map(fn ($e) => $this->callingEntry($e));
 
-        // Waiting queue
+        // Last person called today who is no longer in the flash window
+        $lastCalled = QueueEntry::on('tenant')
+            ->with(['patient:id,first_name,last_name', 'doctor.staffProfile:id,first_name,last_name'])
+            ->where('branch_id', $id)
+            ->whereDate('queue_date', $today)
+            ->whereIn('status', [QueueEntry::STATUS_WITH_NURSE, QueueEntry::STATUS_WITH_DOCTOR])
+            ->where('called_at', '<', $flashAt)
+            ->whereNotNull('called_at')
+            ->orderByDesc('called_at')
+            ->first();
+
+        // Waiting queue with status so the screen can show N / D badges
         $waiting = QueueEntry::on('tenant')
             ->with('patient:id,first_name,last_name')
-            ->where('branch_id', $branchId)
+            ->where('branch_id', $id)
             ->whereDate('queue_date', $today)
-            ->whereIn('status', [
-                QueueEntry::STATUS_WAITING,
-                QueueEntry::STATUS_AWAITING_DOCTOR,
-            ])
+            ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_AWAITING_DOCTOR])
             ->orderByDesc('is_priority')
             ->orderBy('queue_number')
             ->limit(25)
             ->get()
             ->map(fn ($e) => [
-                'id'          => $e->id,
+                'id'           => $e->id,
                 'queue_number' => $e->queue_number,
-                'name'        => $this->screenName($e->patient),
-                'is_priority' => (bool) $e->is_priority,
+                'name'         => $this->screenName($e->patient),
+                'is_priority'  => (bool) $e->is_priority,
+                'badge'        => $e->status === QueueEntry::STATUS_AWAITING_DOCTOR ? 'D' : 'N',
             ]);
 
         $inConsultation = QueueEntry::on('tenant')
-            ->where('branch_id', $branchId)
+            ->where('branch_id', $id)
             ->whereDate('queue_date', $today)
             ->whereIn('status', [
                 QueueEntry::STATUS_WITH_NURSE,
@@ -88,16 +86,59 @@ class QueueScreenController extends Controller
             ->count();
 
         return response()->json([
-            'branch'         => $branch->name,
-            'date'           => now()->format('d F Y'),
-            'time'           => now()->format('H:i'),
-            'calling'        => $calling,
-            'waiting'        => $waiting,
+            'branch'          => $branch->name,
+            'date'            => now()->format('d F Y'),
+            'time'            => now()->format('H:i'),
+            'calling_now'     => $callingNow,
+            'last_called'     => $lastCalled ? $this->callingEntry($lastCalled) : null,
+            'waiting'         => $waiting,
             'in_consultation' => $inConsultation,
         ]);
     }
 
-    // Show first name + last initial only — enough to identify without full exposure
+    public function news(): JsonResponse
+    {
+        $rssUrl = 'https://tt.loopnews.com/rss.xml';
+
+        try {
+            $response = Http::timeout(5)->get($rssUrl);
+            if (!$response->successful()) {
+                return response()->json(['items' => []]);
+            }
+
+            $xml   = simplexml_load_string($response->body());
+            $items = [];
+
+            foreach ($xml->channel->item as $item) {
+                $items[] = (string) $item->title;
+                if (count($items) >= 15) {
+                    break;
+                }
+            }
+
+            return response()->json(['items' => $items]);
+        } catch (\Throwable) {
+            return response()->json(['items' => []]);
+        }
+    }
+
+    private function callingEntry(QueueEntry $e): array
+    {
+        $doctorName = null;
+        if ($e->status === QueueEntry::STATUS_WITH_DOCTOR && $e->doctor?->staffProfile) {
+            $sp         = $e->doctor->staffProfile;
+            $doctorName = 'Dr. ' . trim($sp->first_name . ' ' . $sp->last_name);
+        }
+
+        return [
+            'id'           => $e->id,
+            'queue_number' => $e->queue_number,
+            'name'         => $this->screenName($e->patient),
+            'destination'  => $doctorName ?? ($e->status === QueueEntry::STATUS_WITH_NURSE ? 'Nurse Station' : 'Consultation Room'),
+            'called_at'    => $e->called_at?->toIso8601String(),
+        ];
+    }
+
     private function screenName(?Patient $patient): string
     {
         if (!$patient) {

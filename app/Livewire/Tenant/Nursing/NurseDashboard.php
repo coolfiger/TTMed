@@ -151,6 +151,26 @@ class NurseDashboard extends Component
             ->toArray();
     }
 
+    public function callInPatient(int $entryId): void
+    {
+        $this->checkPermission('nursing.assess');
+
+        $entry = QueueEntry::on('tenant')
+            ->where('branch_id', $this->branchId)
+            ->findOrFail($entryId);
+
+        if ($entry->status === QueueEntry::STATUS_WAITING) {
+            app(\App\Services\QueueService::class)->transition(
+                $entry,
+                QueueEntry::STATUS_WITH_NURSE,
+                Auth::guard('tenant')->id(),
+            );
+        }
+
+        $this->selectPatient($entryId);
+        $this->loadQueue();
+    }
+
     public function selectPatient(int $entryId): void
     {
         $this->checkPermission('nursing.assess');
