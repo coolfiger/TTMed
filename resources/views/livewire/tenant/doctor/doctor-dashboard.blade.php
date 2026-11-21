@@ -138,13 +138,7 @@
             </div>
 
             <div class="flex items-center gap-2 flex-shrink-0">
-                @if($activeEntryStatus !== 'with_doctor')
-                    <button wire:click="callPatient({{ $activeEntryId }})"
-                            wire:confirm="Call this patient in?"
-                            class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-                        Call In Patient
-                    </button>
-                @else
+                @if($activeEntryStatus === 'with_doctor')
                     @if($noteIsFinalized)
                         <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-semibold">Note Finalized</span>
                         @if($activeEncounterId && auth()->guard('tenant')->user()?->hasPermission('prescriptions.create'))
@@ -189,6 +183,24 @@
                 <button wire:click="$set('errorMessage', '')" class="ml-2 text-red-500 hover:text-red-700 text-xs">✕</button>
             </div>
         @endif
+
+        {{-- ── Call-in gate ── --}}
+        @if($activeEntryStatus !== 'with_doctor')
+        <div class="flex-1 flex flex-col items-center justify-center px-8 text-center">
+            <div class="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+            </div>
+            <p class="text-base font-semibold text-slate-800 mb-1">{{ $activePatientName }} is waiting</p>
+            <p class="text-sm text-slate-500 mb-6">Call the patient in before recording any consultation notes.</p>
+            <button wire:click="callPatient({{ $activeEntryId }})"
+                    class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition shadow-sm">
+                Call In {{ $activePatientName }}
+            </button>
+        </div>
+        @else
 
         {{-- Scrollable consultation form --}}
         <div class="flex-1 overflow-y-auto px-5 py-4 space-y-5">
@@ -545,6 +557,8 @@
             {{-- Bottom spacer --}}
             <div class="h-4"></div>
         </div>
+
+        @endif {{-- end call-in gate --}}
 
     </div>
 

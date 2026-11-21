@@ -386,16 +386,6 @@ class DoctorDashboard extends Component
             'follow_up_days'         => $this->followUpDays ?: null,
         ]);
 
-        // If the patient hasn't been formally called in yet, do it automatically
-        if ($this->activeEntryId && $this->activeEntryStatus === 'awaiting_doctor') {
-            $entry = QueueEntry::on('tenant')->find($this->activeEntryId);
-            if ($entry && $entry->status === 'awaiting_doctor') {
-                $entry->update(['status' => 'with_doctor']);
-                $this->activeEntryStatus = 'with_doctor';
-                $this->loadQueue();
-            }
-        }
-
         $this->successMessage = 'Note saved.';
         $this->errorMessage   = '';
     }
