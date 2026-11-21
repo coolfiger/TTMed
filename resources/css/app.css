@@ -3,6 +3,10 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/* Safelist: classes used only in dynamic ternary expressions that Tailwind's
+   scanner cannot detect at build time. */
+@source inline("bg-teal-50 bg-teal-600 bg-teal-700 border-teal-100 border-teal-400 border-teal-600 text-teal-500 text-teal-600 text-teal-700 text-teal-800 hover:bg-teal-700 hover:border-teal-400 hover:text-teal-700 hover:text-teal-800 focus:ring-teal-500");
+
 /* ─────────────────────────────────────────────────────────────────────────────
    Base form element defaults
    Tailwind v4's preflight strips all browser default form styling, so inputs
