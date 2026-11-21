@@ -5,7 +5,7 @@
 
     {{-- Tab navigation --}}
     <div class="flex border-b border-slate-200 mb-6 gap-1">
-        @foreach(['general' => 'General', 'email' => 'Email', 'branding' => 'Branding', 'backups' => 'Backups'] as $tab => $label)
+        @foreach(['general' => 'General', 'email' => 'Email', 'branding' => 'Branding', 'queue_screen' => 'Queue Screen', 'backups' => 'Backups'] as $tab => $label)
         <button wire:click="$set('activeTab', '{{ $tab }}')"
             class="px-4 py-2 text-sm font-medium rounded-t-md -mb-px
                 {{ $activeTab === $tab
@@ -350,6 +350,31 @@
                 </tbody>
             </table>
         </div>
+    @elseif($activeTab === 'queue_screen')
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200">
+            <p class="text-sm font-semibold text-slate-700">Queue Screen</p>
+            <p class="text-xs text-slate-500 mt-0.5">Settings for the waiting room display screen.</p>
+        </div>
+        <div class="p-5 space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">News Ticker RSS Feed URL</label>
+                <input wire:model="queueScreenRssUrl" type="url"
+                       placeholder="https://tt.loopnews.com/rss.xml"
+                       class="w-full max-w-xl">
+                <p class="mt-1.5 text-xs text-slate-500">Paste any valid RSS feed URL. The queue screen will scroll headlines from this feed. Leave blank to disable the ticker.</p>
+            </div>
+            <div class="pt-1">
+                <button wire:click="saveQueueScreen"
+                        wire:loading.attr="disabled"
+                        wire:loading.class="opacity-50 cursor-not-allowed"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+
         @elseif($activeTab === 'backups')
         <div class="bg-white rounded-lg border border-slate-200 p-6 text-sm text-slate-500">
             No backup files found yet.

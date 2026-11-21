@@ -47,6 +47,9 @@ class CentreSettings extends Component
     public ?string $testEmailStatus = null;
     public ?string $backupStatus    = null;
 
+    // Queue screen
+    public string $queueScreenRssUrl = '';
+
     // Branding
     public        $loginLogoFile   = null;
     public        $sidebarLogoFile = null;
@@ -85,6 +88,8 @@ class CentreSettings extends Component
         $this->brandingPrimaryColor = $settings->get('branding_primary_color', '#1e40af');
         $this->hasSidebarLogo = (bool) $settings->get('branding_sidebar_logo_path');
         $this->hasLoginLogo   = (bool) $settings->get('branding_login_logo_path');
+
+        $this->queueScreenRssUrl = $settings->get('queue_screen_rss_url', '');
     }
 
     public function saveBranding(): void
@@ -266,6 +271,21 @@ class CentreSettings extends Component
         RunTenantBackupJob::dispatch($tenantContext->get())->onQueue('backups');
 
         $this->backupStatus = 'queued';
+    }
+
+    public function saveQueueScreen(): void
+    {
+        $this->checkPermission('settings.manage');
+
+        $this->validate([
+            'queueScreenRssUrl' => 'nullable|url|max:500',
+        ]);
+
+        app(CentreSettingsService::class)->set('queue_screen_rss_url', $this->queueScreenRssUrl ?: '');
+
+        app(AuditService::class)->logTenant(auth()->guard('tenant')->id(), 'settings.queue_screen.updated');
+
+        session()->flash('message', 'Queue screen settings saved.');
     }
 
     public function render(TenantContext $tenantContext, BackupService $backupService): \Illuminate\View\View

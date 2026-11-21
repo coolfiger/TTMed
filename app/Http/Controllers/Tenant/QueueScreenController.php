@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant\Branch;
 use App\Models\Tenant\Patient;
 use App\Models\Tenant\QueueEntry;
+use App\Services\CentreSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 
@@ -98,7 +99,8 @@ class QueueScreenController extends Controller
 
     public function news(): JsonResponse
     {
-        $rssUrl = 'https://tt.loopnews.com/rss.xml';
+        $rssUrl = app(CentreSettingsService::class)->get('queue_screen_rss_url', '')
+            ?: 'https://tt.loopnews.com/rss.xml';
 
         try {
             $response = Http::timeout(5)->get($rssUrl);

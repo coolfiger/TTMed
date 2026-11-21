@@ -468,9 +468,12 @@
     // ── Clock ──────────────────────────────────────────────────
     (function clock() {
         function tick() {
-            const n = new Date();
+            const n    = new Date();
+            let   h    = n.getHours();
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
             document.getElementById('clock').textContent =
-                String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+                h + ':' + String(n.getMinutes()).padStart(2,'0') + ' ' + ampm;
         }
         tick();
         setInterval(tick, 1000);
