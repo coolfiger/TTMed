@@ -260,8 +260,7 @@ class PatientForm extends Component
             $patientId
         );
 
-        session()->flash('message', $this->patient ? 'Patient updated.' : 'Patient registered.');
-        $this->redirect(route('tenant.patients.show', $patientId));
+        $this->redirectRoute('tenant.patients.show', ['id' => $patientId], navigate: false);
     }
 
     public function render(): \Illuminate\View\View
