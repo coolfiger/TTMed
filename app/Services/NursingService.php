@@ -72,19 +72,21 @@ class NursingService
         ?string $details     = null,
         ?string $outcome     = null,
         ?string $site        = null,
+        string  $role        = 'nurse',
     ): NursingProcedure {
         $patientId = Encounter::on('tenant')->where('id', $encounterId)->value('patient_id');
 
         return NursingProcedure::on('tenant')->create([
-            'encounter_id'   => $encounterId,
-            'patient_id'     => $patientId,
-            'procedure_type' => $procedureType,
-            'procedure_name' => $procedureName,
-            'performed_by'   => $performedBy,
-            'details'        => $details,
-            'outcome'        => $outcome,
-            'site'           => $site,
-            'performed_at'   => now(),
+            'encounter_id'      => $encounterId,
+            'patient_id'        => $patientId,
+            'procedure_type'    => $procedureType,
+            'procedure_name'    => $procedureName,
+            'performed_by'      => $performedBy,
+            'performed_by_role' => $role,
+            'details'           => $details,
+            'outcome'           => $outcome,
+            'site'              => $site,
+            'performed_at'      => now(),
         ]);
     }
 

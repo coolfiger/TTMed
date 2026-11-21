@@ -9,6 +9,9 @@ return new class extends Migration
 
     public function up(): void
     {
+        if (DB::connection('tenant')->getDriverName() === 'sqlite') {
+            return; // SQLite doesn't enforce enum types; no-op
+        }
         DB::connection('tenant')->statement("
             ALTER TABLE queue_entries
             MODIFY COLUMN status ENUM(
@@ -20,6 +23,9 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::connection('tenant')->getDriverName() === 'sqlite') {
+            return;
+        }
         DB::connection('tenant')->statement("
             ALTER TABLE queue_entries
             MODIFY COLUMN status ENUM(

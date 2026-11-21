@@ -130,25 +130,25 @@
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Systolic <span class="text-slate-400 font-normal">mmHg</span></label>
-                                        <input wire:model="systolic" type="number" min="50" max="300"
+                                        <input wire:model="systolic" wire:change="autoSaveVitals" type="number" min="50" max="300"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         @error('systolic') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Diastolic <span class="text-slate-400 font-normal">mmHg</span></label>
-                                        <input wire:model="diastolic" type="number" min="20" max="200"
+                                        <input wire:model="diastolic" wire:change="autoSaveVitals" type="number" min="20" max="200"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         @error('diastolic') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Pulse <span class="text-slate-400 font-normal">bpm</span></label>
-                                        <input wire:model="pulse" type="number" min="20" max="300"
+                                        <input wire:model="pulse" wire:change="autoSaveVitals" type="number" min="20" max="300"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         @error('pulse') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Resp. Rate <span class="text-slate-400 font-normal">br/min</span></label>
-                                        <input wire:model="respiratoryRate" type="number" min="1" max="60"
+                                        <input wire:model="respiratoryRate" wire:change="autoSaveVitals" type="number" min="1" max="60"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                         @error('respiratoryRate') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
@@ -161,17 +161,17 @@
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">SpO₂ <span class="text-slate-400 font-normal">%</span></label>
-                                        <input wire:model="oxygenSat" type="number" step="0.1" min="50" max="100"
+                                        <input wire:model="oxygenSat" wire:change="autoSaveVitals" type="number" step="0.1" min="50" max="100"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Temp <span class="text-slate-400 font-normal">°C</span></label>
-                                        <input wire:model="temperature" type="number" step="0.1" min="30" max="45"
+                                        <input wire:model="temperature" wire:change="autoSaveVitals" type="number" step="0.1" min="30" max="45"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Site</label>
-                                        <select wire:model="tempSite"
+                                        <select wire:model="tempSite" wire:change="autoSaveVitals"
                                                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
                                             <option value="oral">Oral</option>
                                             <option value="axillary">Axillary</option>
@@ -181,7 +181,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Pain Score <span class="text-slate-400 font-normal">0–10</span></label>
-                                        <input wire:model="painScore" type="number" min="0" max="10"
+                                        <input wire:model="painScore" wire:change="autoSaveVitals" type="number" min="0" max="10"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                 </div>
@@ -193,12 +193,12 @@
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Weight <span class="text-slate-400 font-normal">kg</span></label>
-                                        <input wire:model.live="weightKg" type="number" step="0.1" min="0.5" max="500"
+                                        <input wire:model.live="weightKg" wire:change="autoSaveVitals" type="number" step="0.1" min="0.5" max="500"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Height <span class="text-slate-400 font-normal">cm</span></label>
-                                        <input wire:model.live="heightCm" type="number" step="0.1" min="20" max="250"
+                                        <input wire:model.live="heightCm" wire:change="autoSaveVitals" type="number" step="0.1" min="20" max="250"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
@@ -217,12 +217,12 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Blood Glucose <span class="text-slate-400 font-normal">mmol/L</span></label>
-                                        <input wire:model="bloodGlucose" type="number" step="0.1" min="0.5" max="50"
+                                        <input wire:model="bloodGlucose" wire:change="autoSaveVitals" type="number" step="0.1" min="0.5" max="50"
                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Timing</label>
-                                        <select wire:model="glucoseTiming"
+                                        <select wire:model="glucoseTiming" wire:change="autoSaveVitals"
                                                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
                                             <option value="fasting">Fasting</option>
                                             <option value="random">Random</option>
@@ -234,7 +234,7 @@
 
                             <div class="bg-white rounded-xl border border-slate-200 p-5">
                                 <label class="block text-xs font-medium text-slate-600 mb-1.5">Nursing Notes</label>
-                                <textarea wire:model="vitalsNotes" rows="2"
+                                <textarea wire:model="vitalsNotes" wire:change="autoSaveVitals" rows="2"
                                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 resize-none"
                                           placeholder="Any observations..."></textarea>
                             </div>

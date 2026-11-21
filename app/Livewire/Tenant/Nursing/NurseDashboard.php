@@ -284,6 +284,53 @@ class NurseDashboard extends Component
         $this->resetVitalsForm();
     }
 
+    public function autoSaveVitals(): void
+    {
+        if (!$this->activePatientId || !$this->activeEncounterId) {
+            return;
+        }
+
+        $this->checkPermission('nursing.assess');
+
+        try {
+            $this->validate([
+                'systolic'        => 'nullable|integer|min:50|max:300',
+                'diastolic'       => 'nullable|integer|min:20|max:200',
+                'pulse'           => 'nullable|integer|min:20|max:300',
+                'respiratoryRate' => 'nullable|integer|min:1|max:60',
+                'oxygenSat'       => 'nullable|numeric|min:50|max:100',
+                'temperature'     => 'nullable|numeric|min:30|max:45',
+                'weightKg'        => 'nullable|numeric|min:0.5|max:500',
+                'heightCm'        => 'nullable|numeric|min:20|max:250',
+                'bloodGlucose'    => 'nullable|numeric|min:0.5|max:50',
+                'painScore'       => 'nullable|integer|min:0|max:10',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException) {
+            return; // Invalid mid-entry value — skip save, don't show error
+        }
+
+        $data = [
+            'patient_id'           => $this->activePatientId,
+            'encounter_id'         => $this->activeEncounterId,
+            'systolic_bp'          => $this->systolic ?: null,
+            'diastolic_bp'         => $this->diastolic ?: null,
+            'pulse_rate'           => $this->pulse ?: null,
+            'respiratory_rate'     => $this->respiratoryRate ?: null,
+            'oxygen_saturation'    => $this->oxygenSat ?: null,
+            'temperature'          => $this->temperature ?: null,
+            'temperature_site'     => $this->tempSite,
+            'weight_kg'            => $this->weightKg ?: null,
+            'height_cm'            => $this->heightCm ?: null,
+            'blood_glucose'        => $this->bloodGlucose ?: null,
+            'blood_glucose_timing' => $this->bloodGlucose ? $this->glucoseTiming : null,
+            'pain_score'           => $this->painScore !== '' ? (int) $this->painScore : null,
+            'notes'                => $this->vitalsNotes ?: null,
+        ];
+
+        $this->nursingService->recordVitals($data, Auth::guard('tenant')->id());
+        $this->successMessage = 'Vitals auto-saved.';
+    }
+
     // -------------------------------------------------------------------------
     // Assessment
     // -------------------------------------------------------------------------

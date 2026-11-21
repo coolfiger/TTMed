@@ -4,13 +4,14 @@ namespace App\Models\Tenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Tenant\StaffProfile;
 
 class NursingProcedure extends Model
 {
     protected $connection = 'tenant';
 
     protected $fillable = [
-        'encounter_id', 'patient_id', 'performed_by',
+        'encounter_id', 'patient_id', 'performed_by', 'performed_by_role',
         'procedure_type', 'procedure_name',
         'details', 'outcome', 'site', 'performed_at',
     ];
@@ -47,6 +48,15 @@ class NursingProcedure extends Model
     public function performedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'performed_by');
+    }
+
+    public function getPerformerNameAttribute(): string
+    {
+        $sp = StaffProfile::on('tenant')->where('user_id', $this->performed_by)->first();
+        if ($sp) {
+            return trim(($sp->title ? $sp->title . ' ' : '') . $sp->first_name . ' ' . $sp->last_name);
+        }
+        return '—';
     }
 
     public function getTypeLabelAttribute(): string

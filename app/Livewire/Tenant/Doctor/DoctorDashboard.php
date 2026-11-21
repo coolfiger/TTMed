@@ -26,6 +26,7 @@ use App\Models\Tenant\StaffProfile;
 use App\Models\Tenant\VitalSign;
 use App\Services\BillingService;
 use App\Services\ConsultationService;
+use App\Services\NursingService;
 use App\Services\PrescriptionService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -132,6 +133,14 @@ class DoctorDashboard extends Component
     // -------------------------------------------------------------------------
     // UI state
     // -------------------------------------------------------------------------
+    // Doctor procedures
+    public bool   $showDoctorProcedureForm = false;
+    public string $doctorProcedureType     = '';
+    public string $doctorProcedureName     = '';
+    public string $doctorProcedureDetails  = '';
+    public string $doctorProcedureOutcome  = '';
+    public string $doctorProcedureSite     = '';
+
     public string $activeTab      = 'soap';
     public string $successMessage = '';
     public string $errorMessage   = '';
@@ -347,14 +356,29 @@ class DoctorDashboard extends Component
                     ];
                 }
 
+                $attendingDoctor = null;
+                if ($enc->doctor_id) {
+                    $sp = StaffProfile::on('tenant')
+                        ->where('id', function ($q) use ($enc) {
+                            $q->select('staff_profile_id')
+                              ->from('doctors')
+                              ->where('id', $enc->doctor_id)
+                              ->limit(1);
+                        })->first();
+                    if ($sp) {
+                        $attendingDoctor = trim(($sp->title ? $sp->title . ' ' : '') . $sp->first_name . ' ' . $sp->last_name);
+                    }
+                }
+
                 return [
-                    'id'              => $enc->id,
-                    'encounter_date'  => $enc->encounter_date?->format('d M Y'),
-                    'chief_complaint' => $enc->chief_complaint,
-                    'assessment'      => $note?->assessment,
-                    'plan'            => $note?->plan,
-                    'diagnoses'       => $diagnoses,
-                    'vitals'          => $vitals,
+                    'id'               => $enc->id,
+                    'encounter_date'   => $enc->encounter_date?->format('d M Y'),
+                    'chief_complaint'  => $enc->chief_complaint,
+                    'assessment'       => $note?->assessment,
+                    'plan'             => $note?->plan,
+                    'diagnoses'        => $diagnoses,
+                    'vitals'           => $vitals,
+                    'attending_doctor' => $attendingDoctor,
                 ];
             })->toArray();
     }
@@ -1064,6 +1088,40 @@ class DoctorDashboard extends Component
     }
 
     // -------------------------------------------------------------------------
+    // Doctor procedures
+    // -------------------------------------------------------------------------
+
+    public function saveDoctorProcedure(): void
+    {
+        $this->checkPermission('encounters.manage');
+
+        $this->validate([
+            'doctorProcedureType' => 'required|string',
+            'doctorProcedureName' => 'required|string|max:200',
+        ]);
+
+        if (!$this->activeEncounterId) {
+            $this->errorMessage = 'No active encounter.';
+            return;
+        }
+
+        app(NursingService::class)->addProcedure(
+            encounterId:   $this->activeEncounterId,
+            procedureType: $this->doctorProcedureType,
+            procedureName: $this->doctorProcedureName,
+            performedBy:   Auth::guard('tenant')->id(),
+            details:       $this->doctorProcedureDetails ?: null,
+            outcome:       $this->doctorProcedureOutcome ?: null,
+            site:          $this->doctorProcedureSite ?: null,
+            role:          'doctor',
+        );
+
+        $this->successMessage             = 'Procedure recorded.';
+        $this->showDoctorProcedureForm    = false;
+        $this->resetDoctorProcedureForm();
+    }
+
+    // -------------------------------------------------------------------------
     // Rendering
     // -------------------------------------------------------------------------
 
@@ -1077,6 +1135,7 @@ class DoctorDashboard extends Component
         $noteIsFinalized = false;
         $nursingAssessment = null;
         $nursingProcedures = [];
+        $doctorProcedures  = [];
         $encounterDocuments = [];
         $familyHistories   = [];
 
@@ -1149,6 +1208,21 @@ class DoctorDashboard extends Component
 
             $nursingProcedures = NursingProcedure::on('tenant')
                 ->where('encounter_id', $this->activeEncounterId)
+                ->where('performed_by_role', 'nurse')
+                ->orderBy('performed_at')
+                ->get()
+                ->map(fn ($p) => [
+                    'type_label'   => $p->type_label,
+                    'name'         => $p->procedure_name,
+                    'site'         => $p->site,
+                    'outcome'      => $p->outcome,
+                    'performed_at' => $p->performed_at?->format('H:i'),
+                ])
+                ->toArray();
+
+            $doctorProcedures = NursingProcedure::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->where('performed_by_role', 'doctor')
                 ->orderBy('performed_at')
                 ->get()
                 ->map(fn ($p) => [
@@ -1205,6 +1279,7 @@ class DoctorDashboard extends Component
             'noteIsFinalized'    => $noteIsFinalized,
             'nursingAssessment'  => $nursingAssessment,
             'nursingProcedures'  => $nursingProcedures,
+            'doctorProcedures'   => $doctorProcedures,
             'encounterDocuments' => $encounterDocuments,
             'familyHistories'    => $familyHistories,
             'savedFollowUp'      => $savedFollowUp,
@@ -1240,10 +1315,21 @@ class DoctorDashboard extends Component
         $this->wizardStep            = null;
         $this->successMessage        = '';
         $this->errorMessage          = '';
-        $this->showDiagnosisForm     = false;
-        $this->showReferralForm      = false;
+        $this->showDiagnosisForm          = false;
+        $this->showReferralForm           = false;
+        $this->showDoctorProcedureForm    = false;
         $this->resetDiagnosisForm();
         $this->resetReferralForm();
+        $this->resetDoctorProcedureForm();
+    }
+
+    private function resetDoctorProcedureForm(): void
+    {
+        $this->doctorProcedureType    = '';
+        $this->doctorProcedureName    = '';
+        $this->doctorProcedureDetails = '';
+        $this->doctorProcedureOutcome = '';
+        $this->doctorProcedureSite    = '';
     }
 
     private function resetDiagnosisForm(): void

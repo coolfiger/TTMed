@@ -587,6 +587,99 @@
                 </div>
             </div>
 
+            {{-- ── Doctor Procedures ── --}}
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-600">Procedures Performed</p>
+                    @if(!$noteIsFinalized)
+                        <button wire:click="$set('showDoctorProcedureForm', true)"
+                                class="text-xs font-semibold text-blue-600 hover:text-blue-800 transition">
+                            + Add Procedure
+                        </button>
+                    @endif
+                </div>
+
+                @if($showDoctorProcedureForm)
+                    <div class="p-4 border-b border-slate-100 bg-blue-50 space-y-3">
+                        <h3 class="text-sm font-semibold text-slate-700">Record Procedure</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Type</label>
+                                <select wire:model="doctorProcedureType"
+                                        class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <option value="">Select type…</option>
+                                    @foreach(\App\Models\Tenant\NursingProcedure::TYPES as $key => $label)
+                                        <option value="{{ $key }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('doctorProcedureType') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Name / Description</label>
+                                <input type="text" wire:model="doctorProcedureName" maxlength="200"
+                                       class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                                @error('doctorProcedureName') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Site</label>
+                                <input type="text" wire:model="doctorProcedureSite"
+                                       class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Outcome</label>
+                                <input type="text" wire:model="doctorProcedureOutcome"
+                                       class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1">Details</label>
+                            <textarea wire:model="doctorProcedureDetails" rows="2"
+                                      class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"></textarea>
+                        </div>
+                        <div class="flex gap-2 justify-end">
+                            <button wire:click="$set('showDoctorProcedureForm', false)"
+                                    class="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5">Cancel</button>
+                            <button wire:click="saveDoctorProcedure"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition">
+                                Save Procedure
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="p-4">
+                    @if(count($doctorProcedures) > 0)
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-100">
+                                    <th class="text-left pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Procedure</th>
+                                    <th class="text-left pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Site</th>
+                                    <th class="text-left pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Outcome</th>
+                                    <th class="text-left pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                @foreach($doctorProcedures as $proc)
+                                    <tr>
+                                        <td class="py-2 pr-4">
+                                            <p class="font-medium text-slate-800">{{ $proc['type_label'] }}</p>
+                                            @if($proc['name'] !== $proc['type_label'])
+                                                <p class="text-xs text-slate-500">{{ $proc['name'] }}</p>
+                                            @endif
+                                        </td>
+                                        <td class="py-2 pr-4 text-slate-600 text-sm">{{ $proc['site'] ?? '—' }}</td>
+                                        <td class="py-2 pr-4 text-slate-600 text-sm">{{ $proc['outcome'] ?? '—' }}</td>
+                                        <td class="py-2 text-xs text-slate-400">{{ $proc['performed_at'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <p class="text-sm text-slate-400 text-center py-4">No procedures recorded for this visit.</p>
+                    @endif
+                </div>
+            </div>
+
             {{-- ── Diagnoses ── --}}
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -1263,6 +1356,9 @@
                                 @click="expanded = !expanded">
                             <div>
                                 <p class="text-xs font-semibold text-slate-700">{{ $visit['encounter_date'] }}</p>
+                                @if(!empty($visit['attending_doctor']))
+                                    <p class="text-xs text-blue-600 font-medium">{{ $visit['attending_doctor'] }}</p>
+                                @endif
                                 @if($visit['chief_complaint'])
                                     <p class="text-xs text-slate-500 italic truncate max-w-[200px]">{{ $visit['chief_complaint'] }}</p>
                                 @endif
@@ -1324,6 +1420,9 @@
                                     <p class="text-xs font-semibold text-slate-400 uppercase">Plan</p>
                                     <p class="text-xs text-slate-600">{{ Str::limit($visit['plan'], 200) }}</p>
                                 </div>
+                            @endif
+                            @if(!empty($visit['attending_doctor']))
+                                <p class="text-xs text-slate-400">Attending: <span class="text-slate-600">{{ $visit['attending_doctor'] }}</span></p>
                             @endif
                         </div>
                     </div>
