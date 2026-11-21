@@ -289,7 +289,7 @@ class CentreSettings extends Component
             'queue_screen_rss_url'  => $this->queueScreenRssUrl ?: '',
         ]);
 
-        app(AuditService::class)->logTenant(auth()->guard('tenant')->id(), 'settings.queue_screen.updated');
+        app(AuditService::class)->logTenant('settings.queue_screen.updated');
 
         session()->flash('message', 'Queue screen settings saved.');
     }
