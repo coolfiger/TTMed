@@ -123,6 +123,12 @@ class DoctorDashboard extends Component
     public string $followUpScheduleReason   = '';
 
     // -------------------------------------------------------------------------
+    // Post-consultation inline wizard
+    // null = not in wizard; 'prescription' | 'instructions' | 'billing'
+    // -------------------------------------------------------------------------
+    public ?string $wizardStep = null;
+
+    // -------------------------------------------------------------------------
     // UI state
     // -------------------------------------------------------------------------
     public string $activeTab      = 'soap';
@@ -506,9 +512,10 @@ class DoctorDashboard extends Component
             )
             ->first();
 
-        $this->selectedServiceIds = $autoSelect ? [$autoSelect->id] : [];
-        $this->billingSearchQuery = '';
+        $this->selectedServiceIds  = $autoSelect ? [$autoSelect->id] : [];
+        $this->billingSearchQuery  = '';
         $this->showBillingSelector = true;
+        $this->wizardStep          = 'billing';
     }
 
     public function toggleBillingService(int $serviceId): void
@@ -528,6 +535,7 @@ class DoctorDashboard extends Component
         $this->selectedServiceIds  = [];
         $this->billingCatalog      = [];
         $this->billingSearchQuery  = '';
+        $this->wizardStep          = null;
     }
 
     public function completeEncounterWithBilling(): void
@@ -605,6 +613,7 @@ class DoctorDashboard extends Component
             $this->showBillingSelector = false;
             $this->selectedServiceIds  = [];
             $this->billingCatalog      = [];
+            $this->wizardStep          = null;
             $this->successMessage      = 'Encounter completed.';
             $this->activeEntryId       = null;
             $this->activeEncounterId   = null;
@@ -733,6 +742,7 @@ class DoctorDashboard extends Component
         ];
         $this->showPrescriptionBuilder = true;
         $this->showInstructionBuilder  = false;
+        $this->wizardStep              = 'prescription';
     }
 
     public function addRxItem(): void
@@ -803,7 +813,10 @@ class DoctorDashboard extends Component
             ->where('encounter_id', $this->activeEncounterId)
             ->first();
 
-        $this->instructionLines = $existing?->lines ?? [''];
+        $this->instructionLines      = $existing?->lines ?? [''];
+        $this->showInstructionBuilder = true;
+        $this->showPrescriptionBuilder = false;
+        $this->wizardStep             = 'instructions';
 
         // Pre-fill follow-up from consultation note if already set
         $existingFollowUp = FollowUp::on('tenant')
@@ -820,8 +833,6 @@ class DoctorDashboard extends Component
             $this->followUpScheduleDays   = $this->followUpDays;
             $this->followUpScheduleReason = $this->followUpInstructions;
         }
-
-        $this->showInstructionBuilder = true;
     }
 
     public function addInstructionLine(): void
@@ -1165,6 +1176,7 @@ class DoctorDashboard extends Component
         $this->scheduleFollowUp      = false;
         $this->followUpScheduleDays  = '';
         $this->followUpScheduleReason = '';
+        $this->wizardStep            = null;
         $this->successMessage        = '';
         $this->errorMessage          = '';
         $this->showDiagnosisForm     = false;

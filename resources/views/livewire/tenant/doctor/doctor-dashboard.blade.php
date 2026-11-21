@@ -139,18 +139,27 @@
 
             <div class="flex items-center gap-2 flex-shrink-0">
                 @if($activeEntryStatus === 'with_doctor')
-                    @if($noteIsFinalized)
+                    @if($wizardStep)
+                        {{-- Wizard is active — show step breadcrumb, no edit buttons --}}
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                                {{ $wizardStep === 'prescription' ? 'bg-blue-600 text-white' : 'bg-emerald-100 text-emerald-700' }}">
+                                {{ $wizardStep === 'prescription' ? '1' : '✓' }}
+                            </span>
+                            <span class="text-sm {{ $wizardStep === 'prescription' ? 'font-semibold text-blue-700' : 'text-slate-400 line-through' }}">Prescription</span>
+                            <span class="text-slate-300">›</span>
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                                {{ $wizardStep === 'instructions' ? 'bg-teal-600 text-white' : ($wizardStep === 'billing' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500') }}">
+                                {{ $wizardStep === 'billing' ? '✓' : '2' }}
+                            </span>
+                            <span class="text-sm {{ $wizardStep === 'instructions' ? 'font-semibold text-teal-700' : ($wizardStep === 'billing' ? 'text-slate-400 line-through' : 'text-slate-400') }}">Instructions</span>
+                            <span class="text-slate-300">›</span>
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                                {{ $wizardStep === 'billing' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500' }}">3</span>
+                            <span class="text-sm {{ $wizardStep === 'billing' ? 'font-semibold text-emerald-700' : 'text-slate-400' }}">Billing</span>
+                        </div>
+                    @elseif($noteIsFinalized)
                         <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-semibold">Note Finalized</span>
-                        @if($activeEncounterId && auth()->guard('tenant')->user()?->hasPermission('prescriptions.create'))
-                            <a href="{{ route('tenant.prescriptions.encounter', $activeEncounterId) }}"
-                               class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                Prescribe
-                            </a>
-                        @endif
                         <button wire:click="openBillingSelector"
                                 class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
                             Complete &amp; Send to Reception
@@ -213,6 +222,289 @@
                 Call In {{ $activePatientName }}
             </button>
         </div>
+        @elseif($wizardStep)
+
+        {{-- ══════════════════════════════════════════════════════
+             Inline post-consultation wizard (replaces consultation form)
+        ══════════════════════════════════════════════════════ --}}
+        <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+
+            @if($wizardStep === 'prescription')
+            {{-- ── Step 1: Prescription ── --}}
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+                @if($errorMessage)
+                <div class="mx-5 mt-3 flex-shrink-0 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700 flex items-center justify-between">
+                    <span>{{ $errorMessage }}</span>
+                    <button wire:click="$set('errorMessage', '')" class="ml-2 text-red-400 hover:text-red-600 text-xs">✕</button>
+                </div>
+                @endif
+                <div class="px-5 pt-4 pb-2 flex-shrink-0">
+                    <p class="text-xs text-slate-500">Add medications to this prescription. Skip if none needed.</p>
+                </div>
+                <div class="flex-1 min-h-0 overflow-y-auto px-5 pb-4 space-y-4">
+                    @foreach($rxItems as $i => $item)
+                    <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Medication {{ $i + 1 }}</p>
+                            @if(count($rxItems) > 1)
+                                <button wire:click="removeRxItem({{ $i }})" class="text-red-400 hover:text-red-600 text-xs">Remove</button>
+                            @endif
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div class="col-span-2">
+                                <label class="block text-xs text-slate-500 mb-1">Medication Name <span class="text-red-400">*</span></label>
+                                <input type="text" wire:model="rxItems.{{ $i }}.name" placeholder="e.g. Amoxicillin"
+                                       class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Strength</label>
+                                <input type="text" wire:model="rxItems.{{ $i }}.strength" placeholder="e.g. 500mg"
+                                       class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Form</label>
+                                <select wire:model="rxItems.{{ $i }}.form"
+                                        class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <option value="">— Select —</option>
+                                    <option value="tablet">Tablet</option>
+                                    <option value="capsule">Capsule</option>
+                                    <option value="liquid">Liquid</option>
+                                    <option value="cream">Cream / Ointment</option>
+                                    <option value="injection">Injection</option>
+                                    <option value="inhaler">Inhaler</option>
+                                    <option value="drops">Drops</option>
+                                    <option value="patch">Patch</option>
+                                    <option value="suppository">Suppository</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Dose</label>
+                                <input type="text" wire:model="rxItems.{{ $i }}.dose" placeholder="e.g. 1 tablet"
+                                       class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Frequency</label>
+                                <input type="text" wire:model="rxItems.{{ $i }}.frequency" placeholder="e.g. Twice daily"
+                                       class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Duration</label>
+                                <div class="flex gap-1.5">
+                                    <input type="number" wire:model="rxItems.{{ $i }}.duration" min="1" placeholder="7"
+                                           class="w-20 rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                                    <select wire:model="rxItems.{{ $i }}.duration_unit"
+                                            class="flex-1 rounded-lg border border-slate-300 bg-white text-sm px-2 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                        <option value="days">Days</option>
+                                        <option value="weeks">Weeks</option>
+                                        <option value="months">Months</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-span-2 md:col-span-3">
+                                <label class="block text-xs text-slate-500 mb-1">Special Instructions</label>
+                                <input type="text" wire:model="rxItems.{{ $i }}.instructions" placeholder="e.g. Take with food, avoid alcohol"
+                                       class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                    <button wire:click="addRxItem"
+                            class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition">
+                        <span class="text-lg leading-none">+</span> Add Another Medication
+                    </button>
+                </div>
+                <div class="px-5 py-4 border-t-2 border-blue-100 flex items-center justify-between flex-shrink-0 bg-white">
+                    <button wire:click="skipPrescription"
+                            class="text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-5 py-2.5 rounded-lg transition">
+                        Skip — No Prescription
+                    </button>
+                    <button wire:click="issuePrescription"
+                            wire:loading.attr="disabled" wire:target="issuePrescription"
+                            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition shadow-sm disabled:opacity-50">
+                        <span wire:loading.remove wire:target="issuePrescription">Save Prescription &amp; Continue →</span>
+                        <span wire:loading wire:target="issuePrescription">Saving…</span>
+                    </button>
+                </div>
+            </div>
+
+            @elseif($wizardStep === 'instructions')
+            {{-- ── Step 2: Instructions ── --}}
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div class="px-5 pt-4 pb-2 flex-shrink-0">
+                    <p class="text-xs text-slate-500">Give the patient written guidance to take home. Reception can print this at checkout.</p>
+                </div>
+                <div class="flex-1 min-h-0 overflow-y-auto px-5 pb-4 space-y-5">
+                    @php
+                        $tmplList = [
+                            'Drink at least 8 glasses of water daily',
+                            'Rest and avoid strenuous physical activity',
+                            'Elevate the affected limb above heart level',
+                            'Apply ice pack for 15-20 minutes every 2 hours',
+                            'Take all medication as prescribed, even if feeling better',
+                            'Avoid alcohol and smoking during treatment',
+                            'Eat light, easily digestible meals',
+                            'Monitor temperature and return if fever exceeds 38.5 degrees C',
+                            'Keep wound site clean and dry',
+                            'Return to clinic immediately if symptoms worsen',
+                            'Avoid driving while on medication',
+                            'Follow up with physiotherapy as arranged',
+                        ];
+                    @endphp
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Common Instructions &mdash; click to toggle</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($tmplList as $tmpl)
+                                @php $active = in_array($tmpl, $instructionLines); @endphp
+                                <button wire:click="toggleInstructionTemplate('{{ e($tmpl) }}')"
+                                        class="text-xs px-3 py-1.5 rounded-full border transition
+                                            {{ $active ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-slate-300 text-slate-700 hover:border-teal-400 hover:text-teal-700' }}">
+                                    {{ $tmpl }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Custom Instructions</p>
+                        <div class="space-y-2">
+                            @foreach($instructionLines as $j => $line)
+                                @if(!in_array($line, $tmplList) || trim($line) === '')
+                                <div class="flex gap-2 items-center">
+                                    <input type="text" wire:model="instructionLines.{{ $j }}"
+                                           placeholder="Add a custom instruction&hellip;"
+                                           class="flex-1 rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+                                    <button wire:click="removeInstructionLine({{ $j }})"
+                                            class="text-red-400 hover:text-red-600 text-xs flex-shrink-0">Remove</button>
+                                </div>
+                                @endif
+                            @endforeach
+                        </div>
+                        <button wire:click="addInstructionLine"
+                                class="mt-2 flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-800 font-medium">
+                            <span class="text-lg leading-none">+</span> Add Custom Line
+                        </button>
+                    </div>
+                    @if(count(array_filter($instructionLines)) > 0)
+                    <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Preview</p>
+                        <ul class="space-y-1.5">
+                            @foreach($instructionLines as $ln)
+                                @if(trim($ln))
+                                <li class="text-sm text-slate-700 flex gap-2">
+                                    <span class="text-teal-500 flex-shrink-0 mt-0.5">&#8226;</span>
+                                    <span>{{ $ln }}</span>
+                                </li>
+                                @endif
+                            @endforeach
+                        </ul>
+                    </div>
+                    @endif
+                    {{-- Follow-up scheduling --}}
+                    <div class="border border-amber-200 rounded-xl bg-amber-50 p-4">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" wire:model.live="scheduleFollowUp"
+                                   class="w-4 h-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500">
+                            <span class="text-sm font-semibold text-amber-800">Schedule a follow-up appointment</span>
+                        </label>
+                        @if($scheduleFollowUp)
+                        <div class="mt-4 space-y-3 pt-3 border-t border-amber-200">
+                            <div class="flex items-center gap-3">
+                                <label class="text-xs font-semibold text-amber-700 w-28 flex-shrink-0">Return in</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" wire:model="followUpScheduleDays" min="1" max="365" placeholder="7"
+                                           class="w-20 rounded-lg border border-amber-300 bg-white text-sm px-3 py-1.5 focus:ring-2 focus:ring-amber-400 focus:outline-none">
+                                    <span class="text-sm text-amber-700">days</span>
+                                    @if($followUpScheduleDays && is_numeric($followUpScheduleDays))
+                                        <span class="text-xs text-amber-600 ml-1">({{ now()->addDays((int)$followUpScheduleDays)->format('d M Y') }})</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-amber-700 block mb-1">Follow-up instructions / reason</label>
+                                <textarea wire:model="followUpScheduleReason" rows="2"
+                                          placeholder="e.g. Review blood pressure results, wound check&hellip;"
+                                          class="w-full rounded-lg border border-amber-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:outline-none resize-none"></textarea>
+                            </div>
+                            <p class="text-xs text-amber-600">Reception will see this in the follow-up queue to call and confirm a time.</p>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                <div class="px-5 py-4 border-t-2 border-teal-100 flex items-center justify-between flex-shrink-0 bg-white">
+                    <button wire:click="skipInstructions"
+                            class="text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-5 py-2.5 rounded-lg transition">
+                        Skip — No Instructions
+                    </button>
+                    <button wire:click="saveInstructions"
+                            wire:loading.attr="disabled" wire:target="saveInstructions"
+                            class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition shadow-sm disabled:opacity-50">
+                        <span wire:loading.remove wire:target="saveInstructions">Save Instructions &amp; Continue →</span>
+                        <span wire:loading wire:target="saveInstructions">Saving…</span>
+                    </button>
+                </div>
+            </div>
+
+            @elseif($wizardStep === 'billing')
+            {{-- ── Step 3: Billing ── --}}
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden" x-data="{ search: '' }">
+                <div class="px-5 pt-4 pb-2 flex-shrink-0">
+                    <p class="text-xs text-slate-500 mb-3">Select everything done during this visit. The receptionist will collect payment.</p>
+                    <input type="text" x-model="search" placeholder="Search services…"
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10">
+                </div>
+                <div class="flex-1 min-h-0 overflow-y-auto px-5 pb-2 space-y-1">
+                    @php $grouped = collect($billingCatalog)->groupBy('category'); @endphp
+                    @foreach($grouped as $category => $services)
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide pt-2 pb-1"
+                           x-show="{{ collect($services)->pluck('name')->map(fn($n) => "search===''||'".strtolower($n)."'.includes(search.toLowerCase())")->join('||') }}">
+                           {{ $category }}
+                        </p>
+                        @foreach($services as $svc)
+                        <label class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-slate-50 transition"
+                               x-show="search === '' || '{{ strtolower($svc['name']) }}'.includes(search.toLowerCase())">
+                            <input type="checkbox"
+                                   wire:click="toggleBillingService({{ $svc['id'] }})"
+                                   @checked(in_array($svc['id'], $selectedServiceIds))
+                                   class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-slate-800">{{ $svc['name'] }}</p>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-600 flex-shrink-0">
+                                ${{ number_format($svc['price'] / 100, 2) }}
+                            </span>
+                        </label>
+                        @endforeach
+                    @endforeach
+                    @if(count($billingCatalog) === 0)
+                        <p class="text-sm text-slate-400 italic text-center py-6">No active services found. Add services under Settings → Services.</p>
+                    @endif
+                </div>
+                <div class="px-5 py-4 border-t border-slate-200 flex-shrink-0 bg-white">
+                    @php
+                        $selectedTotal = collect($billingCatalog)->whereIn('id', $selectedServiceIds)->sum('price');
+                    @endphp
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm text-slate-500">{{ count($selectedServiceIds) }} service(s) selected</span>
+                        <span class="text-base font-bold text-slate-800">${{ number_format($selectedTotal / 100, 2) }}</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <button wire:click="closeBillingSelector"
+                                class="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
+                            Cancel
+                        </button>
+                        <button wire:click="completeEncounterWithBilling"
+                                wire:loading.attr="disabled" wire:target="completeEncounterWithBilling"
+                                class="flex-1 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
+                            <span wire:loading.remove wire:target="completeEncounterWithBilling">Send to Reception</span>
+                            <span wire:loading wire:target="completeEncounterWithBilling">Processing…</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+        </div>
+
         @else
 
         {{-- Scrollable consultation form --}}
@@ -1198,286 +1490,6 @@
 
     @endif {{-- end activeEntryId --}}
 
-    {{-- ══════════════════════════════════════════════════════
-         Prescription Builder Modal
-══════════════════════════════════════════════════════ --}}
-@if($showPrescriptionBuilder)
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[92vh] overflow-hidden">
-
-        {{-- Wizard header --}}
-        <div class="px-6 pt-4 pb-3 border-b border-slate-100 flex-shrink-0">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">1</span>
-                    <span class="text-sm font-semibold text-blue-700">Prescription</span>
-                    <span class="text-slate-300 text-sm">›</span>
-                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-500 text-xs font-bold">2</span>
-                    <span class="text-sm text-slate-400">Instructions</span>
-                    <span class="text-slate-300 text-sm">›</span>
-                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-500 text-xs font-bold">3</span>
-                    <span class="text-sm text-slate-400">Billing</span>
-                </div>
-                <button wire:click="skipPrescription" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
-            </div>
-            <p class="text-xs text-slate-500">Add medications to this prescription. Reception will print it at checkout.</p>
-        </div>
-
-        {{-- Inline error --}}
-        @if($errorMessage)
-        <div class="mx-6 mt-3 flex-shrink-0 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700 flex items-center justify-between">
-            <span>{{ $errorMessage }}</span>
-            <button wire:click="$set('errorMessage', '')" class="ml-2 text-red-400 hover:text-red-600 text-xs">✕</button>
-        </div>
-        @endif
-
-        <div class="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto">
-            @foreach($rxItems as $i => $item)
-            <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Medication {{ $i + 1 }}</p>
-                    @if(count($rxItems) > 1)
-                        <button wire:click="removeRxItem({{ $i }})" class="text-red-400 hover:text-red-600 text-xs">Remove</button>
-                    @endif
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <div class="col-span-2 md:col-span-2">
-                        <label class="block text-xs text-slate-500 mb-1">Medication Name <span class="text-red-400">*</span></label>
-                        <input type="text" wire:model="rxItems.{{ $i }}.name"
-                               placeholder="e.g. Amoxicillin"
-                               class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-500 mb-1">Strength</label>
-                        <input type="text" wire:model="rxItems.{{ $i }}.strength"
-                               placeholder="e.g. 500mg"
-                               class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-500 mb-1">Form</label>
-                        <select wire:model="rxItems.{{ $i }}.form"
-                                class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="">— Select —</option>
-                            <option value="tablet">Tablet</option>
-                            <option value="capsule">Capsule</option>
-                            <option value="liquid">Liquid</option>
-                            <option value="cream">Cream / Ointment</option>
-                            <option value="injection">Injection</option>
-                            <option value="inhaler">Inhaler</option>
-                            <option value="drops">Drops</option>
-                            <option value="patch">Patch</option>
-                            <option value="suppository">Suppository</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-500 mb-1">Dose</label>
-                        <input type="text" wire:model="rxItems.{{ $i }}.dose"
-                               placeholder="e.g. 1 tablet"
-                               class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-500 mb-1">Frequency</label>
-                        <input type="text" wire:model="rxItems.{{ $i }}.frequency"
-                               placeholder="e.g. Twice daily"
-                               class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-500 mb-1">Duration</label>
-                        <div class="flex gap-1.5">
-                            <input type="number" wire:model="rxItems.{{ $i }}.duration" min="1"
-                                   placeholder="7"
-                                   class="w-20 rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                            <select wire:model="rxItems.{{ $i }}.duration_unit"
-                                    class="flex-1 rounded-lg border border-slate-300 bg-white text-sm px-2 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                <option value="days">Days</option>
-                                <option value="weeks">Weeks</option>
-                                <option value="months">Months</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-span-2 md:col-span-3">
-                        <label class="block text-xs text-slate-500 mb-1">Special Instructions</label>
-                        <input type="text" wire:model="rxItems.{{ $i }}.instructions"
-                               placeholder="e.g. Take with food, avoid alcohol"
-                               class="w-full rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                    </div>
-                </div>
-            </div>
-            @endforeach
-
-            <button wire:click="addRxItem"
-                    class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition">
-                <span class="text-lg leading-none">+</span> Add Another Medication
-            </button>
-        </div>
-
-        <div class="px-6 py-5 border-t-2 border-blue-100 flex items-center justify-between flex-shrink-0 bg-white">
-            <button wire:click="skipPrescription"
-                    class="text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-5 py-2.5 rounded-lg transition">
-                Skip — No Prescription
-            </button>
-            <button wire:click="issuePrescription"
-                    wire:loading.attr="disabled"
-                    wire:target="issuePrescription"
-                    class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition shadow-sm disabled:opacity-50">
-                <span wire:loading.remove wire:target="issuePrescription">Save Prescription &amp; Continue →</span>
-                <span wire:loading wire:target="issuePrescription">Saving…</span>
-            </button>
-        </div>
-    </div>
-</div>
-@endif
-
-{{-- ══════════════════════════════════════════════════════
-     Patient Instruction Sheet Builder Modal
-══════════════════════════════════════════════════════ --}}
-@if($showInstructionBuilder)
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[92vh] overflow-hidden">
-
-        {{-- Wizard header --}}
-        <div class="px-6 pt-4 pb-3 border-b border-slate-100 flex-shrink-0">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">✓</span>
-                    <span class="text-sm text-slate-400 line-through">Prescription</span>
-                    <span class="text-slate-300 text-sm">›</span>
-                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-teal-600 text-white text-xs font-bold">2</span>
-                    <span class="text-sm font-semibold text-teal-700">Instructions</span>
-                    <span class="text-slate-300 text-sm">›</span>
-                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-500 text-xs font-bold">3</span>
-                    <span class="text-sm text-slate-400">Billing</span>
-                </div>
-                <button wire:click="skipInstructions" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
-            </div>
-            <p class="text-xs text-slate-500">Give the patient written guidance to take home. Reception can print this at checkout.</p>
-        </div>
-
-        <div class="flex-1 min-h-0 p-6 space-y-5 overflow-y-auto">
-            @php
-                $tmplList = [
-                    'Drink at least 8 glasses of water daily',
-                    'Rest and avoid strenuous physical activity',
-                    'Elevate the affected limb above heart level',
-                    'Apply ice pack for 15-20 minutes every 2 hours',
-                    'Take all medication as prescribed, even if feeling better',
-                    'Avoid alcohol and smoking during treatment',
-                    'Eat light, easily digestible meals',
-                    'Monitor temperature and return if fever exceeds 38.5 degrees C',
-                    'Keep wound site clean and dry',
-                    'Return to clinic immediately if symptoms worsen',
-                    'Avoid driving while on medication',
-                    'Follow up with physiotherapy as arranged',
-                ];
-            @endphp
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Common Instructions &mdash; click to toggle</p>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($tmplList as $tmpl)
-                        @php $active = in_array($tmpl, $instructionLines); @endphp
-                        <button wire:click="toggleInstructionTemplate('{{ e($tmpl) }}')"
-                                class="text-xs px-3 py-1.5 rounded-full border transition
-                                    {{ $active
-                                        ? 'bg-teal-600 border-teal-600 text-white'
-                                        : 'bg-white border-slate-300 text-slate-700 hover:border-teal-400 hover:text-teal-700' }}">
-                            {{ $tmpl }}
-                        </button>
-                    @endforeach
-                </div>
-            </div>
-
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Custom Instructions</p>
-                <div class="space-y-2">
-                    @foreach($instructionLines as $j => $line)
-                        @if(!in_array($line, $tmplList) || trim($line) === '')
-                        <div class="flex gap-2 items-center">
-                            <input type="text" wire:model="instructionLines.{{ $j }}"
-                                   placeholder="Add a custom instruction&hellip;"
-                                   class="flex-1 rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none" />
-                            <button wire:click="removeInstructionLine({{ $j }})"
-                                    class="text-red-400 hover:text-red-600 text-xs flex-shrink-0">Remove</button>
-                        </div>
-                        @endif
-                    @endforeach
-                </div>
-                <button wire:click="addInstructionLine"
-                        class="mt-2 flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-800 font-medium">
-                    <span class="text-lg leading-none">+</span> Add Custom Line
-                </button>
-            </div>
-
-            @if(count(array_filter($instructionLines)) > 0)
-            <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Preview</p>
-                <ul class="space-y-1.5">
-                    @foreach($instructionLines as $ln)
-                        @if(trim($ln))
-                        <li class="text-sm text-slate-700 flex gap-2">
-                            <span class="text-teal-500 flex-shrink-0 mt-0.5">&#8226;</span>
-                            <span>{{ $ln }}</span>
-                        </li>
-                        @endif
-                    @endforeach
-                </ul>
-            </div>
-            @endif
-
-            {{-- Follow-up scheduling --}}
-            <div class="border border-amber-200 rounded-xl bg-amber-50 p-4">
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" wire:model.live="scheduleFollowUp"
-                           class="w-4 h-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500">
-                    <span class="text-sm font-semibold text-amber-800">Schedule a follow-up appointment</span>
-                </label>
-
-                @if($scheduleFollowUp)
-                <div class="mt-4 space-y-3 pt-3 border-t border-amber-200">
-                    <div class="flex items-center gap-3">
-                        <label class="text-xs font-semibold text-amber-700 w-28 flex-shrink-0">Return in</label>
-                        <div class="flex items-center gap-2">
-                            <input type="number" wire:model="followUpScheduleDays"
-                                   min="1" max="365" placeholder="7"
-                                   class="w-20 rounded-lg border border-amber-300 bg-white text-sm px-3 py-1.5 focus:ring-2 focus:ring-amber-400 focus:outline-none">
-                            <span class="text-sm text-amber-700">days</span>
-                            @if($followUpScheduleDays && is_numeric($followUpScheduleDays))
-                                <span class="text-xs text-amber-600 ml-1">
-                                    ({{ now()->addDays((int)$followUpScheduleDays)->format('d M Y') }})
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-amber-700 block mb-1">Follow-up instructions / reason</label>
-                        <textarea wire:model="followUpScheduleReason"
-                                  rows="2"
-                                  placeholder="e.g. Review blood pressure results, wound check&hellip;"
-                                  class="w-full rounded-lg border border-amber-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:outline-none resize-none"></textarea>
-                    </div>
-                    <p class="text-xs text-amber-600">Reception will see this in the follow-up queue to call and confirm a time.</p>
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <div class="px-6 py-5 border-t-2 border-teal-100 flex items-center justify-between flex-shrink-0 bg-white">
-            <button wire:click="skipInstructions"
-                    class="text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-5 py-2.5 rounded-lg transition">
-                Skip — No Instructions
-            </button>
-            <button wire:click="saveInstructions"
-                    wire:loading.attr="disabled"
-                    wire:target="saveInstructions"
-                    class="bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition shadow-sm disabled:opacity-50">
-                <span wire:loading.remove wire:target="saveInstructions">Save Instructions &amp; Continue →</span>
-                <span wire:loading wire:target="saveInstructions">Saving…</span>
-            </button>
-        </div>
-    </div>
-</div>
-@endif
-
 {{-- ══════════════════════════════════════════════════════
      Imaging comparison modal (full-screen overlay)
 ══════════════════════════════════════════════════════ --}}
@@ -1514,92 +1526,5 @@
     </div>
 @endif
 
-{{-- ── Billing selector modal ── --}}
-@if($showBillingSelector)
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]"
-         x-data="{ search: '' }">
-
-        {{-- Header --}}
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
-            <div>
-                <p class="text-base font-semibold text-slate-800">Services to Bill</p>
-                <p class="text-xs text-slate-500 mt-0.5">Select everything done during this visit. The receptionist will collect payment.</p>
-            </div>
-            <button wire:click="closeBillingSelector" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
-        </div>
-
-        {{-- Search --}}
-        <div class="px-6 pt-4 flex-shrink-0">
-            <input type="text"
-                   x-model="search"
-                   placeholder="Search services…"
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10">
-        </div>
-
-        {{-- Service list --}}
-        <div class="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-1">
-            @php
-                $grouped = collect($billingCatalog)->groupBy('category');
-            @endphp
-            @foreach($grouped as $category => $services)
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide pt-2 pb-1"
-                   x-show="{{ collect($services)->pluck('name')->map(fn($n) => "search===''||'".strtolower($n)."'.includes(search.toLowerCase())")->join('||') }}">
-                   {{ $category }}
-                </p>
-                @foreach($services as $svc)
-                <label class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-slate-50 transition"
-                       x-show="search === '' || '{{ strtolower($svc['name']) }}'.includes(search.toLowerCase())">
-                    <input type="checkbox"
-                           wire:click="toggleBillingService({{ $svc['id'] }})"
-                           @checked(in_array($svc['id'], $selectedServiceIds))
-                           class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-slate-800">{{ $svc['name'] }}</p>
-                    </div>
-                    <span class="text-sm font-semibold text-slate-600 flex-shrink-0">
-                        ${{ number_format($svc['price'] / 100, 2) }}
-                    </span>
-                </label>
-                @endforeach
-            @endforeach
-
-            @if(count($billingCatalog) === 0)
-                <p class="text-sm text-slate-400 italic text-center py-6">No active services found. Add services under Settings → Services.</p>
-            @endif
-        </div>
-
-        {{-- Selected summary + confirm --}}
-        <div class="px-6 py-4 border-t border-slate-100 flex-shrink-0">
-            @php
-                $selectedTotal = collect($billingCatalog)
-                    ->whereIn('id', $selectedServiceIds)
-                    ->sum('price');
-            @endphp
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-sm text-slate-500">
-                    {{ count($selectedServiceIds) }} service(s) selected
-                </span>
-                <span class="text-base font-bold text-slate-800">
-                    ${{ number_format($selectedTotal / 100, 2) }}
-                </span>
-            </div>
-            <div class="flex gap-3">
-                <button wire:click="closeBillingSelector"
-                        class="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
-                    Cancel
-                </button>
-                <button wire:click="completeEncounterWithBilling"
-                        wire:loading.attr="disabled"
-                        wire:target="completeEncounterWithBilling"
-                        class="flex-1 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
-                    <span wire:loading.remove wire:target="completeEncounterWithBilling">Send to Reception</span>
-                    <span wire:loading wire:target="completeEncounterWithBilling">Processing…</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
 
 </div>{{-- end root Livewire div --}}
