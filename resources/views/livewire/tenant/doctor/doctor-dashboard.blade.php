@@ -1182,7 +1182,7 @@
 ══════════════════════════════════════════════════════ --}}
 @if($showPrescriptionBuilder)
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[92vh]">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[92vh] overflow-hidden">
 
         {{-- Wizard header --}}
         <div class="px-6 pt-4 pb-3 border-b border-slate-100 flex-shrink-0">
@@ -1291,16 +1291,16 @@
             </button>
         </div>
 
-        <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between flex-shrink-0 bg-slate-50 rounded-b-2xl">
+        <div class="px-6 py-5 border-t-2 border-blue-100 flex items-center justify-between flex-shrink-0 bg-white">
             <button wire:click="skipPrescription"
-                    class="text-sm text-slate-500 hover:text-slate-700 font-medium px-4 py-2 rounded-lg transition">
+                    class="text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-5 py-2.5 rounded-lg transition">
                 Skip — No Prescription
             </button>
             <button wire:click="issuePrescription"
                     wire:loading.attr="disabled"
                     wire:target="issuePrescription"
-                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50">
-                <span wire:loading.remove wire:target="issuePrescription">Save &amp; Continue to Instructions →</span>
+                    class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition shadow-sm disabled:opacity-50">
+                <span wire:loading.remove wire:target="issuePrescription">Save Prescription &amp; Continue →</span>
                 <span wire:loading wire:target="issuePrescription">Saving…</span>
             </button>
         </div>
@@ -1313,7 +1313,7 @@
 ══════════════════════════════════════════════════════ --}}
 @if($showInstructionBuilder)
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[92vh]">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[92vh] overflow-hidden">
 
         {{-- Wizard header --}}
         <div class="px-6 pt-4 pb-3 border-b border-slate-100 flex-shrink-0">
@@ -1404,16 +1404,16 @@
             @endif
         </div>
 
-        <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between flex-shrink-0 bg-slate-50 rounded-b-2xl">
+        <div class="px-6 py-5 border-t-2 border-teal-100 flex items-center justify-between flex-shrink-0 bg-white">
             <button wire:click="skipInstructions"
-                    class="text-sm text-slate-500 hover:text-slate-700 font-medium px-4 py-2 rounded-lg transition">
+                    class="text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-5 py-2.5 rounded-lg transition">
                 Skip — No Instructions
             </button>
             <button wire:click="saveInstructions"
                     wire:loading.attr="disabled"
                     wire:target="saveInstructions"
-                    class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50">
-                <span wire:loading.remove wire:target="saveInstructions">Save &amp; Continue to Billing →</span>
+                    class="bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition shadow-sm disabled:opacity-50">
+                <span wire:loading.remove wire:target="saveInstructions">Save Instructions &amp; Continue →</span>
                 <span wire:loading wire:target="saveInstructions">Saving…</span>
             </button>
         </div>
