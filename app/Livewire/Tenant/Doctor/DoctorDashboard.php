@@ -373,6 +373,20 @@ class DoctorDashboard extends Component
                     }
                 }
 
+                $procedures = NursingProcedure::on('tenant')
+                    ->where('encounter_id', $enc->id)
+                    ->orderBy('performed_at')
+                    ->get()
+                    ->map(fn ($p) => [
+                        'type_label'  => $p->type_label,
+                        'name'        => $p->procedure_name,
+                        'performer'   => $p->performer_name,
+                        'role'        => $p->performed_by_role,
+                        'site'        => $p->site,
+                        'outcome'     => $p->outcome,
+                    ])
+                    ->toArray();
+
                 return [
                     'id'               => $enc->id,
                     'encounter_date'   => $enc->encounter_date?->format('d M Y'),
@@ -382,6 +396,7 @@ class DoctorDashboard extends Component
                     'diagnoses'        => $diagnoses,
                     'vitals'           => $vitals,
                     'attending_doctor' => $attendingDoctor,
+                    'procedures'       => $procedures,
                 ];
             })->toArray();
     }

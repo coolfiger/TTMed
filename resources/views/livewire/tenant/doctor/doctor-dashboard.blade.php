@@ -1426,6 +1426,21 @@
                                     <p class="text-xs text-slate-600">{{ Str::limit($visit['plan'], 200) }}</p>
                                 </div>
                             @endif
+                            @if(!empty($visit['procedures']))
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-400 uppercase mb-1">Procedures</p>
+                                    <div class="space-y-0.5">
+                                        @foreach($visit['procedures'] as $proc)
+                                        <p class="text-xs text-slate-600">
+                                            <span class="font-medium">{{ $proc['type_label'] }}:</span>
+                                            {{ $proc['name'] }}
+                                            @if($proc['site']) <span class="text-slate-400">({{ $proc['site'] }})</span>@endif
+                                            — <span class="text-slate-400">{{ $proc['role'] === 'doctor' ? 'Dr.' : 'Nurse' }} {{ $proc['performer'] }}</span>
+                                        </p>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                             @if(!empty($visit['attending_doctor']))
                                 <p class="text-xs text-slate-400">Attending: <span class="text-slate-600">{{ $visit['attending_doctor'] }}</span></p>
                             @endif
