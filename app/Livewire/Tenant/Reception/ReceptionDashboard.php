@@ -561,7 +561,7 @@ class ReceptionDashboard extends Component
             $this->uploadedDocNames[] = $title;
             $this->docFile            = null;
             $this->docTitle           = '';
-        } catch (\InvalidArgumentException $e) {
+        } catch (\Throwable $e) {
             $this->docUploadError = $e->getMessage();
         }
     }

@@ -147,15 +147,16 @@ class DocumentService
     private function storeFile(UploadedFile $file, string $subdir): array
     {
         $dir = $this->tenantContext->storagePath($subdir);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+            throw new \RuntimeException("Could not create storage directory: {$dir}");
         }
 
+        $mimeType = $file->getMimeType() ?? $file->getClientMimeType();
         $filename = uniqid('doc_', true) . '.' . $file->getClientOriginalExtension();
         $path     = $dir . '/' . $filename;
 
         $file->move($dir, $filename);
 
-        return [$path, $file->getMimeType() ?? mime_content_type($path), filesize($path)];
+        return [$path, $mimeType ?? mime_content_type($path), filesize($path)];
     }
 }
