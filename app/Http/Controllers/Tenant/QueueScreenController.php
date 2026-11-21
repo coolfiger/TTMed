@@ -104,24 +104,28 @@ class QueueScreenController extends Controller
             ?: 'https://tt.loopnews.com/rss.xml';
 
         try {
-            $response = Http::timeout(5)->get($rssUrl);
+            $response = Http::timeout(10)->withoutVerifying()->get($rssUrl);
             if (!$response->successful()) {
-                return response()->json(['items' => []]);
+                \Log::warning('QueueScreen news fetch failed', ['url' => $rssUrl, 'status' => $response->status()]);
+                return response()->json(['items' => [], 'debug' => 'http_' . $response->status()]);
             }
 
-            $xml   = simplexml_load_string($response->body());
-            $items = [];
+            $xml = @simplexml_load_string($response->body());
+            if ($xml === false) {
+                \Log::warning('QueueScreen RSS parse failed', ['url' => $rssUrl]);
+                return response()->json(['items' => [], 'debug' => 'parse_error']);
+            }
 
+            $items = [];
             foreach ($xml->channel->item as $item) {
                 $items[] = (string) $item->title;
-                if (count($items) >= 15) {
-                    break;
-                }
+                if (count($items) >= 15) break;
             }
 
             return response()->json(['items' => $items]);
-        } catch (\Throwable) {
-            return response()->json(['items' => []]);
+        } catch (\Throwable $e) {
+            \Log::warning('QueueScreen news exception', ['url' => $rssUrl, 'error' => $e->getMessage()]);
+            return response()->json(['items' => [], 'debug' => $e->getMessage()]);
         }
     }
 
