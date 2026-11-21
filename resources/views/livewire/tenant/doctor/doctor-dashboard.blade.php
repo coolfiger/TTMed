@@ -695,6 +695,105 @@
         </div>
         @endif
 
+        {{-- Nursing Assessment & Procedures (current encounter) --}}
+        @if($nursingAssessment || count($nursingProcedures) > 0)
+        <div class="border-b border-slate-100" x-data="{ openNursing: true }">
+            <button class="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-slate-50 transition"
+                    @click="openNursing = !openNursing">
+                <span class="text-xs font-semibold text-teal-700 uppercase tracking-wide">
+                    Nursing — This Visit
+                    @if(count($nursingProcedures) > 0)
+                        <span class="normal-case font-normal text-slate-400">({{ count($nursingProcedures) }} procedure{{ count($nursingProcedures) > 1 ? 's' : '' }})</span>
+                    @endif
+                </span>
+                <svg class="w-3.5 h-3.5 text-slate-400 transition-transform" :class="openNursing ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="openNursing" class="px-4 pb-3 space-y-2">
+                @if($nursingAssessment)
+                    @if($nursingAssessment['chief_complaint'])
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase tracking-wide">Chief Complaint</p>
+                        <p class="text-sm text-slate-700">{{ $nursingAssessment['chief_complaint'] }}</p>
+                    </div>
+                    @endif
+                    @if($nursingAssessment['nursing_notes'])
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase tracking-wide">Nursing Notes</p>
+                        <p class="text-sm text-slate-700 whitespace-pre-line">{{ $nursingAssessment['nursing_notes'] }}</p>
+                    </div>
+                    @endif
+                @endif
+                @if(count($nursingProcedures) > 0)
+                <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">Procedures Performed</p>
+                    <div class="space-y-1.5">
+                        @foreach($nursingProcedures as $proc)
+                        <div class="rounded bg-teal-50 border border-teal-100 px-2.5 py-1.5">
+                            <p class="text-xs font-semibold text-teal-800">
+                                {{ $proc['type_label'] }}
+                                @if($proc['name'] !== $proc['type_label']) — {{ $proc['name'] }} @endif
+                                @if($proc['site']) <span class="font-normal text-teal-600">· {{ $proc['site'] }}</span> @endif
+                                @if($proc['performed_at']) <span class="font-normal text-slate-400">· {{ $proc['performed_at'] }}</span> @endif
+                            </p>
+                            @if($proc['outcome'])
+                                <p class="text-xs text-teal-700 mt-0.5">{{ $proc['outcome'] }}</p>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- Documents attached at reception (current encounter) --}}
+        @if(count($encounterDocuments) > 0)
+        <div class="border-b border-slate-100" x-data="{ openDocs: true }">
+            <button class="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-slate-50 transition"
+                    @click="openDocs = !openDocs">
+                <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
+                    Documents — This Visit
+                    <span class="normal-case font-normal text-slate-400">({{ count($encounterDocuments) }})</span>
+                </span>
+                <svg class="w-3.5 h-3.5 text-slate-400 transition-transform" :class="openDocs ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="openDocs" class="px-4 pb-3 space-y-1.5">
+                @foreach($encounterDocuments as $doc)
+                <div class="flex items-start gap-2 rounded border border-slate-100 bg-slate-50 px-2.5 py-2">
+                    <div class="flex-shrink-0 mt-0.5">
+                        @if(in_array($doc['mime_type'], ['image/jpeg','image/png','image/gif']))
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        @elseif($doc['mime_type'] === 'application/pdf')
+                            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        @else
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                        @endif
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-slate-800 truncate">{{ $doc['title'] ?: $doc['original_filename'] }}</p>
+                        @if($doc['description'])
+                            <p class="text-xs text-slate-500">{{ $doc['description'] }}</p>
+                        @endif
+                        <p class="text-xs text-slate-400">{{ strtoupper($doc['extension']) }} · {{ $doc['file_size_label'] }}</p>
+                    </div>
+                    @if($doc['is_viewable'])
+                    <a href="{{ route('tenant.documents.download', $doc['id']) }}"
+                       target="_blank"
+                       class="flex-shrink-0 text-xs font-semibold text-indigo-600 hover:text-indigo-800 mt-0.5">
+                        View
+                    </a>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- Past Visits --}}
         <div class="border-b border-slate-100">
             <button class="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-slate-50 transition"
@@ -926,6 +1025,35 @@
                 @endforelse
             </div>
         </div>
+
+        {{-- Family History --}}
+        @if(count($familyHistories) > 0)
+        <div class="border-b border-slate-100" x-data="{ openFamily: false }">
+            <button class="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-slate-50 transition"
+                    @click="openFamily = !openFamily">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                    Family History
+                    <span class="normal-case font-normal text-slate-400">({{ count($familyHistories) }})</span>
+                </span>
+                <svg class="w-3.5 h-3.5 text-slate-400 transition-transform" :class="openFamily ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="openFamily" class="px-4 pb-3 space-y-1.5">
+                @foreach($familyHistories as $fh)
+                <div class="flex items-baseline gap-2">
+                    <span class="text-xs font-semibold text-slate-500 flex-shrink-0 w-28">{{ $fh['relationship_label'] }}</span>
+                    <div class="flex-1 min-w-0">
+                        <span class="text-xs text-slate-800">{{ $fh['condition'] }}</span>
+                        @if($fh['notes'])
+                            <span class="text-xs text-slate-400"> — {{ $fh['notes'] }}</span>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         <div class="h-4 flex-shrink-0"></div>
 

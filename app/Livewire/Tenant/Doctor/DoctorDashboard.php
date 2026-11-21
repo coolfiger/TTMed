@@ -10,7 +10,11 @@ use App\Models\Tenant\ImagingOrder;
 use App\Models\Tenant\ImagingReport;
 use App\Models\Tenant\Invoice;
 use App\Models\Tenant\LabOrder;
+use App\Models\Tenant\NursingAssessment;
+use App\Models\Tenant\NursingProcedure;
 use App\Models\Tenant\PatientAllergy;
+use App\Models\Tenant\PatientDocument;
+use App\Models\Tenant\PatientFamilyHistory;
 use App\Models\Tenant\PatientMedication;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\Referral;
@@ -770,6 +774,10 @@ class DoctorDashboard extends Component
         $imagingReports  = [];
         $referrals       = [];
         $noteIsFinalized = false;
+        $nursingAssessment = null;
+        $nursingProcedures = [];
+        $encounterDocuments = [];
+        $familyHistories   = [];
 
         if ($this->activeEncounterId && $this->activePatientId) {
             $vitals = VitalSign::on('tenant')
@@ -826,15 +834,71 @@ class DoctorDashboard extends Component
                 ->where('encounter_id', $this->activeEncounterId)
                 ->first();
             $noteIsFinalized = $note?->isFinalized() ?? false;
+
+            $rawAssessment = NursingAssessment::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->first();
+            if ($rawAssessment) {
+                $nursingAssessment = [
+                    'chief_complaint'  => $rawAssessment->chief_complaint,
+                    'nursing_notes'    => $rawAssessment->nursing_notes,
+                    'status'           => $rawAssessment->status,
+                ];
+            }
+
+            $nursingProcedures = NursingProcedure::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->orderBy('performed_at')
+                ->get()
+                ->map(fn ($p) => [
+                    'type_label'   => $p->type_label,
+                    'name'         => $p->procedure_name,
+                    'site'         => $p->site,
+                    'outcome'      => $p->outcome,
+                    'performed_at' => $p->performed_at?->format('H:i'),
+                ])
+                ->toArray();
+
+            $encounterDocuments = PatientDocument::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->where('is_archived', false)
+                ->orderBy('created_at')
+                ->get()
+                ->map(fn ($d) => [
+                    'id'                => $d->id,
+                    'title'             => $d->title,
+                    'description'       => $d->description,
+                    'original_filename' => $d->original_filename,
+                    'extension'         => $d->extension,
+                    'file_size_label'   => $d->file_size_label,
+                    'is_viewable'       => $d->isViewable(),
+                    'mime_type'         => $d->mime_type,
+                ])
+                ->toArray();
+
+            $familyHistories = PatientFamilyHistory::on('tenant')
+                ->where('patient_id', $this->activePatientId)
+                ->orderBy('relationship')
+                ->get()
+                ->map(fn ($h) => [
+                    'relationship_label' => $h->relationship_label,
+                    'condition'          => $h->condition,
+                    'notes'              => $h->notes,
+                ])
+                ->toArray();
         }
 
         return view('livewire.tenant.doctor.doctor-dashboard', [
-            'vitals'          => $vitals,
-            'diagnoses'       => $diagnoses,
-            'labOrders'       => $labOrders,
-            'imagingReports'  => $imagingReports,
-            'referrals'       => $referrals,
-            'noteIsFinalized' => $noteIsFinalized,
+            'vitals'             => $vitals,
+            'diagnoses'          => $diagnoses,
+            'labOrders'          => $labOrders,
+            'imagingReports'     => $imagingReports,
+            'referrals'          => $referrals,
+            'noteIsFinalized'    => $noteIsFinalized,
+            'nursingAssessment'  => $nursingAssessment,
+            'nursingProcedures'  => $nursingProcedures,
+            'encounterDocuments' => $encounterDocuments,
+            'familyHistories'    => $familyHistories,
         ])->layout('layouts.app-workspace');
     }
 

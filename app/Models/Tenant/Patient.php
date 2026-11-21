@@ -129,6 +129,11 @@ class Patient extends Model
         return $this->hasOne(PatientMedicalHistory::class);
     }
 
+    public function familyHistories(): HasMany
+    {
+        return $this->hasMany(PatientFamilyHistory::class)->orderBy('relationship');
+    }
+
     public function consents(): HasMany
     {
         return $this->hasMany(PatientConsent::class)->orderBy('consent_date', 'desc');

@@ -228,6 +228,62 @@
             </div>
         </div>
 
+        {{-- Family History --}}
+        <div class="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-800">Family History</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Hereditary or chronic conditions in immediate family</p>
+                </div>
+                <button type="button" wire:click="addFamilyHistory"
+                    class="text-xs font-semibold text-blue-600 hover:text-blue-800 px-2.5 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
+                    + Add
+                </button>
+            </div>
+            <div class="space-y-3">
+                @foreach($familyHistories as $i => $fh)
+                <div class="grid grid-cols-12 gap-3 items-start">
+                    <div class="col-span-3">
+                        <select wire:model="familyHistories.{{ $i }}.relationship"
+                            class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                            <option value="">Relation</option>
+                            <option value="mother">Mother</option>
+                            <option value="father">Father</option>
+                            <option value="maternal_grandmother">Mat. Grandmother</option>
+                            <option value="maternal_grandfather">Mat. Grandfather</option>
+                            <option value="paternal_grandmother">Pat. Grandmother</option>
+                            <option value="paternal_grandfather">Pat. Grandfather</option>
+                            <option value="sibling">Sibling</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-span-5">
+                        <input wire:model="familyHistories.{{ $i }}.condition"
+                            type="text"
+                            placeholder="Condition (e.g. Diabetes, Hypertension)"
+                            class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                    </div>
+                    <div class="col-span-3">
+                        <input wire:model="familyHistories.{{ $i }}.notes"
+                            type="text"
+                            placeholder="Notes (optional)"
+                            class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                    </div>
+                    <div class="col-span-1 flex justify-end pt-2">
+                        @if(count($familyHistories) > 1)
+                        <button type="button" wire:click="removeFamilyHistory({{ $i }})"
+                            class="text-slate-400 hover:text-red-500 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
         <div class="flex gap-3">
             <button type="submit"
                 class="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">

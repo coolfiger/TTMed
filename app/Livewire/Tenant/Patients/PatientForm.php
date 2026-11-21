@@ -6,6 +6,7 @@ use App\Models\Tenant\Branch;
 use App\Models\Tenant\Doctor;
 use App\Models\Tenant\InsuranceProvider;
 use App\Models\Tenant\Patient;
+use App\Models\Tenant\PatientFamilyHistory;
 use App\Services\AuditService;
 use App\Services\PatientDuplicateDetector;
 use App\Services\PatientNumberService;
@@ -50,6 +51,9 @@ class PatientForm extends Component
     public string $branchId = '';
     public string $notes = '';
 
+    // Family history
+    public array $familyHistories = [];
+
     // Duplicate detection state
     public bool $showDuplicateWarning = false;
     public array $duplicates = [];
@@ -86,7 +90,40 @@ class PatientForm extends Component
                 'branchId'               => (string) ($this->patient->branch_id ?? ''),
                 'notes'                  => $this->patient->notes ?? '',
             ]);
+
+            $this->familyHistories = PatientFamilyHistory::on('tenant')
+                ->where('patient_id', $this->patient->id)
+                ->orderBy('relationship')
+                ->get()
+                ->map(fn ($h) => [
+                    'id'           => $h->id,
+                    'relationship' => $h->relationship,
+                    'condition'    => $h->condition,
+                    'notes'        => $h->notes ?? '',
+                ])
+                ->toArray();
         }
+
+        if (empty($this->familyHistories)) {
+            $this->familyHistories = [['id' => null, 'relationship' => '', 'condition' => '', 'notes' => '']];
+        }
+    }
+
+    public function addFamilyHistory(): void
+    {
+        $this->familyHistories[] = ['id' => null, 'relationship' => '', 'condition' => '', 'notes' => ''];
+    }
+
+    public function removeFamilyHistory(int $index): void
+    {
+        $entry = $this->familyHistories[$index] ?? null;
+        if ($entry && $entry['id']) {
+            PatientFamilyHistory::on('tenant')
+                ->where('id', $entry['id'])
+                ->where('patient_id', $this->patient?->id)
+                ->delete();
+        }
+        array_splice($this->familyHistories, $index, 1);
     }
 
     public function checkDuplicates(): void
@@ -181,8 +218,44 @@ class PatientForm extends Component
             $patientId = $patient->id;
         }
 
+        $userId = auth()->guard('tenant')->id();
+
+        // Sync family histories
+        $keptIds = [];
+        foreach ($this->familyHistories as $entry) {
+            if (empty($entry['relationship']) || empty($entry['condition'])) {
+                continue;
+            }
+            if (!empty($entry['id'])) {
+                PatientFamilyHistory::on('tenant')
+                    ->where('id', $entry['id'])
+                    ->where('patient_id', $patientId)
+                    ->update([
+                        'relationship' => $entry['relationship'],
+                        'condition'    => $entry['condition'],
+                        'notes'        => $entry['notes'] ?: null,
+                    ]);
+                $keptIds[] = $entry['id'];
+            } else {
+                $h = PatientFamilyHistory::on('tenant')->create([
+                    'patient_id'   => $patientId,
+                    'relationship' => $entry['relationship'],
+                    'condition'    => $entry['condition'],
+                    'notes'        => $entry['notes'] ?: null,
+                    'recorded_by'  => $userId,
+                ]);
+                $keptIds[] = $h->id;
+            }
+        }
+        // Remove any deleted rows not in $keptIds
+        $deleteQuery = PatientFamilyHistory::on('tenant')->where('patient_id', $patientId);
+        if (!empty($keptIds)) {
+            $deleteQuery->whereNotIn('id', $keptIds);
+        }
+        $deleteQuery->delete();
+
         app(AuditService::class)->logTenant(
-            auth()->guard('tenant')->id(),
+            $userId,
             $this->patient ? 'patient.updated' : 'patient.registered',
             'Patient',
             $patientId
