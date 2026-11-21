@@ -1096,7 +1096,7 @@ class DoctorDashboard extends Component
 
     public function saveDoctorProcedure(): void
     {
-        $this->checkPermission('encounters.manage');
+        $this->checkPermission('encounters.view');
 
         $this->validate([
             'doctorProcedureType' => 'required|string',
