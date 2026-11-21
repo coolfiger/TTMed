@@ -1441,6 +1441,51 @@
                                     </div>
                                 </div>
                             @endif
+                            @if(!empty($visit['prescriptions']))
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-400 uppercase mb-1">Medications Prescribed</p>
+                                    <div class="space-y-0.5">
+                                        @foreach($visit['prescriptions'] as $rx)
+                                        <p class="text-xs text-slate-600">
+                                            <span class="font-medium">{{ $rx['name'] }}</span>
+                                            @if($rx['dose']) {{ $rx['dose'] }}@endif
+                                            @if($rx['frequency']) — {{ $rx['frequency'] }}@endif
+                                            @if($rx['duration']) for {{ $rx['duration'] }}@endif
+                                        </p>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                            @if(!empty($visit['lab_orders']))
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-400 uppercase mb-1">Labs Ordered</p>
+                                    <p class="text-xs text-slate-600">{{ implode(', ', $visit['lab_orders']) }}</p>
+                                </div>
+                            @endif
+                            @if(!empty($visit['referrals']))
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-400 uppercase mb-1">Referrals</p>
+                                    @foreach($visit['referrals'] as $ref)
+                                    <p class="text-xs text-slate-600">
+                                        <span class="font-medium">{{ $ref['to'] }}</span>
+                                        @if($ref['specialty']) ({{ $ref['specialty'] }})@endif
+                                        — <span class="capitalize text-slate-400">{{ $ref['urgency'] }}</span>
+                                    </p>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @if(!empty($visit['instructions']))
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-400 uppercase mb-0.5">Patient Instructions</p>
+                                    <p class="text-xs text-slate-600">{{ Str::limit($visit['instructions'], 200) }}</p>
+                                </div>
+                            @endif
+                            @if(!empty($visit['follow_up']))
+                                <p class="text-xs text-slate-400">
+                                    Follow-up: <span class="text-slate-600 font-medium">{{ $visit['follow_up']['target_date'] }}</span>
+                                    @if($visit['follow_up']['reason']) — {{ $visit['follow_up']['reason'] }}@endif
+                                </p>
+                            @endif
                             @if(!empty($visit['attending_doctor']))
                                 <p class="text-xs text-slate-400">Attending: <span class="text-slate-600">{{ $visit['attending_doctor'] }}</span></p>
                             @endif

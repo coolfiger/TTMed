@@ -378,14 +378,55 @@ class DoctorDashboard extends Component
                     ->orderBy('performed_at')
                     ->get()
                     ->map(fn ($p) => [
-                        'type_label'  => $p->type_label,
-                        'name'        => $p->procedure_name,
-                        'performer'   => $p->performer_name,
-                        'role'        => $p->performed_by_role,
-                        'site'        => $p->site,
-                        'outcome'     => $p->outcome,
+                        'type_label' => $p->type_label,
+                        'name'       => $p->procedure_name,
+                        'performer'  => $p->performer_name,
+                        'role'       => $p->performed_by_role,
+                        'site'       => $p->site,
+                        'outcome'    => $p->outcome,
                     ])
                     ->toArray();
+
+                $prescriptions = Prescription::on('tenant')
+                    ->with('items')
+                    ->where('encounter_id', $enc->id)
+                    ->get()
+                    ->flatMap(fn ($rx) => $rx->items->map(fn ($item) => [
+                        'name'        => $item->medication_name,
+                        'dose'        => trim($item->dose . ' ' . $item->strength),
+                        'frequency'   => $item->frequency,
+                        'duration'    => $item->duration ? $item->duration . ' ' . ($item->duration_unit ?? 'days') : null,
+                        'instructions'=> $item->instructions,
+                    ]))
+                    ->toArray();
+
+                $labOrders = LabOrder::on('tenant')
+                    ->with('items')
+                    ->where('encounter_id', $enc->id)
+                    ->get()
+                    ->flatMap(fn ($o) => $o->items->map(fn ($i) => $i->test_name ?? $i->name ?? '—'))
+                    ->filter()
+                    ->values()
+                    ->toArray();
+
+                $referrals = Referral::on('tenant')
+                    ->where('encounter_id', $enc->id)
+                    ->get()
+                    ->map(fn ($r) => [
+                        'to'       => $r->referred_to_name,
+                        'specialty'=> $r->referred_to_specialty,
+                        'urgency'  => $r->urgency,
+                        'reason'   => $r->reason,
+                    ])
+                    ->toArray();
+
+                $followUp = FollowUp::on('tenant')
+                    ->where('encounter_id', $enc->id)
+                    ->first();
+
+                $instructions = EncounterInstruction::on('tenant')
+                    ->where('encounter_id', $enc->id)
+                    ->value('lines');
 
                 return [
                     'id'               => $enc->id,
@@ -397,6 +438,15 @@ class DoctorDashboard extends Component
                     'vitals'           => $vitals,
                     'attending_doctor' => $attendingDoctor,
                     'procedures'       => $procedures,
+                    'prescriptions'    => $prescriptions,
+                    'lab_orders'       => $labOrders,
+                    'referrals'        => $referrals,
+                    'follow_up'        => $followUp ? [
+                        'target_date'  => $followUp->target_date?->format('d M Y'),
+                        'reason'       => $followUp->reason,
+                        'instructions' => $followUp->instructions,
+                    ] : null,
+                    'instructions'     => $instructions ? (is_array($instructions) ? implode(' / ', array_filter($instructions)) : $instructions) : null,
                 ];
             })->toArray();
     }
