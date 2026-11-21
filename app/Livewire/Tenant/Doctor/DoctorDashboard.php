@@ -200,7 +200,10 @@ class DoctorDashboard extends Component
             ->where('status', 'awaiting_doctor')
             ->findOrFail($entryId);
 
-        $entry->update(['status' => 'with_doctor']);
+        $entry->update([
+            'status'    => 'with_doctor',
+            'called_at' => now(),
+        ]);
 
         if ($entry->encounter_id) {
             Encounter::on('tenant')

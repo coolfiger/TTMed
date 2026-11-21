@@ -35,9 +35,9 @@ class QueueScreenController extends Controller
         $branch  = $this->resolveBranch($code);
         $id      = $branch->id;
         $today   = today();
-        $flashAt = now()->subSeconds(90);
+        $flashAt = now()->subSeconds(15);
 
-        // Patients called in the last 90 seconds — flash these on screen
+        // Patients called in the last 15 seconds — flash these on screen
         $callingNow = QueueEntry::on('tenant')
             ->with(['patient:id,first_name,last_name', 'doctor.staffProfile:id,first_name,last_name'])
             ->where('branch_id', $id)
@@ -48,12 +48,12 @@ class QueueScreenController extends Controller
             ->get()
             ->map(fn ($e) => $this->callingEntry($e));
 
-        // Last person called today who is no longer in the flash window
+        // Last person called today — any status after being called, outside the flash window
         $lastCalled = QueueEntry::on('tenant')
             ->with(['patient:id,first_name,last_name', 'doctor.staffProfile:id,first_name,last_name'])
             ->where('branch_id', $id)
             ->whereDate('queue_date', $today)
-            ->whereIn('status', [QueueEntry::STATUS_WITH_NURSE, QueueEntry::STATUS_WITH_DOCTOR])
+            ->whereNotIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_AWAITING_DOCTOR])
             ->where('called_at', '<', $flashAt)
             ->whereNotNull('called_at')
             ->orderByDesc('called_at')
@@ -131,17 +131,21 @@ class QueueScreenController extends Controller
 
     private function callingEntry(QueueEntry $e): array
     {
-        $doctorName = null;
-        if ($e->status === QueueEntry::STATUS_WITH_DOCTOR && $e->doctor?->staffProfile) {
-            $sp         = $e->doctor->staffProfile;
-            $doctorName = 'Dr. ' . trim($sp->first_name . ' ' . $sp->last_name);
+        // If a doctor is assigned, use their name regardless of current status
+        // (entry may have moved to awaiting_checkout/completed by the time last_called reads it)
+        $destination = 'Nurse Station';
+        if ($e->doctor?->staffProfile) {
+            $sp          = $e->doctor->staffProfile;
+            $destination = 'Dr. ' . trim($sp->first_name . ' ' . $sp->last_name);
+        } elseif ($e->status !== QueueEntry::STATUS_WITH_NURSE) {
+            $destination = 'Consultation Room';
         }
 
         return [
             'id'           => $e->id,
             'queue_number' => $e->queue_number,
             'name'         => $this->screenName($e->patient),
-            'destination'  => $doctorName ?? ($e->status === QueueEntry::STATUS_WITH_NURSE ? 'Nurse Station' : 'Consultation Room'),
+            'destination'  => $destination,
             'called_at'    => $e->called_at?->toIso8601String(),
         ];
     }
