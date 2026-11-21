@@ -65,9 +65,6 @@
                 ['route' => 'tenant.prescriptions.index',    'label' => 'Prescriptions',    'perm' => 'prescriptions.view',   'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>'],
                 ['route' => 'tenant.imaging.index',          'label' => 'Imaging',          'perm' => 'imaging.view',         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>'],
                 ['route' => 'tenant.document.tracker',       'label' => 'Doc Tracker',      'perm' => 'documents.view',       'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>'],
-                ['route' => 'tenant.billing.index',          'label' => 'Billing',          'perm' => 'billing.view',         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>'],
-                ['route' => 'tenant.payments.index',         'label' => 'Payments',         'perm' => 'payments.view',        'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>'],
-                ['route' => 'tenant.billing.shifts',         'label' => 'Cash Mgmt',        'perm' => 'shifts.view',          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>'],
                 ['route' => 'tenant.reports.index',          'label' => 'Reports',          'perm' => 'reports.operational',  'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>'],
                 ['route' => 'tenant.staff.index',            'label' => 'Staff',            'perm' => 'staff.view',           'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>'],
                 ['route' => 'tenant.insurance.index',        'label' => 'Insurance',        'perm' => 'insurance.view',       'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>'],
@@ -101,6 +98,55 @@
                     </li>
                     @endif
                 @endforeach
+
+                {{-- Accounts (sub-menu) --}}
+                @php
+                    $canAccounts = $user?->hasAnyPermission(['billing.view','payments.view','shifts.view']);
+                    $inAccounts  = request()->routeIs('tenant.billing.*') || request()->routeIs('tenant.payments.*');
+                @endphp
+                @if($canAccounts)
+                <li x-data="{ open: {{ $inAccounts ? 'true' : 'false' }} }">
+                    <button @click="collapsed ? (collapsed = false) : (open = !open)"
+                            class="w-full flex items-center gap-2.5 rounded-md py-1.5 text-sm font-medium transition-colors
+                                   {{ $inAccounts ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800' }}"
+                            :class="collapsed ? 'justify-center px-0' : 'px-2.5'"
+                            :title="collapsed ? 'Accounts' : ''">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                        <span x-show="!collapsed" class="flex-1 text-left">Accounts</span>
+                        <svg x-show="!collapsed" :class="open ? 'rotate-90' : ''" class="h-3.5 w-3.5 flex-shrink-0 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                    <ul x-show="open && !collapsed" x-cloak class="mt-0.5 ml-6 border-l border-slate-200 pl-2 space-y-0.5">
+                        @if($user?->hasPermission('billing.view'))
+                        <li>
+                            <a href="{{ route('tenant.billing.index') }}"
+                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.billing.index') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Billing
+                            </a>
+                        </li>
+                        @endif
+                        @if($user?->hasPermission('payments.view'))
+                        <li>
+                            <a href="{{ route('tenant.payments.index') }}"
+                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.payments.*') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Payments
+                            </a>
+                        </li>
+                        @endif
+                        @if($user?->hasPermission('shifts.view'))
+                        <li>
+                            <a href="{{ route('tenant.billing.shifts') }}"
+                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.billing.shifts') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Cash Mgmt
+                            </a>
+                        </li>
+                        @endif
+                    </ul>
+                </li>
+                @endif
 
                 {{-- Settings (sub-menu) --}}
                 @if($user?->hasPermission('settings.view'))
