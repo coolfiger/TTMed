@@ -523,6 +523,19 @@
                 </div>
             @endif
 
+            {{-- ── Chief Complaint ── --}}
+            @if($chiefComplaint)
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 flex items-start gap-2.5">
+                <svg class="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                </svg>
+                <div class="min-w-0">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-amber-600">Chief Complaint</span>
+                    <p class="text-sm text-amber-900 mt-0.5">{{ $chiefComplaint }}</p>
+                </div>
+            </div>
+            @endif
+
             {{-- ── SOAP Note ── --}}
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200">

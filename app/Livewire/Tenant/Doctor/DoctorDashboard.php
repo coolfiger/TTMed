@@ -65,6 +65,7 @@ class DoctorDashboard extends Component
     // -------------------------------------------------------------------------
     // SOAP note fields
     // -------------------------------------------------------------------------
+    public string $chiefComplaint        = '';
     public string $subjective            = '';
     public string $objective             = '';
     public string $assessment            = '';
@@ -229,6 +230,12 @@ class DoctorDashboard extends Component
         $this->activeTab         = 'soap';
         $this->compareReportIds  = [];
         $this->showComparisonModal = false;
+
+        // Load chief complaint from the encounter
+        if ($this->activeEncounterId) {
+            $enc = Encounter::on('tenant')->find($this->activeEncounterId);
+            $this->chiefComplaint = $enc?->chief_complaint ?? '';
+        }
 
         // Load existing SOAP note
         if ($this->activeEncounterId) {
@@ -1218,6 +1225,7 @@ class DoctorDashboard extends Component
 
     private function resetForms(): void
     {
+        $this->chiefComplaint        = '';
         $this->subjective            = '';
         $this->objective             = '';
         $this->assessment            = '';
