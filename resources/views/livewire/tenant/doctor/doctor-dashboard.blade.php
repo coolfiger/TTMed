@@ -1020,10 +1020,8 @@
 
     @endif {{-- end activeEntryId --}}
 
-</div>
-
-{{-- ══════════════════════════════════════════════════════
-     Prescription Builder Modal
+    {{-- ══════════════════════════════════════════════════════
+         Prescription Builder Modal
 ══════════════════════════════════════════════════════ --}}
 @if($showPrescriptionBuilder)
 <div class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-y-auto">
@@ -1361,3 +1359,5 @@
     </div>
 </div>
 @endif
+
+</div>{{-- end root Livewire div --}}
