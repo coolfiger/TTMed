@@ -155,7 +155,13 @@ class DocumentService
         $filename = uniqid('doc_', true) . '.' . $file->getClientOriginalExtension();
         $path     = $dir . '/' . $filename;
 
-        $file->move($dir, $filename);
+        // Use copy+unlink instead of move() — Livewire temp files are not raw
+        // PHP uploads, so move_uploaded_file() fails on them.
+        $sourcePath = $file->getRealPath();
+        if (!copy($sourcePath, $path)) {
+            throw new \RuntimeException("Could not copy uploaded file to storage directory.");
+        }
+        @unlink($sourcePath);
 
         return [$path, $mimeType ?? mime_content_type($path), filesize($path)];
     }

@@ -404,31 +404,23 @@
                             <p class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ $docUploadError }}</p>
                         @endif
 
-                        {{-- File picker --}}
+                        {{-- File picker — saves automatically on selection --}}
                         <div>
-                            <label class="form-label">File <span class="text-slate-400 font-normal">(image, PDF, Word — max 20 MB)</span></label>
+                            <label class="form-label">Add a file <span class="text-slate-400 font-normal">(image, PDF, Word — max 20 MB)</span></label>
                             <input type="file" wire:model="docFile"
                                    accept="image/*,application/pdf,.doc,.docx"
-                                   capture="environment"
                                    class="w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" />
-                            <div wire:loading wire:target="docFile" class="text-xs text-slate-500 mt-1">Reading file…</div>
-                        </div>
-
-                        {{-- Optional title --}}
-                        <div>
-                            <label class="form-label">Title <span class="text-slate-400 font-normal">(optional — defaults to filename)</span></label>
-                            <input type="text" wire:model="docTitle" placeholder="e.g. Chest X-ray Jan 2025" class="w-full" />
+                            <div wire:loading wire:target="docFile,addDocument" class="flex items-center gap-1.5 text-xs text-blue-600 mt-1.5">
+                                <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                Saving…
+                            </div>
                         </div>
 
                         <div class="flex gap-3 pt-1">
-                            <button wire:click="addDocument"
+                            <button wire:click="doneUploading"
                                     wire:loading.attr="disabled"
-                                    wire:target="addDocument"
-                                    class="btn btn-primary btn-sm flex-1">
-                                <span wire:loading.remove wire:target="addDocument">+ Add File</span>
-                                <span wire:loading wire:target="addDocument">Uploading…</span>
-                            </button>
-                            <button wire:click="doneUploading" class="btn btn-secondary btn-sm flex-1">
+                                    wire:target="docFile,addDocument"
+                                    class="btn btn-secondary btn-sm w-full">
                                 {{ count($uploadedDocNames) > 0 ? 'Done' : 'Skip' }}
                             </button>
                         </div>

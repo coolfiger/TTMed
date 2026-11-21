@@ -536,6 +536,13 @@ class ReceptionDashboard extends Component
         $this->loadQueue();
     }
 
+    public function updatedDocFile(): void
+    {
+        if ($this->docFile) {
+            $this->addDocument();
+        }
+    }
+
     public function addDocument(): void
     {
         $this->docUploadError = '';
