@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\EncounterInstruction;
+use App\Models\Tenant\FollowUp;
 use Illuminate\Support\Facades\Auth;
 
 class EncounterInstructionPrintController extends Controller
@@ -20,6 +21,14 @@ class EncounterInstructionPrintController extends Controller
             ->where('encounter_id', $encounterId)
             ->firstOrFail();
 
-        return view('print.encounter-instructions', ['instruction' => $instruction]);
+        $followUp = FollowUp::on('tenant')
+            ->where('encounter_id', $encounterId)
+            ->whereIn('status', ['pending', 'booked'])
+            ->first();
+
+        return view('print.encounter-instructions', [
+            'instruction' => $instruction,
+            'followUp'    => $followUp,
+        ]);
     }
 }

@@ -11,6 +11,7 @@ use App\Models\Tenant\ImagingReport;
 use App\Models\Tenant\Invoice;
 use App\Models\Tenant\LabOrder;
 use App\Models\Tenant\EncounterInstruction;
+use App\Models\Tenant\FollowUp;
 use App\Models\Tenant\NursingAssessment;
 use App\Models\Tenant\NursingProcedure;
 use App\Models\Tenant\PatientAllergy;
@@ -115,8 +116,11 @@ class DoctorDashboard extends Component
     // -------------------------------------------------------------------------
     // Instruction builder
     // -------------------------------------------------------------------------
-    public bool  $showInstructionBuilder = false;
-    public array $instructionLines       = [];
+    public bool   $showInstructionBuilder   = false;
+    public array  $instructionLines         = [];
+    public bool   $scheduleFollowUp         = false;
+    public string $followUpScheduleDays     = '';
+    public string $followUpScheduleReason   = '';
 
     // -------------------------------------------------------------------------
     // UI state
@@ -799,7 +803,24 @@ class DoctorDashboard extends Component
             ->where('encounter_id', $this->activeEncounterId)
             ->first();
 
-        $this->instructionLines      = $existing?->lines ?? [''];
+        $this->instructionLines = $existing?->lines ?? [''];
+
+        // Pre-fill follow-up from consultation note if already set
+        $existingFollowUp = FollowUp::on('tenant')
+            ->where('encounter_id', $this->activeEncounterId)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingFollowUp) {
+            $this->scheduleFollowUp       = true;
+            $this->followUpScheduleDays   = $existingFollowUp->follow_up_days ? (string) $existingFollowUp->follow_up_days : '';
+            $this->followUpScheduleReason = $existingFollowUp->reason ?? '';
+        } else {
+            $this->scheduleFollowUp       = (bool) $this->followUpDays;
+            $this->followUpScheduleDays   = $this->followUpDays;
+            $this->followUpScheduleReason = $this->followUpInstructions;
+        }
+
         $this->showInstructionBuilder = true;
     }
 
@@ -834,6 +855,7 @@ class DoctorDashboard extends Component
 
         if (empty($lines)) {
             $this->showInstructionBuilder = false;
+            $this->openBillingSelector(fromWizard: true);
             return;
         }
 
@@ -847,6 +869,32 @@ class DoctorDashboard extends Component
                 'lines'      => $lines,
             ]
         );
+
+        // Create/update follow-up record if the doctor scheduled one
+        if ($this->scheduleFollowUp && $this->followUpScheduleDays) {
+            $days = (int) $this->followUpScheduleDays;
+            if ($days > 0) {
+                $profile  = StaffProfile::on('tenant')->where('user_id', $userId)->first();
+                $doctorId = $profile?->doctor?->id;
+
+                if ($doctorId) {
+                    FollowUp::on('tenant')->updateOrCreate(
+                        ['encounter_id' => $this->activeEncounterId],
+                        [
+                            'patient_id'      => $this->activePatientId,
+                            'doctor_id'       => $doctorId,
+                            'branch_id'       => $this->branchId,
+                            'follow_up_days'  => $days,
+                            'target_date'     => now()->addDays($days)->toDateString(),
+                            'reason'          => $this->followUpScheduleReason ?: null,
+                            'instructions'    => $this->followUpScheduleReason ?: null,
+                            'status'          => 'pending',
+                            'created_by'      => $userId,
+                        ]
+                    );
+                }
+            }
+        }
 
         $this->showInstructionBuilder = false;
         $this->successMessage         = 'Instructions saved.';
@@ -1070,6 +1118,13 @@ class DoctorDashboard extends Component
                 ->toArray();
         }
 
+        $savedFollowUp = $this->activeEncounterId
+            ? FollowUp::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->whereIn('status', ['pending', 'booked'])
+                ->first()
+            : null;
+
         return view('livewire.tenant.doctor.doctor-dashboard', [
             'vitals'             => $vitals,
             'diagnoses'          => $diagnoses,
@@ -1081,6 +1136,7 @@ class DoctorDashboard extends Component
             'nursingProcedures'  => $nursingProcedures,
             'encounterDocuments' => $encounterDocuments,
             'familyHistories'    => $familyHistories,
+            'savedFollowUp'      => $savedFollowUp,
         ])->layout('layouts.app-workspace');
     }
 
@@ -1106,6 +1162,9 @@ class DoctorDashboard extends Component
         $this->investigationsOrdered = '';
         $this->followUpInstructions  = '';
         $this->followUpDays          = '';
+        $this->scheduleFollowUp      = false;
+        $this->followUpScheduleDays  = '';
+        $this->followUpScheduleReason = '';
         $this->successMessage        = '';
         $this->errorMessage          = '';
         $this->showDiagnosisForm     = false;

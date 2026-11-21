@@ -49,6 +49,35 @@
         @endforeach
     </ul>
 
+    @if(!empty($followUp))
+    <div style="margin-top: 24px; padding: 14px 16px; background: #fffbeb; border: 1px solid #fcd34d; border-left: 4px solid #f59e0b; border-radius: 0 6px 6px 0;">
+        <h2 style="color: #92400e; margin-bottom: 8px;">Follow-up Appointment</h2>
+        <p style="font-size: 13px; color: #78350f; margin-bottom: 4px;">
+            @if($followUp->target_date)
+                Please return on or around <strong>{{ $followUp->target_date->format('d F Y') }}</strong>
+                (in {{ $followUp->follow_up_days }} days).
+            @elseif($followUp->follow_up_days)
+                Please return in <strong>{{ $followUp->follow_up_days }} days</strong>.
+            @endif
+        </p>
+        @if($followUp->reason)
+        <p style="font-size: 12px; color: #92400e; margin-top: 6px; font-style: italic;">
+            {{ $followUp->reason }}
+        </p>
+        @endif
+        @if($followUp->isBooked() && $followUp->appointment)
+        <p style="font-size: 12px; color: #1e3a5f; margin-top: 8px; font-weight: bold;">
+            Appointment confirmed: {{ $followUp->appointment->appointment_date->format('d F Y') }}
+            at {{ $followUp->appointment->appointment_time }}
+        </p>
+        @else
+        <p style="font-size: 11px; color: #92400e; margin-top: 8px;">
+            Our reception team will contact you to confirm the exact time.
+        </p>
+        @endif
+    </div>
+    @endif
+
     <div class="footer">
         <p>These instructions are provided by your doctor. If you have any concerns or your condition worsens, please contact the clinic or visit the nearest emergency facility.</p>
     </div>

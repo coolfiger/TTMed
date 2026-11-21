@@ -437,6 +437,27 @@
                         <p class="text-xs text-slate-400 mt-1">Reception will schedule this automatically.</p>
                     </div>
                 </div>
+                @if(!empty($savedFollowUp))
+                <div class="px-4 pb-3">
+                    <div class="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+                        <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span>
+                            Follow-up queued for reception
+                            @if($savedFollowUp->target_date)
+                                — target {{ $savedFollowUp->target_date->format('d M Y') }}
+                            @elseif($savedFollowUp->follow_up_days)
+                                — in {{ $savedFollowUp->follow_up_days }} days
+                            @endif
+                            @if($savedFollowUp->isBooked())
+                                <strong class="text-blue-700 ml-1">(booked)</strong>
+                            @endif
+                        </span>
+                    </div>
+                </div>
+                @endif
             </div>
 
             {{-- ── Referrals ── --}}
@@ -1402,6 +1423,42 @@
                 </ul>
             </div>
             @endif
+
+            {{-- Follow-up scheduling --}}
+            <div class="border border-amber-200 rounded-xl bg-amber-50 p-4">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" wire:model.live="scheduleFollowUp"
+                           class="w-4 h-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500">
+                    <span class="text-sm font-semibold text-amber-800">Schedule a follow-up appointment</span>
+                </label>
+
+                @if($scheduleFollowUp)
+                <div class="mt-4 space-y-3 pt-3 border-t border-amber-200">
+                    <div class="flex items-center gap-3">
+                        <label class="text-xs font-semibold text-amber-700 w-28 flex-shrink-0">Return in</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" wire:model="followUpScheduleDays"
+                                   min="1" max="365" placeholder="7"
+                                   class="w-20 rounded-lg border border-amber-300 bg-white text-sm px-3 py-1.5 focus:ring-2 focus:ring-amber-400 focus:outline-none">
+                            <span class="text-sm text-amber-700">days</span>
+                            @if($followUpScheduleDays && is_numeric($followUpScheduleDays))
+                                <span class="text-xs text-amber-600 ml-1">
+                                    ({{ now()->addDays((int)$followUpScheduleDays)->format('d M Y') }})
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-amber-700 block mb-1">Follow-up instructions / reason</label>
+                        <textarea wire:model="followUpScheduleReason"
+                                  rows="2"
+                                  placeholder="e.g. Review blood pressure results, wound check&hellip;"
+                                  class="w-full rounded-lg border border-amber-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:outline-none resize-none"></textarea>
+                    </div>
+                    <p class="text-xs text-amber-600">Reception will see this in the follow-up queue to call and confirm a time.</p>
+                </div>
+                @endif
+            </div>
         </div>
 
         <div class="px-6 py-5 border-t-2 border-teal-100 flex items-center justify-between flex-shrink-0 bg-white">
