@@ -813,7 +813,17 @@ class DoctorDashboard extends Component
             ->where('encounter_id', $this->activeEncounterId)
             ->first();
 
-        $this->instructionLines      = $existing?->lines ?? [''];
+        if ($existing) {
+            $this->instructionLines = $existing->lines ?: [''];
+        } else {
+            // Seed from the SOAP note's follow-up instructions field
+            $seeded = array_values(array_filter(
+                array_map('trim', explode("\n", $this->followUpInstructions ?? '')),
+                fn ($l) => $l !== ''
+            ));
+            $this->instructionLines = $seeded ?: [''];
+        }
+
         $this->showInstructionBuilder = true;
         $this->showPrescriptionBuilder = false;
         $this->wizardStep             = 'instructions';
@@ -916,6 +926,49 @@ class DoctorDashboard extends Component
     {
         $this->showInstructionBuilder = false;
         $this->openBillingSelector(fromWizard: true);
+    }
+
+    public function backToPrescription(): void
+    {
+        // Load items from the most recent issued prescription so the doctor can revise
+        $issued = Prescription::on('tenant')
+            ->with('items')
+            ->where('encounter_id', $this->activeEncounterId)
+            ->where('status', Prescription::STATUS_ISSUED)
+            ->latest()
+            ->first();
+
+        if ($issued) {
+            $loaded = $issued->items->map(fn ($item) => [
+                'name'          => $item->medication_name,
+                'strength'      => $item->strength ?? '',
+                'form'          => $item->form ?? 'tablet',
+                'dose'          => $item->dose ?? '',
+                'frequency'     => $item->frequency ?? '',
+                'duration'      => $item->duration ? (string) $item->duration : '',
+                'duration_unit' => $item->duration_unit ?? 'days',
+                'instructions'  => $item->instructions ?? '',
+            ])->toArray();
+
+            $this->rxItems = $loaded ?: [['name' => '', 'strength' => '', 'form' => 'tablet', 'dose' => '', 'frequency' => '', 'duration' => '', 'duration_unit' => 'days', 'instructions' => '']];
+
+            $this->prescriptionService->cancelPrescription(
+                $issued,
+                'Revised by doctor',
+                Auth::guard('tenant')->id()
+            );
+        } else {
+            $this->rxItems = [['name' => '', 'strength' => '', 'form' => 'tablet', 'dose' => '', 'frequency' => '', 'duration' => '', 'duration_unit' => 'days', 'instructions' => '']];
+        }
+
+        $this->showPrescriptionBuilder = true;
+        $this->showInstructionBuilder  = false;
+        $this->wizardStep              = 'prescription';
+    }
+
+    public function backToInstructions(): void
+    {
+        $this->openInstructionBuilder();
     }
 
     // -------------------------------------------------------------------------

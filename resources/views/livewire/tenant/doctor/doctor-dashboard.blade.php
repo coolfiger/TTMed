@@ -431,10 +431,16 @@
                     </div>
                 </div>
                 <div class="px-5 py-4 border-t-2 border-teal-100 flex items-center justify-between flex-shrink-0 bg-white">
-                    <button wire:click="skipInstructions"
-                            class="text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-5 py-2.5 rounded-lg transition">
-                        Skip — No Instructions
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button wire:click="backToPrescription"
+                                class="text-sm font-medium text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300 px-3 py-2.5 rounded-lg transition flex items-center gap-1.5">
+                            ← Back
+                        </button>
+                        <button wire:click="skipInstructions"
+                                class="text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-5 py-2.5 rounded-lg transition">
+                            Skip — No Instructions
+                        </button>
+                    </div>
                     <button wire:click="saveInstructions"
                             wire:loading.attr="disabled"
                             wire:loading.class="opacity-50 cursor-not-allowed"
@@ -488,15 +494,15 @@
                         <span class="text-base font-bold text-slate-800">${{ number_format($selectedTotal / 100, 2) }}</span>
                     </div>
                     <div class="flex gap-3">
-                        <button wire:click="closeBillingSelector"
-                                class="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
-                            Cancel
+                        <button wire:click="backToInstructions"
+                                class="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition flex items-center gap-1.5">
+                            ← Back
                         </button>
                         <button wire:click="completeEncounterWithBilling"
-                                wire:loading.attr="disabled" wire:target="completeEncounterWithBilling"
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-50 cursor-not-allowed"
                                 class="flex-1 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
-                            <span wire:loading.remove wire:target="completeEncounterWithBilling">Send to Reception</span>
-                            <span wire:loading wire:target="completeEncounterWithBilling">Processing…</span>
+                            Send to Reception
                         </button>
                     </div>
                 </div>
