@@ -1,21 +1,22 @@
-<div class="flex h-full min-h-0 overflow-hidden bg-slate-100"
-     x-data="panelLayout()"
-     x-init="init()">
+<div class="flex h-full min-h-0 overflow-hidden bg-slate-100">
 
     {{-- ══════════════════════════════════════════════════════
          LEFT: Queue panel
     ══════════════════════════════════════════════════════ --}}
-    <div :style="queueStyle()"
-         class="flex-shrink-0 flex flex-col bg-white border-r border-slate-200 transition-[width] duration-150 overflow-hidden"
+    <div x-data="{
+            collapsed: (()=>{ try{ return localStorage.getItem('doc_q_collapsed')==='1'; }catch(e){ return false; } })()
+         }"
+         :class="collapsed ? 'w-12' : 'w-64'"
+         class="flex-shrink-0 flex flex-col bg-white border-r border-slate-200 overflow-hidden transition-all duration-150"
          id="panel-queue">
 
-        <div class="px-3 py-2.5 border-b border-slate-200 flex items-center justify-between flex-shrink-0 gap-2">
-            <div x-show="!queueCollapsed" class="min-w-0 flex-1">
-                <p class="text-sm font-semibold text-slate-800">Doctor Queue</p>
+        <div class="px-3 py-2.5 border-b border-slate-200 flex items-center justify-between flex-shrink-0 gap-1">
+            <div x-show="!collapsed" class="min-w-0 flex-1 overflow-hidden">
+                <p class="text-sm font-semibold text-slate-800 truncate">Doctor Queue</p>
                 <p class="text-xs text-slate-400">{{ today()->format('d M Y') }}</p>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
-                <button wire:click="loadQueue" x-show="!queueCollapsed"
+                <button wire:click="loadQueue" x-show="!collapsed"
                         class="text-slate-400 hover:text-blue-600 transition p-1 rounded"
                         title="Refresh queue">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,13 +24,13 @@
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                 </button>
-                <button @click="toggleQueue()"
+                <button @click="collapsed=!collapsed; try{localStorage.setItem('doc_q_collapsed',collapsed?'1':'0')}catch(e){}"
                         class="text-slate-400 hover:text-slate-700 transition p-1 rounded hover:bg-slate-100"
-                        :title="queueCollapsed ? 'Expand queue' : 'Collapse queue'">
-                    <svg x-show="!queueCollapsed" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        :title="collapsed ? 'Expand queue' : 'Collapse queue'">
+                    <svg x-show="!collapsed" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7"/>
                     </svg>
-                    <svg x-show="queueCollapsed" x-cloak class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg x-show="collapsed" x-cloak class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7"/>
                     </svg>
                 </button>
@@ -124,13 +125,6 @@
         </div>
 
     @else
-
-    {{-- Drag handle: queue ↔ center --}}
-    <div class="w-1 flex-shrink-0 bg-slate-200 hover:bg-blue-400 cursor-col-resize transition-colors active:bg-blue-500 relative group"
-         x-show="!queueCollapsed"
-         @mousedown.prevent="startDrag($event, 'queue')">
-        <div class="absolute inset-y-0 -left-1 -right-1"></div>
-    </div>
 
     {{-- ══════════════════════════════════════════════════════
          CENTER: Consultation workspace
@@ -982,17 +976,10 @@
 
     </div>
 
-    {{-- Drag handle: center ↔ context --}}
-    <div class="w-1 flex-shrink-0 bg-slate-200 hover:bg-blue-400 cursor-col-resize transition-colors active:bg-blue-500 relative"
-         @mousedown.prevent="startDrag($event, 'context')">
-        <div class="absolute inset-y-0 -left-1 -right-1"></div>
-    </div>
-
     {{-- ══════════════════════════════════════════════════════
          RIGHT: Patient context panel
     ══════════════════════════════════════════════════════ --}}
-    <div :style="contextStyle()"
-         class="flex-shrink-0 flex flex-col bg-white border-l border-slate-200 overflow-y-auto"
+    <div class="w-80 flex-shrink-0 flex flex-col bg-white border-l border-slate-200 overflow-y-auto"
          id="panel-context"
          x-data="{
              open: {
@@ -1743,90 +1730,3 @@
 
 </div>{{-- end root Livewire div --}}
 
-@push('body-scripts')
-<script>
-function panelLayout() {
-    const QUEUE_KEY   = 'doc_queue_w';
-    const CONTEXT_KEY = 'doc_context_w';
-    const QUEUE_MIN   = 48;
-    const QUEUE_DEF   = 256;
-    const CONTEXT_MIN = 240;
-    const CONTEXT_DEF = 320;
-
-    return {
-        queueW:        QUEUE_DEF,
-        contextW:      CONTEXT_DEF,
-        queueCollapsed: false,
-        _dragging:     null,
-        _startX:       0,
-        _startW:       0,
-
-        init() {
-            try {
-                const qw = parseInt(localStorage.getItem(QUEUE_KEY));
-                const cw = parseInt(localStorage.getItem(CONTEXT_KEY));
-                const qc = localStorage.getItem('doc_queue_collapsed');
-                if (qw >= QUEUE_MIN) this.queueW = qw;
-                if (cw >= CONTEXT_MIN) this.contextW = cw;
-                if (qc === '1') { this.queueCollapsed = true; this.queueW = QUEUE_MIN; }
-            } catch {}
-
-            const onMove = (e) => this._onMove(e);
-            const onUp   = (e) => this._onUp(e);
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-            this.$el.addEventListener('selectstart', (e) => { if (this._dragging) e.preventDefault(); });
-        },
-
-        queueStyle() {
-            return 'width:' + this.queueW + 'px;min-width:' + this.queueW + 'px;max-width:' + this.queueW + 'px;';
-        },
-
-        contextStyle() {
-            return 'width:' + this.contextW + 'px;min-width:' + this.contextW + 'px;max-width:' + this.contextW + 'px;';
-        },
-
-        toggleQueue() {
-            this.queueCollapsed = !this.queueCollapsed;
-            this.queueW = this.queueCollapsed ? QUEUE_MIN : QUEUE_DEF;
-            try {
-                localStorage.setItem('doc_queue_collapsed', this.queueCollapsed ? '1' : '0');
-                localStorage.setItem(QUEUE_KEY, this.queueW);
-            } catch {}
-        },
-
-        startDrag(e, panel) {
-            this._dragging = panel;
-            this._startX   = e.clientX;
-            this._startW   = panel === 'queue' ? this.queueW : this.contextW;
-            document.body.style.cursor = 'col-resize';
-            document.body.style.userSelect = 'none';
-        },
-
-        _onMove(e) {
-            if (!this._dragging) return;
-            const dx = e.clientX - this._startX;
-            if (this._dragging === 'queue') {
-                const nw = Math.max(QUEUE_MIN, this._startW + dx);
-                this.queueW = nw;
-                this.queueCollapsed = nw <= QUEUE_MIN;
-            } else {
-                this.contextW = Math.max(CONTEXT_MIN, Math.min(600, this._startW - dx));
-            }
-        },
-
-        _onUp() {
-            if (!this._dragging) return;
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            try {
-                localStorage.setItem(QUEUE_KEY, this.queueW);
-                localStorage.setItem(CONTEXT_KEY, this.contextW);
-                localStorage.setItem('doc_queue_collapsed', this.queueCollapsed ? '1' : '0');
-            } catch {}
-            this._dragging = null;
-        },
-    };
-}
-</script>
-@endpush
