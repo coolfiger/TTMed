@@ -78,7 +78,7 @@
         <div class="rx-symbol">℞</div>
         <div class="rx-meta">
             <strong>{{ $prescription->prescription_number }}</strong><br>
-            Date: {{ $prescription->issued_at->format('d M Y') }}
+            Date: {{ $prescription->issued_at?->format('d M Y') ?? now()->format('d M Y') }}
         </div>
     </div>
 
@@ -147,7 +147,7 @@
     </div>
 
     <div class="disclaimer">
-        This prescription was generated electronically. {{ $prescription->prescription_number }} issued {{ $prescription->issued_at->format('d M Y H:i') }}.
+        This prescription was generated electronically. {{ $prescription->prescription_number }} issued {{ $prescription->issued_at?->format('d M Y H:i') ?? now()->format('d M Y H:i') }}.
     </div>
 
 </div>

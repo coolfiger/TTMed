@@ -103,13 +103,18 @@ class PrescriptionService
         }
 
         return DB::connection('tenant')->transaction(function () use ($prescription, $userId) {
+            $issuedAt = now();
+
+            // Set issued_at before generating the PDF so the blade can render it.
+            $prescription->forceFill(['issued_at' => $issuedAt, 'issued_by' => $userId]);
+
             $pdfPath = $this->generatePdf($prescription);
 
             $prescription->update([
                 'status'    => Prescription::STATUS_ISSUED,
                 'pdf_path'  => $pdfPath,
                 'issued_by' => $userId,
-                'issued_at' => now(),
+                'issued_at' => $issuedAt,
             ]);
 
             $this->auditService->logTenant(
