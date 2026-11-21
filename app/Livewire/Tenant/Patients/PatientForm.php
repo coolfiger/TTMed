@@ -177,7 +177,6 @@ class PatientForm extends Component
             'dateOfBirth'  => 'nullable|date|before:today',
             'email'        => 'nullable|email|max:150',
             'phonePrimary' => 'nullable|string|max:30',
-            'branchId'     => 'nullable|exists:branches,id',
         ]);
 
         $data = [
