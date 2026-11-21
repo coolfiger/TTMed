@@ -57,6 +57,7 @@ use App\Livewire\Tenant\Inventory\InventoryManager;
 use App\Livewire\Tenant\Reports\ReportDashboard;
 use App\Http\Controllers\Tenant\ReportExportController;
 use App\Http\Controllers\Tenant\BackupDownloadController;
+use App\Http\Controllers\Tenant\QueueScreenController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -94,6 +95,12 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
     Route::get('/register/{token}',  [PatientIntakeController::class, 'showRegistration'])->name('tenant.patient.register');
     Route::post('/register/{token}', [PatientIntakeController::class, 'submitRegistration'])->name('tenant.patient.register.submit')
         ->middleware('throttle:10,5');
+
+    // Queue display screen — public within tenant, no login required (waiting room TVs)
+    Route::get('/screen/{branch}', [QueueScreenController::class, 'show'])->name('tenant.queue.screen');
+    Route::get('/screen/{branch}/data', [QueueScreenController::class, 'data'])
+        ->name('tenant.queue.screen.data')
+        ->middleware('throttle:30,1');
 
     // Branding logo — public within tenant (non-sensitive)
     Route::get('/branding/logo/{type}', BrandingLogoController::class)
