@@ -119,6 +119,31 @@ class DocumentService
         }, $filename, ['Content-Type' => $mime]);
     }
 
+    public function streamInline(PatientDocument $document, int $userId): StreamedResponse
+    {
+        if (!file_exists($document->storage_path)) {
+            abort(404);
+        }
+
+        $this->logAccess($document, $userId, 'view');
+
+        $mime = $document->mime_type;
+        $path = $document->storage_path;
+
+        return response()->stream(function () use ($path) {
+            $handle = fopen($path, 'rb');
+            while (!feof($handle)) {
+                echo fread($handle, 8192);
+                flush();
+            }
+            fclose($handle);
+        }, 200, [
+            'Content-Type'        => $mime,
+            'Content-Disposition' => 'inline',
+            'X-Frame-Options'     => 'SAMEORIGIN',
+        ]);
+    }
+
     public function logAccess(PatientDocument $document, int $userId, string $type = 'view'): void
     {
         DocumentAccessLog::on('tenant')->create([

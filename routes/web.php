@@ -308,6 +308,8 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
                 ->name('tenant.documents.index');
             Route::get('/documents/{id}/download', DocumentDownloadController::class)
                 ->name('tenant.documents.download');
+            Route::get('/documents/{id}/view', [DocumentDownloadController::class, 'view'])
+                ->name('tenant.documents.view');
         });
 
         // Imaging workqueue

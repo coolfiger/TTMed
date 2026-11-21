@@ -723,7 +723,24 @@
 
         {{-- Documents attached at reception (current encounter) --}}
         @if(count($encounterDocuments) > 0)
-        <div class="border-b border-slate-100" x-data="{ openDocs: true }">
+        <div class="border-b border-slate-100" x-data="{
+            openDocs: true,
+            viewer: { open: false, url: '', title: '', isImage: false },
+            compare: { slots: [], open: false },
+            openViewer(url, title, isImage) {
+                this.viewer = { open: true, url, title, isImage };
+            },
+            toggleCompare(id, url, title) {
+                const idx = this.compare.slots.findIndex(s => s.id === id);
+                if (idx >= 0) {
+                    this.compare.slots.splice(idx, 1);
+                } else if (this.compare.slots.length < 2) {
+                    this.compare.slots.push({ id, url, title });
+                }
+            },
+            inCompare(id) { return this.compare.slots.some(s => s.id === id); }
+        }">
+            {{-- Section header --}}
             <button class="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-slate-50 transition"
                     @click="openDocs = !openDocs">
                 <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
@@ -734,11 +751,36 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
+
             <div x-show="openDocs" class="px-4 pb-3 space-y-1.5">
+
+                {{-- Compare bar --}}
+                <div x-show="compare.slots.length > 0"
+                     class="flex items-center justify-between bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-1.5">
+                    <span class="text-xs text-indigo-700 font-medium"
+                          x-text="compare.slots.length === 1 ? 'Select one more to compare' : '2 selected'"></span>
+                    <div class="flex gap-2">
+                        <button @click="compare.slots = []"
+                                class="text-xs text-slate-500 hover:text-slate-700">Clear</button>
+                        <button x-show="compare.slots.length === 2"
+                                @click="compare.open = true"
+                                class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Compare →</button>
+                    </div>
+                </div>
+
                 @foreach($encounterDocuments as $doc)
-                <div class="flex items-start gap-2 rounded border border-slate-100 bg-slate-50 px-2.5 py-2">
+                @php
+                    $isImage = in_array($doc['mime_type'], ['image/jpeg','image/png','image/gif']);
+                    $viewUrl  = $doc['is_viewable'] ? route('tenant.documents.view', $doc['id']) : null;
+                    $dlUrl    = route('tenant.documents.download', $doc['id']);
+                    $label    = $doc['title'] ?: $doc['original_filename'];
+                @endphp
+                <div class="flex items-start gap-2 rounded border bg-slate-50 px-2.5 py-2 transition"
+                     :class="inCompare({{ $doc['id'] }}) ? 'border-indigo-400 bg-indigo-50' : 'border-slate-100'">
+
+                    {{-- Mime icon --}}
                     <div class="flex-shrink-0 mt-0.5">
-                        @if(in_array($doc['mime_type'], ['image/jpeg','image/png','image/gif']))
+                        @if($isImage)
                             <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         @elseif($doc['mime_type'] === 'application/pdf')
                             <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -746,23 +788,125 @@
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                         @endif
                     </div>
+
+                    {{-- Info --}}
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs font-semibold text-slate-800 truncate">{{ $doc['title'] ?: $doc['original_filename'] }}</p>
+                        <p class="text-xs font-semibold text-slate-800 truncate">{{ $label }}</p>
                         @if($doc['description'])
                             <p class="text-xs text-slate-500">{{ $doc['description'] }}</p>
                         @endif
                         <p class="text-xs text-slate-400">{{ strtoupper($doc['extension']) }} · {{ $doc['file_size_label'] }}</p>
                     </div>
-                    @if($doc['is_viewable'])
-                    <a href="{{ route('tenant.documents.download', $doc['id']) }}"
-                       target="_blank"
-                       class="flex-shrink-0 text-xs font-semibold text-indigo-600 hover:text-indigo-800 mt-0.5">
-                        View
-                    </a>
-                    @endif
+
+                    {{-- Actions --}}
+                    <div class="flex-shrink-0 flex flex-col items-end gap-1 mt-0.5">
+                        @if($viewUrl)
+                        <button @click="openViewer('{{ $viewUrl }}', '{{ addslashes($label) }}', {{ $isImage ? 'true' : 'false' }})"
+                                class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 leading-none">
+                            View
+                        </button>
+                        @if($isImage)
+                        <button @click="toggleCompare({{ $doc['id'] }}, '{{ $viewUrl }}', '{{ addslashes($label) }}')"
+                                :class="inCompare({{ $doc['id'] }}) ? 'text-indigo-700 font-semibold' : 'text-slate-400 hover:text-indigo-600'"
+                                class="text-xs leading-none transition">
+                            <span x-text="inCompare({{ $doc['id'] }}) ? '✓ Compare' : 'Compare'"></span>
+                        </button>
+                        @endif
+                        @else
+                        <a href="{{ $dlUrl }}" class="text-xs font-semibold text-slate-500 hover:text-slate-700 leading-none">Download</a>
+                        @endif
+                    </div>
                 </div>
                 @endforeach
             </div>
+
+            {{-- ── Single-document viewer overlay ── --}}
+            <template x-teleport="body">
+            <div x-show="viewer.open"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @keydown.escape.window="viewer.open = false"
+                 class="fixed inset-0 z-[60] flex flex-col bg-black/90"
+                 style="display:none">
+
+                {{-- Viewer toolbar --}}
+                <div class="flex items-center justify-between px-5 py-3 bg-black/70 flex-shrink-0">
+                    <span class="text-sm font-medium text-white truncate max-w-xs" x-text="viewer.title"></span>
+                    <div class="flex items-center gap-4">
+                        <a :href="viewer.url.replace('/view', '/download')"
+                           target="_blank"
+                           class="text-xs text-slate-300 hover:text-white font-medium transition">
+                            Download
+                        </a>
+                        <button @click="viewer.open = false" class="text-slate-300 hover:text-white text-2xl leading-none">&times;</button>
+                    </div>
+                </div>
+
+                {{-- Image viewer --}}
+                <div x-show="viewer.isImage"
+                     class="flex-1 flex items-center justify-center p-6 overflow-auto">
+                    <img :src="viewer.url"
+                         class="max-w-full max-h-full object-contain rounded shadow-2xl select-none"
+                         alt="">
+                </div>
+
+                {{-- PDF viewer --}}
+                <div x-show="!viewer.isImage"
+                     class="flex-1 overflow-hidden">
+                    <iframe :src="viewer.url"
+                            class="w-full h-full border-0"
+                            x-show="!viewer.isImage">
+                    </iframe>
+                </div>
+            </div>
+            </template>
+
+            {{-- ── Comparison overlay ── --}}
+            <template x-teleport="body">
+            <div x-show="compare.open"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @keydown.escape.window="compare.open = false"
+                 class="fixed inset-0 z-[60] flex flex-col bg-black/95"
+                 style="display:none">
+
+                {{-- Comparison toolbar --}}
+                <div class="flex items-center justify-between px-5 py-3 bg-black/70 flex-shrink-0">
+                    <span class="text-sm font-semibold text-white">Document Comparison</span>
+                    <button @click="compare.open = false" class="text-slate-300 hover:text-white text-2xl leading-none">&times;</button>
+                </div>
+
+                {{-- Side-by-side panes --}}
+                <div class="flex-1 grid grid-cols-2 gap-1 min-h-0 p-1">
+                    <template x-for="(slot, idx) in compare.slots" :key="slot.id">
+                        <div class="flex flex-col bg-black/40 rounded overflow-hidden">
+                            <div class="px-3 py-1.5 bg-black/60 flex-shrink-0">
+                                <span class="text-xs font-semibold text-slate-300" x-text="slot.title"></span>
+                            </div>
+                            <div class="flex-1 flex items-center justify-center overflow-auto p-2">
+                                <img :src="slot.url"
+                                     class="max-w-full max-h-full object-contain select-none"
+                                     alt="">
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Zoom hint --}}
+                <div class="text-center py-2 flex-shrink-0">
+                    <span class="text-xs text-slate-500">Use Ctrl + scroll to zoom each image individually</span>
+                </div>
+            </div>
+            </template>
+
         </div>
         @endif
 

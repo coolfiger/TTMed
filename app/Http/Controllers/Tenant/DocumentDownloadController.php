@@ -23,4 +23,20 @@ class DocumentDownloadController extends Controller
 
         return $this->documentService->streamDownload($document, $user->id);
     }
+
+    public function view(Request $request, int $id)
+    {
+        $user = Auth::guard('tenant')->user();
+        if (!$user || !$user->hasPermission('documents.view')) {
+            abort(403);
+        }
+
+        $document = PatientDocument::on('tenant')->findOrFail($id);
+
+        if (!$document->isViewable()) {
+            abort(415);
+        }
+
+        return $this->documentService->streamInline($document, $user->id);
+    }
 }
