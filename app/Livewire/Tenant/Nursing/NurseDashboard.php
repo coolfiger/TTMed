@@ -362,19 +362,23 @@ class NurseDashboard extends Component
             return;
         }
 
-        $this->nursingService->addProcedure(
-            encounterId:   $this->activeEncounterId,
-            procedureType: $this->procedureType,
-            procedureName: $this->procedureName,
-            performedBy:   Auth::guard('tenant')->id(),
-            details:       $this->procedureDetails ?: null,
-            outcome:       $this->procedureOutcome ?: null,
-            site:          $this->procedureSite ?: null,
-        );
+        try {
+            $this->nursingService->addProcedure(
+                encounterId:   $this->activeEncounterId,
+                procedureType: $this->procedureType,
+                procedureName: $this->procedureName,
+                performedBy:   Auth::guard('tenant')->id(),
+                details:       $this->procedureDetails ?: null,
+                outcome:       $this->procedureOutcome ?: null,
+                site:          $this->procedureSite ?: null,
+            );
 
-        $this->successMessage    = 'Procedure recorded.';
-        $this->showProcedureForm = false;
-        $this->resetProcedureForm();
+            $this->successMessage    = 'Procedure recorded.';
+            $this->showProcedureForm = false;
+            $this->resetProcedureForm();
+        } catch (\Throwable $e) {
+            $this->errorMessage = $e->getMessage();
+        }
     }
 
     // -------------------------------------------------------------------------
