@@ -34,8 +34,9 @@ class QueueScreenController extends Controller
     {
         $branch  = $this->resolveBranch($code);
         $id      = $branch->id;
-        $today   = today();
-        $flashAt = now()->subSeconds(15);
+        $today    = today();
+        $callSecs = (int) app(CentreSettingsService::class)->get('queue_screen_call_seconds', 15);
+        $flashAt  = now()->subSeconds($callSecs);
 
         // Patients called in the last 15 seconds — flash these on screen
         $callingNow = QueueEntry::on('tenant')

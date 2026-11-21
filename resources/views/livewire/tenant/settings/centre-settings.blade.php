@@ -398,6 +398,12 @@
                        class="w-full max-w-xl">
                 <p class="mt-1.5 text-xs text-slate-500">Paste any valid RSS feed URL. The queue screen scrolls headlines from this feed. Leave blank to use the default (Loop TT) or disable the ticker entirely.</p>
             </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Call Display Duration (seconds)</label>
+                <input wire:model="queueScreenCallSeconds" type="number" min="5" max="120" step="1"
+                       class="w-32">
+                <p class="mt-1.5 text-xs text-slate-500">How long a patient's name stays on the "Now Calling" screen before moving to Last Called. Min 5s, max 120s. Default is 15.</p>
+            </div>
             <div class="pt-1">
                 <button wire:click="saveQueueScreen"
                         wire:loading.attr="disabled"

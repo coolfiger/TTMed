@@ -49,8 +49,9 @@ class CentreSettings extends Component
     public ?string $backupStatus    = null;
 
     // Queue screen
-    public string $queueScreenTimezone = 'America/Port_of_Spain';
-    public string $queueScreenRssUrl   = '';
+    public string $queueScreenTimezone    = 'America/Port_of_Spain';
+    public string $queueScreenRssUrl      = '';
+    public int    $queueScreenCallSeconds = 15;
 
     // Branding
     public        $loginLogoFile   = null;
@@ -92,8 +93,9 @@ class CentreSettings extends Component
         $this->hasSidebarLogo = (bool) $settings->get('branding_sidebar_logo_path');
         $this->hasLoginLogo   = (bool) $settings->get('branding_login_logo_path');
 
-        $this->queueScreenTimezone = $settings->get('queue_screen_timezone', 'America/Port_of_Spain');
-        $this->queueScreenRssUrl   = $settings->get('queue_screen_rss_url', '');
+        $this->queueScreenTimezone    = $settings->get('queue_screen_timezone', 'America/Port_of_Spain');
+        $this->queueScreenRssUrl      = $settings->get('queue_screen_rss_url', '');
+        $this->queueScreenCallSeconds = (int) $settings->get('queue_screen_call_seconds', 15);
     }
 
     public function saveBranding(): void
@@ -284,13 +286,15 @@ class CentreSettings extends Component
         $this->checkPermission('settings.manage');
 
         $this->validate([
-            'queueScreenTimezone' => 'required|string|max:60',
-            'queueScreenRssUrl'   => 'nullable|url|max:500',
+            'queueScreenTimezone'    => 'required|string|max:60',
+            'queueScreenRssUrl'      => 'nullable|url|max:500',
+            'queueScreenCallSeconds' => 'required|integer|min:5|max:120',
         ]);
 
         app(CentreSettingsService::class)->setMany([
-            'queue_screen_timezone' => $this->queueScreenTimezone,
-            'queue_screen_rss_url'  => $this->queueScreenRssUrl ?: '',
+            'queue_screen_timezone'     => $this->queueScreenTimezone,
+            'queue_screen_rss_url'      => $this->queueScreenRssUrl ?: '',
+            'queue_screen_call_seconds' => (string) $this->queueScreenCallSeconds,
         ]);
 
         app(AuditService::class)->logTenant('settings.queue_screen.updated');
