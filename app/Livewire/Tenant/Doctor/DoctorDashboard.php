@@ -464,7 +464,6 @@ class DoctorDashboard extends Component
 
         $this->billingCatalog = Service::on('tenant')
             ->where('is_active', true)
-            ->orderBy('category')
             ->orderBy('name')
             ->get()
             ->map(fn ($s) => [
