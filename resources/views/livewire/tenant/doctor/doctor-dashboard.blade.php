@@ -212,69 +212,6 @@
                 </div>
             @endif
 
-            {{-- ── Today's vitals (read-only summary from nurse) ── --}}
-            @if(count($vitals) > 0)
-                @php $latestVitals = $vitals[0]; @endphp
-                <div class="bg-white rounded-xl border border-slate-200 px-4 py-3">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                        Vitals from Nurse
-                        <span class="font-normal normal-case text-slate-400 ml-1">
-                            {{ \Carbon\Carbon::parse($latestVitals['recorded_at'])->format('H:i') }}
-                        </span>
-                    </p>
-                    <div class="grid grid-cols-4 gap-2 text-sm">
-                        @if($latestVitals['systolic_bp'] && $latestVitals['diastolic_bp'])
-                            <div class="bg-slate-50 rounded px-2 py-1.5 text-center">
-                                <p class="text-xs text-slate-400">BP</p>
-                                <p class="font-semibold text-slate-800">{{ $latestVitals['systolic_bp'] }}/{{ $latestVitals['diastolic_bp'] }}</p>
-                                <p class="text-xs text-slate-400">mmHg</p>
-                            </div>
-                        @endif
-                        @if($latestVitals['pulse_rate'])
-                            <div class="bg-slate-50 rounded px-2 py-1.5 text-center">
-                                <p class="text-xs text-slate-400">Pulse</p>
-                                <p class="font-semibold text-slate-800">{{ $latestVitals['pulse_rate'] }}</p>
-                                <p class="text-xs text-slate-400">bpm</p>
-                            </div>
-                        @endif
-                        @if($latestVitals['temperature'])
-                            <div class="bg-slate-50 rounded px-2 py-1.5 text-center">
-                                <p class="text-xs text-slate-400">Temp</p>
-                                <p class="font-semibold text-slate-800">{{ $latestVitals['temperature'] }}°C</p>
-                                <p class="text-xs text-slate-400">{{ $latestVitals['temperature_site'] ?? '' }}</p>
-                            </div>
-                        @endif
-                        @if($latestVitals['oxygen_saturation'])
-                            <div class="bg-slate-50 rounded px-2 py-1.5 text-center">
-                                <p class="text-xs text-slate-400">SpO₂</p>
-                                <p class="font-semibold text-slate-800">{{ $latestVitals['oxygen_saturation'] }}%</p>
-                                <p class="text-xs text-slate-400">&nbsp;</p>
-                            </div>
-                        @endif
-                        @if($latestVitals['weight_kg'])
-                            <div class="bg-slate-50 rounded px-2 py-1.5 text-center">
-                                <p class="text-xs text-slate-400">Weight</p>
-                                <p class="font-semibold text-slate-800">{{ $latestVitals['weight_kg'] }} kg</p>
-                                @if($latestVitals['bmi'])
-                                    <p class="text-xs text-slate-400">BMI {{ $latestVitals['bmi'] }}</p>
-                                @else
-                                    <p class="text-xs text-slate-400">&nbsp;</p>
-                                @endif
-                            </div>
-                        @endif
-                        @if($latestVitals['pain_score'] !== null)
-                            <div class="bg-slate-50 rounded px-2 py-1.5 text-center">
-                                <p class="text-xs text-slate-400">Pain</p>
-                                <p class="font-semibold {{ $latestVitals['pain_score'] >= 7 ? 'text-red-600' : ($latestVitals['pain_score'] >= 4 ? 'text-amber-600' : 'text-slate-800') }}">
-                                    {{ $latestVitals['pain_score'] }}/10
-                                </p>
-                                <p class="text-xs text-slate-400">&nbsp;</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
-
             {{-- ── SOAP Note ── --}}
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200">
