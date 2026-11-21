@@ -350,7 +350,17 @@
                 </tbody>
             </table>
         </div>
-    @elseif($activeTab === 'queue_screen')
+    @else
+        <div class="bg-white rounded-lg border border-slate-200 p-6 text-sm text-slate-500">
+            No backup files found yet.
+        </div>
+    @endif
+
+    </div>
+    @endif
+
+    {{-- Queue Screen --}}
+    @if($activeTab === 'queue_screen')
     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200">
             <p class="text-sm font-semibold text-slate-700">Queue Screen</p>
@@ -358,11 +368,20 @@
         </div>
         <div class="p-5 space-y-5">
             <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Clock Timezone</label>
+                <select wire:model="queueScreenTimezone" class="max-w-xs">
+                    @foreach($timezones as $tz)
+                        <option value="{{ $tz }}" @selected($queueScreenTimezone === $tz)>{{ $tz }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1.5 text-xs text-slate-500">The timezone the clock on the waiting room screen will show.</p>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">News Ticker RSS Feed URL</label>
                 <input wire:model="queueScreenRssUrl" type="url"
                        placeholder="https://tt.loopnews.com/rss.xml"
                        class="w-full max-w-xl">
-                <p class="mt-1.5 text-xs text-slate-500">Paste any valid RSS feed URL. The queue screen will scroll headlines from this feed. Leave blank to disable the ticker.</p>
+                <p class="mt-1.5 text-xs text-slate-500">Paste any valid RSS feed URL. The queue screen scrolls headlines from this feed. Leave blank to use the default (Loop TT) or disable the ticker entirely.</p>
             </div>
             <div class="pt-1">
                 <button wire:click="saveQueueScreen"
@@ -371,16 +390,12 @@
                         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
                     Save
                 </button>
+                @if(session('message') && $activeTab === 'queue_screen')
+                    <span class="ml-3 text-sm text-green-600">Saved.</span>
+                @endif
             </div>
         </div>
     </div>
-
-        @elseif($activeTab === 'backups')
-        <div class="bg-white rounded-lg border border-slate-200 p-6 text-sm text-slate-500">
-            No backup files found yet.
-        </div>
-        @endif
-
-    </div>
     @endif
+
 </div>

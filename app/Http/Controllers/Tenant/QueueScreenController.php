@@ -25,8 +25,9 @@ class QueueScreenController extends Controller
 
     public function show(string $code): \Illuminate\View\View
     {
-        $branch = $this->resolveBranch($code);
-        return view('tenant.queue-screen', compact('branch'));
+        $branch   = $this->resolveBranch($code);
+        $timezone = app(CentreSettingsService::class)->get('queue_screen_timezone', 'America/Port_of_Spain');
+        return view('tenant.queue-screen', compact('branch', 'timezone'));
     }
 
     public function data(string $code): JsonResponse

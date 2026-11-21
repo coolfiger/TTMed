@@ -467,13 +467,12 @@
 
     // ── Clock ──────────────────────────────────────────────────
     (function clock() {
+        const TZ     = '{{ $timezone }}';
+        const timeFmt = new Intl.DateTimeFormat('en-TT', {
+            timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true
+        });
         function tick() {
-            const n    = new Date();
-            let   h    = n.getHours();
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            h = h % 12 || 12;
-            document.getElementById('clock').textContent =
-                h + ':' + String(n.getMinutes()).padStart(2,'0') + ' ' + ampm;
+            document.getElementById('clock').textContent = timeFmt.format(new Date());
         }
         tick();
         setInterval(tick, 1000);

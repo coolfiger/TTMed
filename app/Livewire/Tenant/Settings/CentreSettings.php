@@ -48,7 +48,8 @@ class CentreSettings extends Component
     public ?string $backupStatus    = null;
 
     // Queue screen
-    public string $queueScreenRssUrl = '';
+    public string $queueScreenTimezone = 'America/Port_of_Spain';
+    public string $queueScreenRssUrl   = '';
 
     // Branding
     public        $loginLogoFile   = null;
@@ -89,7 +90,8 @@ class CentreSettings extends Component
         $this->hasSidebarLogo = (bool) $settings->get('branding_sidebar_logo_path');
         $this->hasLoginLogo   = (bool) $settings->get('branding_login_logo_path');
 
-        $this->queueScreenRssUrl = $settings->get('queue_screen_rss_url', '');
+        $this->queueScreenTimezone = $settings->get('queue_screen_timezone', 'America/Port_of_Spain');
+        $this->queueScreenRssUrl   = $settings->get('queue_screen_rss_url', '');
     }
 
     public function saveBranding(): void
@@ -278,10 +280,14 @@ class CentreSettings extends Component
         $this->checkPermission('settings.manage');
 
         $this->validate([
-            'queueScreenRssUrl' => 'nullable|url|max:500',
+            'queueScreenTimezone' => 'required|string|max:60',
+            'queueScreenRssUrl'   => 'nullable|url|max:500',
         ]);
 
-        app(CentreSettingsService::class)->set('queue_screen_rss_url', $this->queueScreenRssUrl ?: '');
+        app(CentreSettingsService::class)->setMany([
+            'queue_screen_timezone' => $this->queueScreenTimezone,
+            'queue_screen_rss_url'  => $this->queueScreenRssUrl ?: '',
+        ]);
 
         app(AuditService::class)->logTenant(auth()->guard('tenant')->id(), 'settings.queue_screen.updated');
 
