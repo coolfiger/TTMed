@@ -176,7 +176,7 @@ class CentreSettings extends Component
         ]);
         $settings->set('tax_enabled', $this->taxEnabled, 'boolean');
 
-        app(AuditService::class)->logTenant(auth()->guard('tenant')->id(), 'settings.general.updated');
+        app(AuditService::class)->logTenant('settings.general.updated');
 
         session()->flash('message', 'General settings saved.');
     }
@@ -205,7 +205,7 @@ class CentreSettings extends Component
             $this->smtpPassword = '';
         }
 
-        app(AuditService::class)->logTenant(auth()->guard('tenant')->id(), 'settings.email.updated');
+        app(AuditService::class)->logTenant('settings.email.updated');
 
         session()->flash('message', 'Email settings saved.');
     }
@@ -292,6 +292,14 @@ class CentreSettings extends Component
         app(AuditService::class)->logTenant('settings.queue_screen.updated');
 
         session()->flash('message', 'Queue screen settings saved.');
+    }
+
+    private function checkPermission(string $perm): void
+    {
+        $user = \Illuminate\Support\Facades\Auth::guard('tenant')->user();
+        if (!$user || !$user->hasPermission($perm)) {
+            abort(403);
+        }
     }
 
     public function render(TenantContext $tenantContext, BackupService $backupService): \Illuminate\View\View
