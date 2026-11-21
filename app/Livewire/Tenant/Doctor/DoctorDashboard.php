@@ -462,6 +462,18 @@ class DoctorDashboard extends Component
             return;
         }
 
+        // If no prescription has been issued yet, go through the prescription → instruction
+        // flow first so the doctor is never able to skip it accidentally.
+        $hasPrescription = Prescription::on('tenant')
+            ->where('encounter_id', $this->activeEncounterId)
+            ->where('status', 'issued')
+            ->exists();
+
+        if (!$hasPrescription && !$this->showPrescriptionBuilder && !$this->showInstructionBuilder) {
+            $this->openPrescriptionBuilder();
+            return;
+        }
+
         $this->billingCatalog = Service::on('tenant')
             ->where('is_active', true)
             ->orderBy('name')
