@@ -36,6 +36,7 @@ use App\Http\Controllers\Tenant\LabInboundController;
 use App\Http\Controllers\Tenant\ImagingInboundController;
 use App\Http\Controllers\Tenant\DocumentDownloadController;
 use App\Http\Controllers\Tenant\PrescriptionDownloadController;
+use App\Http\Controllers\Tenant\EncounterInstructionPrintController;
 use App\Http\Controllers\Tenant\LabAttachmentDownloadController;
 use App\Http\Controllers\Tenant\ImagingReportDownloadController;
 use App\Http\Controllers\Tenant\Smtp2goWebhookController;
@@ -226,6 +227,9 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
             Route::get('/prescriptions/{id}/download', PrescriptionDownloadController::class)
                 ->name('tenant.prescriptions.download');
         });
+
+        Route::get('/encounters/{encounterId}/instructions/print', EncounterInstructionPrintController::class)
+            ->name('tenant.encounters.instructions.print');
 
         // Appointments
         Route::middleware('permission:appointments.view')->group(function () {

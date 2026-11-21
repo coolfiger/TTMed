@@ -10,6 +10,8 @@ use App\Models\Tenant\Invoice;
 use App\Models\Tenant\Patient;
 use App\Models\Tenant\PatientIntakeToken;
 use App\Models\Tenant\QueueEntry;
+use App\Models\Tenant\EncounterInstruction;
+use App\Models\Tenant\Prescription;
 use App\Models\Tenant\Service;
 use App\Services\AuditService;
 use App\Services\BillingService;
@@ -80,6 +82,9 @@ class ReceptionDashboard extends Component
     public string  $checkoutError       = '';
     public bool    $checkoutPaid        = false;
     public array   $checkoutItems       = [];
+    public ?int    $checkoutEncounterId      = null;
+    public ?int    $checkoutPrescriptionId   = null;
+    public bool    $checkoutHasInstructions  = false;
 
     // Document upload step (shown after successful check-in)
     public bool   $showDocumentUpload   = false;
@@ -366,12 +371,15 @@ class ReceptionDashboard extends Component
         $this->checkoutTotal       = 0;
         $this->checkoutAmountDue   = 0;
         $this->checkoutItems       = [];
-        $this->checkoutAmountInput = '';
-        $this->checkoutMethod      = 'cash';
-        $this->checkoutReference   = '';
-        $this->checkoutError       = '';
-        $this->checkoutPaid        = false;
-        $this->showCheckout        = true;
+        $this->checkoutAmountInput          = '';
+        $this->checkoutMethod               = 'cash';
+        $this->checkoutReference            = '';
+        $this->checkoutError                = '';
+        $this->checkoutPaid                 = false;
+        $this->checkoutEncounterId          = null;
+        $this->checkoutPrescriptionId       = null;
+        $this->checkoutHasInstructions      = false;
+        $this->showCheckout                 = true;
 
         try {
             $entry = QueueEntry::on('tenant')
@@ -386,6 +394,20 @@ class ReceptionDashboard extends Component
             }
 
             $this->checkoutPatientName = $entry->patient?->display_name ?? '';
+
+            if ($entry->encounter_id) {
+                $this->checkoutEncounterId = $entry->encounter_id;
+
+                $rx = Prescription::on('tenant')
+                    ->where('encounter_id', $entry->encounter_id)
+                    ->where('status', 'issued')
+                    ->first();
+                $this->checkoutPrescriptionId = $rx?->id;
+
+                $this->checkoutHasInstructions = EncounterInstruction::on('tenant')
+                    ->where('encounter_id', $entry->encounter_id)
+                    ->exists();
+            }
 
             $user = auth()->guard('tenant')->user();
 
@@ -502,10 +524,13 @@ class ReceptionDashboard extends Component
 
     public function closeCheckout(): void
     {
-        $this->showCheckout    = false;
-        $this->checkoutEntryId = null;
-        $this->checkoutPaid    = false;
-        $this->checkoutError   = '';
+        $this->showCheckout              = false;
+        $this->checkoutEntryId           = null;
+        $this->checkoutEncounterId       = null;
+        $this->checkoutPrescriptionId    = null;
+        $this->checkoutHasInstructions   = false;
+        $this->checkoutPaid              = false;
+        $this->checkoutError             = '';
     }
 
     public function completeCheckout(int $entryId): void

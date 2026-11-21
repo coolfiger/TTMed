@@ -10,18 +10,22 @@ use App\Models\Tenant\ImagingOrder;
 use App\Models\Tenant\ImagingReport;
 use App\Models\Tenant\Invoice;
 use App\Models\Tenant\LabOrder;
+use App\Models\Tenant\EncounterInstruction;
 use App\Models\Tenant\NursingAssessment;
 use App\Models\Tenant\NursingProcedure;
 use App\Models\Tenant\PatientAllergy;
 use App\Models\Tenant\PatientDocument;
 use App\Models\Tenant\PatientFamilyHistory;
 use App\Models\Tenant\PatientMedication;
+use App\Models\Tenant\Prescription;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\Referral;
 use App\Models\Tenant\Service;
+use App\Models\Tenant\StaffProfile;
 use App\Models\Tenant\VitalSign;
 use App\Services\BillingService;
 use App\Services\ConsultationService;
+use App\Services\PrescriptionService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -98,9 +102,21 @@ class DoctorDashboard extends Component
     // Billing selector (pre-checkout service selection)
     // -------------------------------------------------------------------------
     public bool   $showBillingSelector  = false;
-    public array  $billingCatalog       = [];   // all active services for picker
-    public array  $selectedServiceIds   = [];   // IDs the doctor has ticked
+    public array  $billingCatalog       = [];
+    public array  $selectedServiceIds   = [];
     public string $billingSearchQuery   = '';
+
+    // -------------------------------------------------------------------------
+    // Prescription builder
+    // -------------------------------------------------------------------------
+    public bool  $showPrescriptionBuilder = false;
+    public array $rxItems                 = [];
+
+    // -------------------------------------------------------------------------
+    // Instruction builder
+    // -------------------------------------------------------------------------
+    public bool  $showInstructionBuilder = false;
+    public array $instructionLines       = [];
 
     // -------------------------------------------------------------------------
     // UI state
@@ -110,10 +126,12 @@ class DoctorDashboard extends Component
     public string $errorMessage   = '';
 
     protected ConsultationService $consultationService;
+    protected PrescriptionService $prescriptionService;
 
-    public function boot(ConsultationService $consultationService): void
+    public function boot(ConsultationService $consultationService, PrescriptionService $prescriptionService): void
     {
         $this->consultationService = $consultationService;
+        $this->prescriptionService = $prescriptionService;
     }
 
     public function mount(): void
@@ -416,6 +434,7 @@ class DoctorDashboard extends Component
             $this->consultationService->finalizeNote($note, Auth::guard('tenant')->id());
             $this->successMessage = 'Note finalized.';
             $this->errorMessage   = '';
+            $this->openPrescriptionBuilder();
         } catch (\LogicException|\InvalidArgumentException $e) {
             $this->errorMessage = $e->getMessage();
         }
@@ -675,6 +694,154 @@ class DoctorDashboard extends Component
         $this->selectedIcdText = $code->description;
         $this->diagnosisSearch = $code->display;
         $this->icdResults      = [];
+    }
+
+    public function selectIcdExternal(string $code, string $description): void
+    {
+        $this->selectedIcdId   = null;
+        $this->selectedIcdCode = $code;
+        $this->selectedIcdText = $description;
+        $this->diagnosisSearch = $code . ' — ' . $description;
+        $this->icdResults      = [];
+    }
+
+    // -------------------------------------------------------------------------
+    // Prescriptions
+    // -------------------------------------------------------------------------
+
+    public function openPrescriptionBuilder(): void
+    {
+        $this->rxItems = [
+            ['name' => '', 'strength' => '', 'form' => 'tablet', 'dose' => '', 'frequency' => '', 'duration' => '', 'duration_unit' => 'days', 'instructions' => ''],
+        ];
+        $this->showPrescriptionBuilder = true;
+        $this->showInstructionBuilder  = false;
+    }
+
+    public function addRxItem(): void
+    {
+        $this->rxItems[] = ['name' => '', 'strength' => '', 'form' => 'tablet', 'dose' => '', 'frequency' => '', 'duration' => '', 'duration_unit' => 'days', 'instructions' => ''];
+    }
+
+    public function removeRxItem(int $index): void
+    {
+        array_splice($this->rxItems, $index, 1);
+    }
+
+    public function issuePrescription(): void
+    {
+        $filledItems = array_filter($this->rxItems, fn ($i) => !empty(trim($i['name'] ?? '')));
+
+        if (empty($filledItems)) {
+            $this->skipPrescription();
+            return;
+        }
+
+        try {
+            $userId  = Auth::guard('tenant')->id();
+            $profile = StaffProfile::on('tenant')->where('user_id', $userId)->first();
+            $doctor  = $profile?->doctor ?? null;
+
+            if (!$doctor) {
+                $this->errorMessage = 'Doctor profile not found for your account.';
+                return;
+            }
+
+            $rx = $this->prescriptionService->getOrCreateDraft($this->activeEncounterId, $doctor->id);
+
+            foreach ($filledItems as $item) {
+                $this->prescriptionService->addItem($rx, [
+                    'medication_name' => trim($item['name']),
+                    'strength'        => trim($item['strength']) ?: null,
+                    'form'            => $item['form'] ?: null,
+                    'dose'            => trim($item['dose']) ?: '1',
+                    'frequency'       => trim($item['frequency']) ?: 'as directed',
+                    'duration'        => is_numeric($item['duration']) ? (int) $item['duration'] : null,
+                    'duration_unit'   => $item['duration_unit'] ?: 'days',
+                    'instructions'    => trim($item['instructions']) ?: null,
+                ]);
+            }
+
+            $this->prescriptionService->issuePrescription($rx, $userId);
+            $this->showPrescriptionBuilder = false;
+            $this->openInstructionBuilder();
+        } catch (\Throwable $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function skipPrescription(): void
+    {
+        $this->showPrescriptionBuilder = false;
+        $this->openInstructionBuilder();
+    }
+
+    // -------------------------------------------------------------------------
+    // Patient instructions
+    // -------------------------------------------------------------------------
+
+    public function openInstructionBuilder(): void
+    {
+        $existing = EncounterInstruction::on('tenant')
+            ->where('encounter_id', $this->activeEncounterId)
+            ->first();
+
+        $this->instructionLines      = $existing?->lines ?? [''];
+        $this->showInstructionBuilder = true;
+    }
+
+    public function addInstructionLine(): void
+    {
+        $this->instructionLines[] = '';
+    }
+
+    public function removeInstructionLine(int $index): void
+    {
+        array_splice($this->instructionLines, $index, 1);
+    }
+
+    public function toggleInstructionTemplate(string $text): void
+    {
+        $existing = array_search($text, $this->instructionLines);
+        if ($existing !== false) {
+            array_splice($this->instructionLines, $existing, 1);
+        } else {
+            $lines = array_filter($this->instructionLines, fn ($l) => trim($l) !== '');
+            $lines[] = $text;
+            $this->instructionLines = array_values($lines);
+        }
+    }
+
+    public function saveInstructions(): void
+    {
+        $lines = array_values(array_filter(
+            array_map('trim', $this->instructionLines),
+            fn ($l) => $l !== ''
+        ));
+
+        if (empty($lines)) {
+            $this->showInstructionBuilder = false;
+            return;
+        }
+
+        $userId = Auth::guard('tenant')->id();
+
+        EncounterInstruction::on('tenant')->updateOrCreate(
+            ['encounter_id' => $this->activeEncounterId],
+            [
+                'patient_id' => $this->activePatientId,
+                'created_by' => $userId,
+                'lines'      => $lines,
+            ]
+        );
+
+        $this->showInstructionBuilder = false;
+        $this->successMessage         = 'Instructions saved.';
+    }
+
+    public function skipInstructions(): void
+    {
+        $this->showInstructionBuilder = false;
     }
 
     // -------------------------------------------------------------------------

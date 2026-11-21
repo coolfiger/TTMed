@@ -624,6 +624,24 @@
             </div>
             <p class="text-lg font-semibold text-slate-800">Payment Complete</p>
             <p class="text-sm text-slate-500 mt-1">{{ $checkoutPatientName }} has been checked out.</p>
+            @if($checkoutPrescriptionId || $checkoutHasInstructions)
+            <div class="mt-5 flex gap-3 flex-wrap justify-center">
+                @if($checkoutPrescriptionId)
+                <a href="{{ route('tenant.prescriptions.download', $checkoutPrescriptionId) }}" target="_blank"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm font-medium hover:bg-blue-100 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17H17.01M6 10v8a2 2 0 002 2h8a2 2 0 002-2v-8M9 10V6a3 3 0 016 0v4"/></svg>
+                    Print Prescription
+                </a>
+                @endif
+                @if($checkoutHasInstructions)
+                <a href="{{ route('tenant.encounters.instructions.print', $checkoutEncounterId) }}" target="_blank"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-sm font-medium hover:bg-teal-100 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Print Instructions
+                </a>
+                @endif
+            </div>
+            @endif
             <button wire:click="closeCheckout" class="mt-6 px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition">Done</button>
         </div>
         @else
@@ -680,6 +698,25 @@
             </div>
         </div>
 
+        @if($checkoutPrescriptionId || $checkoutHasInstructions)
+        <div class="flex-shrink-0 px-6 py-3 border-t border-slate-100 bg-slate-50 flex gap-3 flex-wrap">
+            <p class="text-xs text-slate-400 w-full">Documents for this visit:</p>
+            @if($checkoutPrescriptionId)
+            <a href="{{ route('tenant.prescriptions.download', $checkoutPrescriptionId) }}" target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium hover:bg-blue-100 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17H17.01M6 10v8a2 2 0 002 2h8a2 2 0 002-2v-8M9 10V6a3 3 0 016 0v4"/></svg>
+                Print Prescription
+            </a>
+            @endif
+            @if($checkoutHasInstructions)
+            <a href="{{ route('tenant.encounters.instructions.print', $checkoutEncounterId) }}" target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-xs font-medium hover:bg-teal-100 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Print Instructions
+            </a>
+            @endif
+        </div>
+        @endif
         <div class="flex-shrink-0 px-6 py-4 border-t border-slate-200 flex gap-3">
             <button wire:click="closeCheckout" class="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">Cancel</button>
             <button wire:click="collectCheckoutPayment"
