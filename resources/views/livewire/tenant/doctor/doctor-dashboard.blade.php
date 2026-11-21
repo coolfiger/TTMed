@@ -26,9 +26,11 @@
                 <button @click="toggleQueue()"
                         class="text-slate-400 hover:text-slate-700 transition p-1 rounded hover:bg-slate-100"
                         :title="queueCollapsed ? 'Expand queue' : 'Collapse queue'">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path x-show="!queueCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7"/>
-                        <path x-show="queueCollapsed"  stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7"/>
+                    <svg x-show="!queueCollapsed" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7"/>
+                    </svg>
+                    <svg x-show="queueCollapsed" x-cloak class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7"/>
                     </svg>
                 </button>
             </div>
@@ -136,25 +138,25 @@
     <div class="flex-1 flex flex-col min-w-0 min-h-0">
 
         {{-- Patient header bar --}}
-        <div class="flex-shrink-0 bg-white border-b border-slate-200 px-5 py-3 flex items-center gap-4">
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <p class="text-base font-semibold text-slate-800">{{ $activePatientName }}</p>
+        <div class="flex-shrink-0 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-3 min-w-0">
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <p class="text-sm font-semibold text-slate-800 truncate">{{ $activePatientName }}</p>
+                    <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-semibold
+                        {{ $activeEntryStatus === 'with_doctor' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700' }}">
+                        {{ $activeEntryStatus === 'with_doctor' ? 'In Consultation' : 'Awaiting' }}
+                    </span>
                     @if(count($allergies) > 0)
-                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"
+                        <span class="flex-shrink-0 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full"
                               title="{{ collect($allergies)->pluck('allergen')->join(', ') }}">
-                            ⚠ {{ count($allergies) }} {{ Str::plural('Allergy', count($allergies)) }}
+                            ⚠ {{ count($allergies) }}A
                         </span>
                     @endif
                     @if(count($medications) > 0)
-                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
-                            💊 {{ count($medications) }} Med{{ count($medications) !== 1 ? 's' : '' }}
+                        <span class="flex-shrink-0 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full">
+                            💊 {{ count($medications) }}
                         </span>
                     @endif
-                    <span class="text-xs px-2 py-0.5 rounded-full font-semibold
-                        {{ $activeEntryStatus === 'with_doctor' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700' }}">
-                        {{ $activeEntryStatus === 'with_doctor' ? 'In Consultation' : 'Awaiting Doctor' }}
-                    </span>
                 </div>
             </div>
 
@@ -162,52 +164,52 @@
                 @if($activeEntryStatus === 'with_doctor')
                     @if($wizardStep)
                         {{-- Wizard is active — show step breadcrumb, no edit buttons --}}
-                        <div class="flex items-center gap-2">
-                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold
                                 {{ $wizardStep === 'prescription' ? 'bg-blue-600 text-white' : 'bg-emerald-100 text-emerald-700' }}">
                                 {{ $wizardStep === 'prescription' ? '1' : '✓' }}
                             </span>
-                            <span class="text-sm {{ $wizardStep === 'prescription' ? 'font-semibold text-blue-700' : 'text-slate-400 line-through' }}">Prescription</span>
+                            <span class="text-xs {{ $wizardStep === 'prescription' ? 'font-semibold text-blue-700' : 'text-slate-400 line-through' }}">Rx</span>
                             <span class="text-slate-300">›</span>
-                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold
                                 {{ $wizardStep === 'instructions' ? 'bg-teal-600 text-white' : ($wizardStep === 'billing' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500') }}">
                                 {{ $wizardStep === 'billing' ? '✓' : '2' }}
                             </span>
-                            <span class="text-sm {{ $wizardStep === 'instructions' ? 'font-semibold text-teal-700' : ($wizardStep === 'billing' ? 'text-slate-400 line-through' : 'text-slate-400') }}">Instructions</span>
+                            <span class="text-xs {{ $wizardStep === 'instructions' ? 'font-semibold text-teal-700' : ($wizardStep === 'billing' ? 'text-slate-400 line-through' : 'text-slate-400') }}">Instructions</span>
                             <span class="text-slate-300">›</span>
-                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold
                                 {{ $wizardStep === 'billing' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500' }}">3</span>
-                            <span class="text-sm {{ $wizardStep === 'billing' ? 'font-semibold text-emerald-700' : 'text-slate-400' }}">Billing</span>
+                            <span class="text-xs {{ $wizardStep === 'billing' ? 'font-semibold text-emerald-700' : 'text-slate-400' }}">Billing</span>
                         </div>
                     @elseif($noteIsFinalized)
-                        <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-semibold">Note Finalized</span>
+                        <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-semibold">Finalized</span>
                         <button wire:click="openBillingSelector"
-                                class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-                            Complete &amp; Send to Reception
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition">
+                            Complete &amp; Send
                         </button>
                     @else
                         <button wire:click="saveNote"
-                                class="text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500 text-sm font-semibold px-4 py-2 rounded-lg transition">
-                            Save Note
+                                class="text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500 text-sm font-semibold px-3 py-1.5 rounded-lg transition">
+                            Save
                         </button>
-                        <span x-data="{ confirming: false }">
+                        <div x-data="{ confirming: false }" class="flex items-center gap-2">
                             <button x-show="!confirming"
                                     @click="confirming = true"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-                                Finalize Note
+                                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition">
+                                Finalize
                             </button>
-                            <span x-show="confirming" class="flex items-center gap-2">
-                                <span class="text-xs text-slate-500">Make read-only?</span>
+                            <span x-show="confirming" x-cloak class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">Confirm?</span>
                                 <button @click="confirming = false"
-                                        class="text-sm font-medium text-slate-600 border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition">
-                                    Cancel
+                                        class="text-xs font-medium text-slate-600 border border-slate-300 px-2 py-1 rounded-lg hover:bg-slate-50 transition">
+                                    No
                                 </button>
                                 <button @click="$wire.finalizeNote(); confirming = false"
-                                        class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition">
-                                    Yes, Finalize
+                                        class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-2 py-1 rounded-lg transition">
+                                    Yes
                                 </button>
                             </span>
-                        </span>
+                        </div>
                     @endif
                 @endif
             </div>
