@@ -444,7 +444,7 @@ class DoctorDashboard extends Component
     // Billing selector
     // -------------------------------------------------------------------------
 
-    public function openBillingSelector(): void
+    public function openBillingSelector(bool $fromWizard = false): void
     {
         $this->checkPermission('encounters.view');
 
@@ -462,16 +462,18 @@ class DoctorDashboard extends Component
             return;
         }
 
-        // If no prescription has been issued yet, go through the prescription → instruction
-        // flow first so the doctor is never able to skip it accidentally.
-        $hasPrescription = Prescription::on('tenant')
-            ->where('encounter_id', $this->activeEncounterId)
-            ->where('status', 'issued')
-            ->exists();
+        // When called directly by the button (not from the wizard), enforce the
+        // prescription → instruction flow if no prescription has been issued yet.
+        if (!$fromWizard) {
+            $hasPrescription = Prescription::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->where('status', 'issued')
+                ->exists();
 
-        if (!$hasPrescription && !$this->showPrescriptionBuilder && !$this->showInstructionBuilder) {
-            $this->openPrescriptionBuilder();
-            return;
+            if (!$hasPrescription) {
+                $this->openPrescriptionBuilder();
+                return;
+            }
         }
 
         $this->billingCatalog = Service::on('tenant')
@@ -848,11 +850,13 @@ class DoctorDashboard extends Component
 
         $this->showInstructionBuilder = false;
         $this->successMessage         = 'Instructions saved.';
+        $this->openBillingSelector(fromWizard: true);
     }
 
     public function skipInstructions(): void
     {
         $this->showInstructionBuilder = false;
+        $this->openBillingSelector(fromWizard: true);
     }
 
     // -------------------------------------------------------------------------

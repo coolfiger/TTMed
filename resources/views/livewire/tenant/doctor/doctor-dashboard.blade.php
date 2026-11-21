@@ -1181,18 +1181,36 @@
          Prescription Builder Modal
 ══════════════════════════════════════════════════════ --}}
 @if($showPrescriptionBuilder)
-<div class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8 flex flex-col">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[92vh]">
 
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
-            <div>
-                <p class="text-base font-semibold text-slate-800">Prescription Builder</p>
-                <p class="text-xs text-slate-500 mt-0.5">Add medications to this prescription. Reception will print it at checkout.</p>
+        {{-- Wizard header --}}
+        <div class="px-6 pt-4 pb-3 border-b border-slate-100 flex-shrink-0">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">1</span>
+                    <span class="text-sm font-semibold text-blue-700">Prescription</span>
+                    <span class="text-slate-300 text-sm">›</span>
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-500 text-xs font-bold">2</span>
+                    <span class="text-sm text-slate-400">Instructions</span>
+                    <span class="text-slate-300 text-sm">›</span>
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-500 text-xs font-bold">3</span>
+                    <span class="text-sm text-slate-400">Billing</span>
+                </div>
+                <button wire:click="skipPrescription" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
-            <button wire:click="skipPrescription" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            <p class="text-xs text-slate-500">Add medications to this prescription. Reception will print it at checkout.</p>
         </div>
 
-        <div class="p-6 space-y-4 overflow-y-auto">
+        {{-- Inline error --}}
+        @if($errorMessage)
+        <div class="mx-6 mt-3 flex-shrink-0 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700 flex items-center justify-between">
+            <span>{{ $errorMessage }}</span>
+            <button wire:click="$set('errorMessage', '')" class="ml-2 text-red-400 hover:text-red-600 text-xs">✕</button>
+        </div>
+        @endif
+
+        <div class="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto">
             @foreach($rxItems as $i => $item)
             <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
                 <div class="flex items-center justify-between mb-3">
@@ -1276,14 +1294,14 @@
         <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between flex-shrink-0 bg-slate-50 rounded-b-2xl">
             <button wire:click="skipPrescription"
                     class="text-sm text-slate-500 hover:text-slate-700 font-medium px-4 py-2 rounded-lg transition">
-                Skip &mdash; No Prescription
+                Skip — No Prescription
             </button>
             <button wire:click="issuePrescription"
                     wire:loading.attr="disabled"
                     wire:target="issuePrescription"
                     class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50">
-                <span wire:loading.remove wire:target="issuePrescription">Issue Prescription &rarr;</span>
-                <span wire:loading wire:target="issuePrescription">Saving&hellip;</span>
+                <span wire:loading.remove wire:target="issuePrescription">Save &amp; Continue to Instructions →</span>
+                <span wire:loading wire:target="issuePrescription">Saving…</span>
             </button>
         </div>
     </div>
@@ -1294,18 +1312,28 @@
      Patient Instruction Sheet Builder Modal
 ══════════════════════════════════════════════════════ --}}
 @if($showInstructionBuilder)
-<div class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8 flex flex-col">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[92vh]">
 
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
-            <div>
-                <p class="text-base font-semibold text-slate-800">Patient Instruction Sheet</p>
-                <p class="text-xs text-slate-500 mt-0.5">Give the patient written guidance to take home. Reception can print this at checkout.</p>
+        {{-- Wizard header --}}
+        <div class="px-6 pt-4 pb-3 border-b border-slate-100 flex-shrink-0">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">✓</span>
+                    <span class="text-sm text-slate-400 line-through">Prescription</span>
+                    <span class="text-slate-300 text-sm">›</span>
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-teal-600 text-white text-xs font-bold">2</span>
+                    <span class="text-sm font-semibold text-teal-700">Instructions</span>
+                    <span class="text-slate-300 text-sm">›</span>
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-500 text-xs font-bold">3</span>
+                    <span class="text-sm text-slate-400">Billing</span>
+                </div>
+                <button wire:click="skipInstructions" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
-            <button wire:click="skipInstructions" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            <p class="text-xs text-slate-500">Give the patient written guidance to take home. Reception can print this at checkout.</p>
         </div>
 
-        <div class="p-6 space-y-5 overflow-y-auto">
+        <div class="flex-1 min-h-0 p-6 space-y-5 overflow-y-auto">
             @php
                 $tmplList = [
                     'Drink at least 8 glasses of water daily',
@@ -1379,14 +1407,14 @@
         <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between flex-shrink-0 bg-slate-50 rounded-b-2xl">
             <button wire:click="skipInstructions"
                     class="text-sm text-slate-500 hover:text-slate-700 font-medium px-4 py-2 rounded-lg transition">
-                Skip &mdash; No Instructions
+                Skip — No Instructions
             </button>
             <button wire:click="saveInstructions"
                     wire:loading.attr="disabled"
                     wire:target="saveInstructions"
                     class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50">
-                <span wire:loading.remove wire:target="saveInstructions">Save Instructions</span>
-                <span wire:loading wire:target="saveInstructions">Saving&hellip;</span>
+                <span wire:loading.remove wire:target="saveInstructions">Save &amp; Continue to Billing →</span>
+                <span wire:loading wire:target="saveInstructions">Saving…</span>
             </button>
         </div>
     </div>
