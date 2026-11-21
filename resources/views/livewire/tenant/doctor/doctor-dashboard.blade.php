@@ -436,10 +436,10 @@
                         Skip — No Instructions
                     </button>
                     <button wire:click="saveInstructions"
-                            wire:loading.attr="disabled" wire:target="saveInstructions"
-                            class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition shadow-sm disabled:opacity-50">
-                        <span wire:loading.remove wire:target="saveInstructions">Save Instructions &amp; Continue →</span>
-                        <span wire:loading wire:target="saveInstructions">Saving…</span>
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-50 cursor-not-allowed"
+                            class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition shadow-sm">
+                        Save Instructions &amp; Continue →
                     </button>
                 </div>
             </div>
