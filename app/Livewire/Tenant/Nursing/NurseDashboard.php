@@ -228,6 +228,34 @@ class NurseDashboard extends Component
         $this->loadPatientAllergiesAndMeds();
     }
 
+    public function setTab(string $tab): void
+    {
+        $this->activeTab = $tab;
+
+        if ($tab === 'vitals' && $this->activeEncounterId) {
+            $vs = \App\Models\Tenant\VitalSign::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->orderByDesc('recorded_at')
+                ->first();
+
+            if ($vs) {
+                $this->systolic        = $vs->systolic_bp        ? (string) $vs->systolic_bp        : '';
+                $this->diastolic       = $vs->diastolic_bp       ? (string) $vs->diastolic_bp       : '';
+                $this->pulse           = $vs->pulse_rate         ? (string) $vs->pulse_rate         : '';
+                $this->respiratoryRate = $vs->respiratory_rate   ? (string) $vs->respiratory_rate   : '';
+                $this->oxygenSat       = $vs->oxygen_saturation  ? (string) $vs->oxygen_saturation  : '';
+                $this->temperature     = $vs->temperature        ? (string) $vs->temperature        : '';
+                $this->tempSite        = $vs->temperature_site   ?? 'oral';
+                $this->weightKg        = $vs->weight_kg          ? (string) $vs->weight_kg          : '';
+                $this->heightCm        = $vs->height_cm          ? (string) $vs->height_cm          : '';
+                $this->bloodGlucose    = $vs->blood_glucose      ? (string) $vs->blood_glucose      : '';
+                $this->glucoseTiming   = $vs->blood_glucose_timing ?? 'fasting';
+                $this->painScore       = $vs->pain_score !== null ? (string) $vs->pain_score        : '';
+                $this->vitalsNotes     = $vs->notes              ?? '';
+            }
+        }
+    }
+
     private function loadPatientAllergiesAndMeds(): void
     {
         if (!$this->activePatientId) return;
@@ -310,7 +338,7 @@ class NurseDashboard extends Component
         $this->nursingService->recordVitals($data, Auth::guard('tenant')->id());
 
         $this->successMessage = 'Vitals recorded.';
-        $this->resetVitalsForm();
+        // Don't reset the form — leave values in place so the nurse can see what was saved.
     }
 
     public function autoSaveVitals(): void

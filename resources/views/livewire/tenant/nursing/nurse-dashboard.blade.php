@@ -106,7 +106,7 @@
                     {{-- Step tabs --}}
                     <div class="flex gap-1 mt-4">
                         @foreach(['vitals' => '1. Vitals', 'assessment' => '2. Assessment', 'procedures' => '3. Procedures'] as $tab => $label)
-                            <button wire:click="$set('activeTab', '{{ $tab }}')"
+                            <button wire:click="setTab('{{ $tab }}')"
                                     class="px-4 py-2 text-sm font-medium rounded-lg transition
                                         {{ $activeTab === $tab
                                             ? 'bg-blue-600 text-white shadow-sm'
@@ -265,7 +265,7 @@
                                         <span wire:loading.remove wire:target="saveVitals">Save Vitals</span>
                                         <span wire:loading wire:target="saveVitals">Saving...</span>
                                     </button>
-                                    <button type="button" wire:click="$set('activeTab', 'assessment')"
+                                    <button type="button" wire:click="setTab('assessment')"
                                             class="btn btn-secondary">
                                         Next: Assessment
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -432,7 +432,7 @@
                             @endif
 
                             <div class="flex items-center justify-between">
-                                <button type="button" wire:click="$set('activeTab', 'vitals')"
+                                <button type="button" wire:click="setTab('vitals')"
                                         class="btn btn-ghost">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                     Back to Vitals
