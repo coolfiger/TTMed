@@ -1275,7 +1275,7 @@
 {{-- ── Billing selector modal ── --}}
 @if($showBillingSelector)
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]"
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]"
          x-data="{ search: '' }">
 
         {{-- Header --}}
@@ -1296,7 +1296,7 @@
         </div>
 
         {{-- Service list --}}
-        <div class="flex-1 overflow-y-auto px-6 py-4 space-y-1">
+        <div class="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-1">
             @php
                 $grouped = collect($billingCatalog)->groupBy('category');
             @endphp
