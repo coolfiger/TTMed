@@ -82,9 +82,10 @@ class NurseDashboard extends Component
     // -------------------------------------------------------------------------
     // UI state
     // -------------------------------------------------------------------------
-    public string $activeTab       = 'vitals';
-    public string $successMessage  = '';
-    public string $errorMessage    = '';
+    public string $activeTab          = 'vitals';
+    public string $successMessage     = '';
+    public string $errorMessage       = '';
+    public string $bloodGlucoseUnit   = 'mmol_l'; // 'mmol_l' or 'mg_dl'
 
     protected NursingService $nursingService;
 
@@ -98,6 +99,8 @@ class NurseDashboard extends Component
         $this->checkPermission('nursing.assess');
         $user           = Auth::guard('tenant')->user();
         $this->branchId = $user?->branch_id ?? 0;
+        $this->bloodGlucoseUnit = app(\App\Services\CentreSettingsService::class)
+            ->get('blood_glucose_unit', 'mmol_l');
         $this->loadQueue();
     }
 
@@ -187,8 +190,30 @@ class NurseDashboard extends Component
         $this->resetForms();
         $this->activeTab = 'vitals';
 
-        // Pre-load existing assessment if present
         if ($this->activeEncounterId) {
+            // Pre-load most recent vitals so the nurse sees what was already saved
+            $vs = \App\Models\Tenant\VitalSign::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->orderByDesc('recorded_at')
+                ->first();
+
+            if ($vs) {
+                $this->systolic        = $vs->systolic_bp        ? (string) $vs->systolic_bp        : '';
+                $this->diastolic       = $vs->diastolic_bp       ? (string) $vs->diastolic_bp       : '';
+                $this->pulse           = $vs->pulse_rate         ? (string) $vs->pulse_rate         : '';
+                $this->respiratoryRate = $vs->respiratory_rate   ? (string) $vs->respiratory_rate   : '';
+                $this->oxygenSat       = $vs->oxygen_saturation  ? (string) $vs->oxygen_saturation  : '';
+                $this->temperature     = $vs->temperature        ? (string) $vs->temperature        : '';
+                $this->tempSite        = $vs->temperature_site   ?? 'oral';
+                $this->weightKg        = $vs->weight_kg          ? (string) $vs->weight_kg          : '';
+                $this->heightCm        = $vs->height_cm          ? (string) $vs->height_cm          : '';
+                $this->bloodGlucose    = $vs->blood_glucose      ? (string) $vs->blood_glucose      : '';
+                $this->glucoseTiming   = $vs->blood_glucose_timing ?? 'fasting';
+                $this->painScore       = $vs->pain_score !== null ? (string) $vs->pain_score        : '';
+                $this->vitalsNotes     = $vs->notes              ?? '';
+            }
+
+            // Pre-load existing assessment
             $assessment = NursingAssessment::on('tenant')
                 ->where('encounter_id', $this->activeEncounterId)
                 ->first();
@@ -242,17 +267,21 @@ class NurseDashboard extends Component
     {
         $this->checkPermission('nursing.assess');
 
+        $glucoseRule = $this->bloodGlucoseUnit === 'mg_dl'
+            ? 'nullable|numeric|min:10|max:720'
+            : 'nullable|numeric|min:0.5|max:40';
+
         $this->validate([
-            'systolic'       => 'nullable|integer|min:50|max:300',
-            'diastolic'      => 'nullable|integer|min:20|max:200',
-            'pulse'          => 'nullable|integer|min:20|max:300',
+            'systolic'        => 'nullable|integer|min:50|max:300',
+            'diastolic'       => 'nullable|integer|min:20|max:200',
+            'pulse'           => 'nullable|integer|min:20|max:300',
             'respiratoryRate' => 'nullable|integer|min:1|max:60',
-            'oxygenSat'      => 'nullable|numeric|min:50|max:100',
-            'temperature'    => 'nullable|numeric|min:30|max:45',
-            'weightKg'       => 'nullable|numeric|min:0.5|max:500',
-            'heightCm'       => 'nullable|numeric|min:20|max:250',
-            'bloodGlucose'   => 'nullable|numeric|min:0.5|max:50',
-            'painScore'      => 'nullable|integer|min:0|max:10',
+            'oxygenSat'       => 'nullable|numeric|min:50|max:100',
+            'temperature'     => 'nullable|numeric|min:30|max:45',
+            'weightKg'        => 'nullable|numeric|min:0.5|max:500',
+            'heightCm'        => 'nullable|numeric|min:20|max:250',
+            'bloodGlucose'    => $glucoseRule,
+            'painScore'       => 'nullable|integer|min:0|max:10',
         ]);
 
         if (!$this->activePatientId) {
@@ -292,6 +321,10 @@ class NurseDashboard extends Component
 
         $this->checkPermission('nursing.assess');
 
+        $glucoseRule = $this->bloodGlucoseUnit === 'mg_dl'
+            ? 'nullable|numeric|min:10|max:720'
+            : 'nullable|numeric|min:0.5|max:40';
+
         try {
             $this->validate([
                 'systolic'        => 'nullable|integer|min:50|max:300',
@@ -302,7 +335,7 @@ class NurseDashboard extends Component
                 'temperature'     => 'nullable|numeric|min:30|max:45',
                 'weightKg'        => 'nullable|numeric|min:0.5|max:500',
                 'heightCm'        => 'nullable|numeric|min:20|max:250',
-                'bloodGlucose'    => 'nullable|numeric|min:0.5|max:50',
+                'bloodGlucose'    => $glucoseRule,
                 'painScore'       => 'nullable|integer|min:0|max:10',
             ]);
         } catch (\Illuminate\Validation\ValidationException) {

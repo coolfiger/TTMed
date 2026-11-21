@@ -1085,7 +1085,12 @@
                 @if(!empty($v['blood_glucose']))
                 <div class="flex flex-col">
                     <span class="text-xs text-slate-400">Glucose{{ !empty($v['blood_glucose_timing']) ? ' ('.$v['blood_glucose_timing'].')' : '' }}</span>
-                    <span class="text-sm font-semibold {{ $v['blood_glucose'] > 11.1 ? 'text-red-600' : ($v['blood_glucose'] > 7.8 ? 'text-orange-500' : 'text-slate-800') }}">{{ $v['blood_glucose'] }} <span class="text-xs font-normal text-slate-500">mmol/L</span></span>
+                    @php
+                        $glucoseHigh  = $bloodGlucoseUnit === 'mg_dl' ? 200 : 11.1;
+                        $glucoseMild  = $bloodGlucoseUnit === 'mg_dl' ? 140 : 7.8;
+                        $glucoseLabel = $bloodGlucoseUnit === 'mg_dl' ? 'mg/dL' : 'mmol/L';
+                    @endphp
+                    <span class="text-sm font-semibold {{ $v['blood_glucose'] > $glucoseHigh ? 'text-red-600' : ($v['blood_glucose'] > $glucoseMild ? 'text-orange-500' : 'text-slate-800') }}">{{ $v['blood_glucose'] }} <span class="text-xs font-normal text-slate-500">{{ $glucoseLabel }}</span></span>
                 </div>
                 @endif
             </div>
@@ -1368,7 +1373,7 @@
                                 <p class="text-xs text-slate-400 mt-0.5 space-x-2">
                                     @if(!empty($hv['systolic_bp']))<span class="{{ $hHtn ? 'text-red-500 font-medium' : '' }}">{{ $hv['systolic_bp'] }}/{{ $hv['diastolic_bp'] }}</span>@endif
                                     @if(!empty($hv['pulse_rate']))<span>{{ $hv['pulse_rate'] }}bpm</span>@endif
-                                    @if(!empty($hv['blood_glucose']))<span class="{{ $hv['blood_glucose'] > 7.8 ? 'text-orange-500 font-medium' : '' }}">{{ $hv['blood_glucose'] }}mmol</span>@endif
+                                    @if(!empty($hv['blood_glucose']))<span class="{{ $hv['blood_glucose'] > ($bloodGlucoseUnit === 'mg_dl' ? 140 : 7.8) ? 'text-orange-500 font-medium' : '' }}">{{ $hv['blood_glucose'] }}{{ $bloodGlucoseUnit === 'mg_dl' ? 'mg/dL' : 'mmol' }}</span>@endif
                                 </p>
                                 @endif
                             </div>
@@ -1398,7 +1403,7 @@
                                 <div><p class="text-xs text-slate-400">Wt</p><p class="text-xs font-semibold text-slate-700">{{ $hv['weight_kg'] }}kg</p></div>
                                 @endif
                                 @if(!empty($hv['blood_glucose']))
-                                <div><p class="text-xs text-slate-400">Glucose</p><p class="text-xs font-semibold {{ $hv['blood_glucose'] > 7.8 ? 'text-orange-500' : 'text-slate-700' }}">{{ $hv['blood_glucose'] }}</p></div>
+                                <div><p class="text-xs text-slate-400">Glucose <span class="text-slate-300">({{ $bloodGlucoseUnit === 'mg_dl' ? 'mg/dL' : 'mmol/L' }})</span></p><p class="text-xs font-semibold {{ $hv['blood_glucose'] > ($bloodGlucoseUnit === 'mg_dl' ? 140 : 7.8) ? 'text-orange-500' : 'text-slate-700' }}">{{ $hv['blood_glucose'] }}</p></div>
                                 @endif
                             </div>
                             @endif

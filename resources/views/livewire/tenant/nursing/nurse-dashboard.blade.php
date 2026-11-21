@@ -213,12 +213,29 @@
 
                             {{-- Section: Glucose --}}
                             <div class="bg-white rounded-xl border border-slate-200 p-5">
-                                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Blood Glucose</h3>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Blood Glucose</h3>
+                                    <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full
+                                        {{ $bloodGlucoseUnit === 'mg_dl' ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-blue-50 text-blue-700 border border-blue-200' }}">
+                                        {{ $bloodGlucoseUnit === 'mg_dl' ? 'mg/dL' : 'mmol/L' }}
+                                    </span>
+                                </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Blood Glucose <span class="text-slate-400 font-normal">mmol/L</span></label>
-                                        <input wire:model="bloodGlucose" wire:change="autoSaveVitals" type="number" step="0.1" min="0.5" max="50"
-                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
+                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">
+                                            Blood Glucose
+                                            <span class="text-slate-400 font-normal">
+                                                {{ $bloodGlucoseUnit === 'mg_dl' ? '(mg/dL — normal 70–140)' : '(mmol/L — normal 3.9–7.8)' }}
+                                            </span>
+                                        </label>
+                                        @if($bloodGlucoseUnit === 'mg_dl')
+                                            <input wire:model="bloodGlucose" wire:change="autoSaveVitals" type="number" step="1" min="10" max="720"
+                                                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
+                                        @else
+                                            <input wire:model="bloodGlucose" wire:change="autoSaveVitals" type="number" step="0.1" min="0.5" max="40"
+                                                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10" />
+                                        @endif
+                                        @error('bloodGlucose') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1.5">Timing</label>

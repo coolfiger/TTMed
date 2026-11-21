@@ -1270,6 +1270,9 @@ class DoctorDashboard extends Component
                 ->first()
             : null;
 
+        $bloodGlucoseUnit = app(\App\Services\CentreSettingsService::class)
+            ->get('blood_glucose_unit', 'mmol_l');
+
         return view('livewire.tenant.doctor.doctor-dashboard', [
             'vitals'             => $vitals,
             'diagnoses'          => $diagnoses,
@@ -1283,6 +1286,7 @@ class DoctorDashboard extends Component
             'encounterDocuments' => $encounterDocuments,
             'familyHistories'    => $familyHistories,
             'savedFollowUp'      => $savedFollowUp,
+            'bloodGlucoseUnit'   => $bloodGlucoseUnit,
         ])->layout('layouts.app-workspace');
     }
 

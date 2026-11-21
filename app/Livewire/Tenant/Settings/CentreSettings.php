@@ -22,8 +22,9 @@ class CentreSettings extends Component
     public string $centrePhone = '';
     public string $centreEmail = '';
     public string $centreWebsite = '';
-    public string $timezone = 'America/Port_of_Spain';
-    public string $currency = 'TTD';
+    public string $timezone         = 'America/Port_of_Spain';
+    public string $currency         = 'TTD';
+    public string $bloodGlucoseUnit = 'mmol_l';
     public string $taxLabel = 'VAT';
     public string $taxRate = '12.5';
     public bool $taxEnabled = false;
@@ -73,8 +74,9 @@ class CentreSettings extends Component
         $this->centrePhone   = $settings->get('centre_phone', '');
         $this->centreEmail   = $settings->get('centre_email', '');
         $this->centreWebsite = $settings->get('centre_website', '');
-        $this->timezone      = $settings->get('timezone', 'America/Port_of_Spain');
-        $this->currency      = $settings->get('currency', 'TTD');
+        $this->timezone         = $settings->get('timezone', 'America/Port_of_Spain');
+        $this->currency         = $settings->get('currency', 'TTD');
+        $this->bloodGlucoseUnit = $settings->get('blood_glucose_unit', 'mmol_l');
         $this->taxLabel      = $settings->get('tax_label', 'VAT');
         $this->taxRate       = $settings->get('tax_rate', '12.5');
         $this->taxEnabled    = (bool) $settings->get('tax_enabled', false);
@@ -156,23 +158,25 @@ class CentreSettings extends Component
     public function saveGeneral(): void
     {
         $this->validate([
-            'centreName'  => 'required|string|max:200',
-            'centreEmail' => 'nullable|email|max:150',
-            'timezone'    => 'required|string|max:60',
-            'taxRate'     => 'required|numeric|min:0|max:100',
+            'centreName'       => 'required|string|max:200',
+            'centreEmail'      => 'nullable|email|max:150',
+            'timezone'         => 'required|string|max:60',
+            'taxRate'          => 'required|numeric|min:0|max:100',
+            'bloodGlucoseUnit' => 'required|in:mmol_l,mg_dl',
         ]);
 
         $settings = app(CentreSettingsService::class);
         $settings->setMany([
-            'centre_name'    => $this->centreName,
-            'centre_address' => $this->centreAddress,
-            'centre_phone'   => $this->centrePhone,
-            'centre_email'   => $this->centreEmail,
-            'centre_website' => $this->centreWebsite,
-            'timezone'       => $this->timezone,
-            'currency'       => $this->currency,
-            'tax_label'      => $this->taxLabel,
-            'tax_rate'       => $this->taxRate,
+            'centre_name'        => $this->centreName,
+            'centre_address'     => $this->centreAddress,
+            'centre_phone'       => $this->centrePhone,
+            'centre_email'       => $this->centreEmail,
+            'centre_website'     => $this->centreWebsite,
+            'timezone'           => $this->timezone,
+            'currency'           => $this->currency,
+            'tax_label'          => $this->taxLabel,
+            'tax_rate'           => $this->taxRate,
+            'blood_glucose_unit' => $this->bloodGlucoseUnit,
         ]);
         $settings->set('tax_enabled', $this->taxEnabled, 'boolean');
 

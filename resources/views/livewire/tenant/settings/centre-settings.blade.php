@@ -89,6 +89,21 @@
             </div>
         </div>
 
+        {{-- Clinical: Blood Glucose Unit --}}
+        <div class="bg-white rounded-lg border border-slate-200 p-5">
+            <h3 class="text-sm font-semibold text-slate-700 mb-4">Clinical Settings</h3>
+            <div class="max-w-sm">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Blood Glucose Unit</label>
+                <p class="text-xs text-slate-500 mb-2">Select the unit your testing equipment uses. This applies to all vitals entry across the system.</p>
+                <select wire:model="bloodGlucoseUnit"
+                        class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                    <option value="mmol_l">mmol/L — Millimoles per Litre (UK, Caribbean, Canada, Australia)</option>
+                    <option value="mg_dl">mg/dL — Milligrams per Decilitre (USA)</option>
+                </select>
+                @error('bloodGlucoseUnit') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+        </div>
+
         <button type="submit"
             class="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
             Save General Settings
