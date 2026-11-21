@@ -160,11 +160,24 @@
                                 class="text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500 text-sm font-semibold px-4 py-2 rounded-lg transition">
                             Save Note
                         </button>
-                        <button wire:click="finalizeNote"
-                                wire:confirm="Finalize this consultation note? It will become read-only."
-                                class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-                            Finalize Note
-                        </button>
+                        <span x-data="{ confirming: false }">
+                            <button x-show="!confirming"
+                                    @click="confirming = true"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                                Finalize Note
+                            </button>
+                            <span x-show="confirming" class="flex items-center gap-2">
+                                <span class="text-xs text-slate-500">Make read-only?</span>
+                                <button @click="confirming = false"
+                                        class="text-sm font-medium text-slate-600 border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition">
+                                    Cancel
+                                </button>
+                                <button @click="$wire.finalizeNote(); confirming = false"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition">
+                                    Yes, Finalize
+                                </button>
+                            </span>
+                        </span>
                     @endif
                 @endif
             </div>
