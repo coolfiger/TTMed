@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Exceptions\TenantInactiveException;
 use App\Exceptions\TenantNotFoundException;
 use App\Models\Platform\Tenant;
+use App\Services\CentreSettingsService;
 use App\Tenancy\TenantContext;
 use App\Tenancy\TenantDatabaseManager;
 use Closure;
@@ -49,6 +50,11 @@ class ResolveTenant
 
         $this->context->set($tenant);
         $this->dbManager->connect($tenant);
+
+        // Apply the tenant's configured timezone for all Carbon, log, and DB timestamps
+        $tz = app(CentreSettingsService::class)->get('timezone', config('app.timezone', 'UTC'));
+        config(['app.timezone' => $tz]);
+        date_default_timezone_set($tz);
 
         \Illuminate\Support\Facades\Log::info('ResolveTenant::handle context set', [
             'code' => $tenant->code,
