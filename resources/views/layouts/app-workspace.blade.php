@@ -37,17 +37,20 @@
                      },
                      init() { this.tick(); setInterval(() => this.tick(), 10000); }
                  }"
-                 class="min-w-0 flex-1">
+                 class="min-w-0 flex-1 flex items-start justify-between gap-1">
                 @if($sidebarLogo && file_exists(storage_path('app/' . $sidebarLogo)))
                     <img src="{{ route('tenant.branding.logo', ['type' => 'sidebar']) }}"
                          alt="{{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? 'TTMed' }}"
-                         class="h-7 max-w-[160px] object-contain" />
+                         class="h-7 max-w-[140px] object-contain" />
                 @else
-                    <p class="font-semibold text-slate-800 text-sm leading-tight truncate">
-                        {{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? 'TTMed' }}
-                    </p>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-slate-800 text-sm leading-tight truncate">
+                            {{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? 'TTMed' }}
+                        </p>
+                        <p class="text-xs text-slate-400">Medical Practice</p>
+                    </div>
                 @endif
-                <p class="text-xs text-slate-400 tabular-nums" x-text="time"></p>
+                <p class="text-xs text-slate-400 tabular-nums flex-shrink-0 mt-0.5" x-text="time"></p>
             </div>
             {{-- Toggle button --}}
             <button @click="toggle()"
