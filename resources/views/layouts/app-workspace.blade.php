@@ -19,12 +19,25 @@
          class="flex-shrink-0 flex flex-col bg-white border-r border-slate-200 overflow-hidden transition-[width] duration-200 ease-in-out z-40 relative">
 
         {{-- Logo / name --}}
+        @php
+            $sidebarLogo   = app(\App\Services\CentreSettingsService::class)->get('branding_sidebar_logo_path');
+            $sidebarTz     = app(\App\Services\CentreSettingsService::class)->get('timezone', 'America/Port_of_Spain');
+        @endphp
         <div class="flex h-14 shrink-0 items-center border-b border-slate-200 overflow-hidden"
              :class="collapsed ? 'justify-center px-0' : 'px-4 gap-2'">
-            @php
-                $sidebarLogo = app(\App\Services\CentreSettingsService::class)->get('branding_sidebar_logo_path');
-            @endphp
-            <div x-show="!collapsed" class="min-w-0 flex-1">
+            <div x-show="!collapsed"
+                 x-data="{
+                     time: '',
+                     tz: '{{ $sidebarTz }}',
+                     tick() {
+                         this.time = new Intl.DateTimeFormat('en-US', {
+                             hour: 'numeric', minute: '2-digit', hour12: true,
+                             timeZone: this.tz
+                         }).format(new Date());
+                     },
+                     init() { this.tick(); setInterval(() => this.tick(), 10000); }
+                 }"
+                 class="min-w-0 flex-1">
                 @if($sidebarLogo && file_exists(storage_path('app/' . $sidebarLogo)))
                     <img src="{{ route('tenant.branding.logo', ['type' => 'sidebar']) }}"
                          alt="{{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? 'TTMed' }}"
@@ -33,8 +46,8 @@
                     <p class="font-semibold text-slate-800 text-sm leading-tight truncate">
                         {{ app(\App\Tenancy\TenantContext::class)->get()?->name ?? 'TTMed' }}
                     </p>
-                    <p class="text-xs text-slate-400">Medical Practice</p>
                 @endif
+                <p class="text-xs text-slate-400 tabular-nums" x-text="time"></p>
             </div>
             {{-- Toggle button --}}
             <button @click="toggle()"
