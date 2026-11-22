@@ -6,7 +6,7 @@ use App\Models\Tenant\Role;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class RoleList extends Component
 {
     public function render(): \Illuminate\View\View

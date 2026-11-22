@@ -10,7 +10,7 @@ use App\Models\Tenant\QueueEntry;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class TenantDashboard extends Component
 {
     public function render(): \Illuminate\View\View

@@ -11,7 +11,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class InsuranceList extends Component
 {
     use WithPagination, WithFileUploads;

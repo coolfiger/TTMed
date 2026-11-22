@@ -296,7 +296,7 @@ class AppointmentCalendar extends Component
         return view('livewire.tenant.appointments.appointment-calendar', [
             'doctors'      => $doctors,
             'appointments' => $appointments,
-        ])->layout('layouts.app');
+        ])->layout('layouts.app-workspace');
     }
 
     // -------------------------------------------------------------------------

@@ -7,7 +7,7 @@ use App\Services\AuditService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class BranchList extends Component
 {
     public function toggleActive(int $id): void

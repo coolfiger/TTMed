@@ -8,7 +8,7 @@ use App\Services\AuditService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class ServiceForm extends Component
 {
     public ?Service $service = null;

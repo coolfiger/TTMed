@@ -7,7 +7,7 @@ use App\Models\Tenant\Role;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class RoleForm extends Component
 {
     public ?Role $role = null;

@@ -13,7 +13,7 @@ use App\Services\PatientNumberService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class PatientForm extends Component
 {
     public ?Patient $patient = null;

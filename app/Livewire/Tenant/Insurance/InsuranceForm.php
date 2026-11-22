@@ -7,7 +7,7 @@ use App\Services\AuditService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class InsuranceForm extends Component
 {
     public ?InsuranceProvider $provider = null;

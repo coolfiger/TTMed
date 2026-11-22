@@ -143,7 +143,7 @@ class DoctorScheduleConfig extends Component
 
         return view('livewire.tenant.appointments.doctor-schedule-config', [
             'upcoming' => $upcoming,
-        ])->layout('layouts.app');
+        ])->layout('layouts.app-workspace');
     }
 
     private function checkPermission(string $perm): void

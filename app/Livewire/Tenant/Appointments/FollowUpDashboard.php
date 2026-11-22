@@ -116,7 +116,7 @@ class FollowUpDashboard extends Component
 
         return view('livewire.tenant.appointments.follow-up-dashboard', [
             'followUps' => $followUps,
-        ])->layout('layouts.app');
+        ])->layout('layouts.app-workspace');
     }
 
     private function checkPermission(string $perm): void

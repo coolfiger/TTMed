@@ -12,7 +12,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class CentreSettings extends Component
 {
     use WithFileUploads;

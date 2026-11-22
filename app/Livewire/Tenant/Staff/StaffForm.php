@@ -14,7 +14,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.app-workspace')]
 class StaffForm extends Component
 {
     use WithFileUploads;

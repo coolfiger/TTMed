@@ -235,7 +235,7 @@ class PrescriptionForm extends Component
 
         return view('livewire.tenant.prescriptions.prescription-form', [
             'prescription' => $prescription,
-        ])->layout('layouts.app');
+        ])->layout('layouts.app-workspace');
     }
 
     // -------------------------------------------------------------------------

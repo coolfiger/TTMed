@@ -108,7 +108,7 @@ class PatientDocuments extends Component
         return view('livewire.tenant.documents.patient-documents', [
             'documents'  => $documents,
             'categories' => $categories,
-        ])->layout('layouts.app');
+        ])->layout('layouts.app-workspace');
     }
 
     // -------------------------------------------------------------------------

@@ -241,6 +241,6 @@ class QueueManager extends Component
             'doctors'         => $doctors,
             'transferDoctors' => $transferDoctors,
             'branches'        => $branches,
-        ])->layout('layouts.app');
+        ])->layout('layouts.app-workspace');
     }
 }
