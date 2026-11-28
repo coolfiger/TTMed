@@ -1,44 +1,40 @@
 <div class="flex flex-col h-full min-h-0">
 
     {{-- Page header --}}
-    <div class="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3 min-w-0">
-                <a href="{{ route('tenant.prescriptions.index') }}"
-                   class="flex-shrink-0 text-slate-400 hover:text-slate-700 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </a>
-                <div class="min-w-0">
-                    <h1 class="text-lg font-semibold text-slate-900 truncate">
-                        Prescription — {{ $patientName }}
-                    </h1>
-                    @if($prescription)
-                    <p class="text-xs text-slate-400 font-mono mt-0.5">{{ $prescription->prescription_number }}</p>
-                    @endif
-                </div>
-            </div>
-
-            <div class="flex items-center gap-3 flex-shrink-0">
-                @if($prescription && $prescription->isIssued())
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Issued
-                    </span>
-                    <a href="{{ route('tenant.prescriptions.download', $prescription->id) }}"
-                       target="_blank"
-                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition-colors">
-                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                        </svg>
-                        Download PDF
-                    </a>
-                @elseif($prescription && $prescription->isDraft())
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Draft
-                    </span>
+    <div class="page-topbar">
+        <div class="flex items-center gap-3 min-w-0">
+            <a href="{{ route('tenant.prescriptions.index') }}"
+               class="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="min-w-0">
+                <h1 class="text-lg font-semibold truncate">Prescription — {{ $patientName }}</h1>
+                @if($prescription)
+                <p class="text-xs font-mono mt-0.5 opacity-50">{{ $prescription->prescription_number }}</p>
                 @endif
             </div>
+        </div>
+
+        <div class="flex items-center gap-3 flex-shrink-0">
+            @if($prescription && $prescription->isIssued())
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Issued
+                </span>
+                <a href="{{ route('tenant.prescriptions.download', $prescription->id) }}"
+                   target="_blank"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-slate-600 text-slate-200 bg-slate-700 hover:bg-slate-600 hover:text-white transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download PDF
+                </a>
+            @elseif($prescription && $prescription->isDraft())
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Draft
+                </span>
+            @endif
         </div>
     </div>
 

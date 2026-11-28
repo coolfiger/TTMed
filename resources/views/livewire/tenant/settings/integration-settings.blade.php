@@ -1,9 +1,11 @@
 <div class="flex flex-col h-full min-h-0 bg-slate-100">
 
     {{-- Header --}}
-    <div class="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
-        <h1 class="text-lg font-bold text-slate-800">Integration Settings</h1>
-        <p class="text-xs text-slate-400 mt-0.5">Configure Lab (LIS), Imaging RIS, and PACS machine connections</p>
+    <div class="page-topbar">
+        <div>
+            <h1 class="text-lg font-bold">Integration Settings</h1>
+            <p class="text-xs mt-0.5 opacity-50">Configure Lab (LIS), Imaging RIS, and PACS machine connections</p>
+        </div>
     </div>
 
     {{-- Tabs --}}

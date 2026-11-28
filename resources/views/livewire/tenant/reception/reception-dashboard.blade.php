@@ -1,22 +1,19 @@
 <div class="flex flex-col h-full">
 
     {{-- Top bar --}}
-    <div class="flex-shrink-0 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+    <div class="page-topbar">
         <div class="flex items-center gap-3">
-            <h1 class="text-base font-semibold text-slate-800">Reception</h1>
-            <span class="text-sm text-slate-400">{{ today()->format('l, d F Y') }}</span>
+            <h1 class="text-base font-semibold">Reception</h1>
+            <span class="text-sm opacity-60">{{ today()->format('l, d F Y') }}</span>
         </div>
         <div class="flex items-center gap-3">
             <select wire:change="switchBranch($event.target.value)"
-                    class="text-sm rounded-lg border border-slate-300 bg-white px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10">
+                    class="text-sm rounded-lg border border-slate-600 bg-slate-700 text-slate-200 px-3 py-1.5 focus:border-sky-500 focus:outline-none">
                 @foreach($branches as $b)
                     <option value="{{ $b->id }}" {{ $b->id == $branchId ? 'selected' : '' }}>{{ $b->name }}</option>
                 @endforeach
             </select>
-            <button wire:click="loadQueue"
-                    class="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition">
-                Refresh
-            </button>
+            <button wire:click="loadQueue" class="topbar-btn">Refresh</button>
         </div>
     </div>
 

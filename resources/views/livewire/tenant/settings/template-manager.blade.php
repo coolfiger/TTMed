@@ -276,17 +276,15 @@
   ════════════════════════════════════════════════════════ --}}
   @if(!$editing)
 
-  <div class="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-lg font-bold text-slate-800">Document Templates</h1>
-        <p class="text-xs text-slate-400 mt-0.5">Design and customise the layout for every printed document</p>
-      </div>
-      <button wire:click="newTemplate"
-              class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition shadow-sm">
-        + New Template
-      </button>
+  <div class="page-topbar">
+    <div>
+      <h1 class="text-lg font-bold">Document Templates</h1>
+      <p class="text-xs mt-0.5 opacity-50">Design and customise the layout for every printed document</p>
     </div>
+    <button wire:click="newTemplate"
+            class="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+      + New Template
+    </button>
   </div>
 
   @if($successMessage)

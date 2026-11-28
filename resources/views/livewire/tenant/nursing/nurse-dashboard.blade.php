@@ -1,8 +1,8 @@
 <div class="flex flex-col h-full">
 
     {{-- Top bar --}}
-    <div class="flex-shrink-0 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-        <h1 class="text-base font-semibold text-slate-800">Nursing Station</h1>
+    <div class="page-topbar">
+        <h1 class="text-base font-semibold">Nursing Station</h1>
         <div class="flex items-center gap-3">
             @if($successMessage)
                 <span class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg"
@@ -15,10 +15,7 @@
                     {{ $errorMessage }}
                 </span>
             @endif
-            <button wire:click="loadQueue"
-                    class="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition">
-                Refresh
-            </button>
+            <button wire:click="loadQueue" class="topbar-btn">Refresh</button>
         </div>
     </div>
 

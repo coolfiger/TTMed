@@ -1,19 +1,17 @@
 <div class="flex flex-col h-full min-h-0">
 
     {{-- Page header --}}
-    <div class="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-4">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-lg font-semibold text-slate-900">Prescriptions</h1>
-                <p class="text-sm text-slate-500 mt-0.5">Search, review and download issued prescriptions</p>
-            </div>
-            <div class="flex items-center gap-4 text-sm">
-                <span class="text-slate-400">Draft: <span class="font-semibold text-amber-600">{{ $counts['draft'] }}</span></span>
-                <span class="text-slate-400">Issued: <span class="font-semibold text-emerald-600">{{ $counts['issued'] }}</span></span>
-                @if($counts['cancelled'])
-                <span class="text-slate-400">Cancelled: <span class="font-semibold text-red-500">{{ $counts['cancelled'] }}</span></span>
-                @endif
-            </div>
+    <div class="page-topbar">
+        <div>
+            <h1 class="text-lg font-semibold">Prescriptions</h1>
+            <p class="text-sm opacity-60 mt-0.5">Search, review and download issued prescriptions</p>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+            <span class="opacity-60">Draft: <span class="font-semibold text-amber-400">{{ $counts['draft'] }}</span></span>
+            <span class="opacity-60">Issued: <span class="font-semibold text-emerald-400">{{ $counts['issued'] }}</span></span>
+            @if($counts['cancelled'])
+            <span class="opacity-60">Cancelled: <span class="font-semibold text-red-400">{{ $counts['cancelled'] }}</span></span>
+            @endif
         </div>
     </div>
 

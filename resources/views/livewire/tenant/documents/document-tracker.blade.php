@@ -1,17 +1,15 @@
 <div class="flex flex-col h-full min-h-0 bg-slate-100">
 
     {{-- Header --}}
-    <div class="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <h1 class="text-lg font-bold text-slate-800">Document Tracker</h1>
-                <p class="text-xs text-slate-400 mt-0.5">Inbound imaging reports, lab results, and uploaded documents</p>
-            </div>
+    <div class="page-topbar">
+        <div>
+            <h1 class="text-lg font-bold">Document Tracker</h1>
+            <p class="text-xs mt-0.5 opacity-50">Inbound imaging reports, lab results, and uploaded documents</p>
         </div>
     </div>
 
     {{-- Stats row --}}
-    <div class="bg-white border-b border-slate-200 px-6 py-3 flex-shrink-0">
+    <div class="bg-slate-50 border-b border-slate-200 px-6 py-3 flex-shrink-0">
         <div class="flex gap-6">
             <div class="text-center">
                 <p class="text-xl font-bold text-blue-600">{{ $stats['total_today'] }}</p>
@@ -33,7 +31,7 @@
     </div>
 
     {{-- Filters --}}
-    <div class="bg-white border-b border-slate-200 px-6 py-3 flex-shrink-0">
+    <div class="bg-slate-50 border-b border-slate-200 px-6 py-3 flex-shrink-0">
         <div class="flex flex-wrap items-center gap-3">
             <input wire:model.live.debounce.300ms="search" type="search"
                    placeholder="Patient name, description…"

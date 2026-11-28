@@ -1,35 +1,37 @@
 <div class="flex flex-col h-full min-h-0 bg-slate-100">
 
     {{-- Top bar --}}
-    <div class="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
-        <div class="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-                <h1 class="text-lg font-bold text-slate-800">Patients</h1>
-                <p class="text-xs text-slate-400 mt-0.5">{{ $total }} {{ Str::plural('patient', $total) }} registered</p>
-            </div>
-            <div class="flex items-center gap-3 flex-wrap">
-                <input wire:model.live.debounce.300ms="search" type="search"
-                       placeholder="Name, number, phone, ID…"
-                       class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm shadow-sm w-64 focus:border-blue-500 focus:bg-white focus:outline-none transition" />
-                <input wire:model.live="dobFilter" type="date"
-                       class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:bg-white focus:outline-none transition" />
-                <select wire:model.live="branchFilter"
-                        class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:bg-white focus:outline-none transition">
-                    <option value="">All Branches</option>
-                    @foreach($branches as $branch)
-                        <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                    @endforeach
-                </select>
-                @if(auth()->guard('tenant')->user()?->hasPermission('patients.create'))
-                    <button wire:click="openRegistrationModal"
-                            class="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition whitespace-nowrap shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                        Register Patient
-                    </button>
-                @endif
-            </div>
+    <div class="page-topbar">
+        <div>
+            <h1 class="text-lg font-bold">Patients</h1>
+            <p class="text-xs mt-0.5 opacity-50">{{ $total }} {{ Str::plural('patient', $total) }} registered</p>
+        </div>
+        @if(auth()->guard('tenant')->user()?->hasPermission('patients.create'))
+        <button wire:click="openRegistrationModal"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 px-4 py-2 text-sm font-semibold text-white transition whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Register Patient
+        </button>
+        @endif
+    </div>
+
+    {{-- Filters --}}
+    <div class="flex-shrink-0 bg-slate-50 border-b border-slate-200 px-6 py-3">
+        <div class="flex items-center gap-3 flex-wrap">
+            <input wire:model.live.debounce.300ms="search" type="search"
+                   placeholder="Name, number, phone, ID…"
+                   class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm w-64 focus:border-sky-500 focus:outline-none transition" />
+            <input wire:model.live="dobFilter" type="date"
+                   class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none transition" />
+            <select wire:model.live="branchFilter"
+                    class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none transition">
+                <option value="">All Branches</option>
+                @foreach($branches as $branch)
+                    <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                @endforeach
+            </select>
         </div>
     </div>
 

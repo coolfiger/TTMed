@@ -1,29 +1,27 @@
 <div class="flex flex-col h-full min-h-0 bg-slate-100">
 
     {{-- Header --}}
-    <div class="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <h1 class="text-lg font-bold text-slate-800">Imaging Workqueue</h1>
-                <p class="text-xs text-slate-400 mt-0.5">All imaging orders and reports across the practice</p>
-            </div>
-            <div class="flex items-center gap-3">
-                @if($criticalCount > 0)
-                    <span class="inline-flex items-center gap-1.5 bg-red-100 text-red-700 text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">
-                        ⚠ {{ $criticalCount }} Critical
-                    </span>
-                @endif
-                @if($pendingReviewCount > 0)
-                    <span class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-                        {{ $pendingReviewCount }} Pending Review
-                    </span>
-                @endif
-            </div>
+    <div class="page-topbar">
+        <div>
+            <h1 class="text-lg font-bold">Imaging Workqueue</h1>
+            <p class="text-xs mt-0.5 opacity-50">All imaging orders and reports across the practice</p>
+        </div>
+        <div class="flex items-center gap-3">
+            @if($criticalCount > 0)
+                <span class="inline-flex items-center gap-1.5 bg-red-500/20 text-red-300 text-xs font-bold px-3 py-1.5 rounded-full ring-1 ring-red-500/40 animate-pulse">
+                    ⚠ {{ $criticalCount }} Critical
+                </span>
+            @endif
+            @if($pendingReviewCount > 0)
+                <span class="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 text-xs font-semibold px-3 py-1.5 rounded-full ring-1 ring-amber-500/40">
+                    {{ $pendingReviewCount }} Pending Review
+                </span>
+            @endif
         </div>
     </div>
 
     {{-- Filters --}}
-    <div class="bg-white border-b border-slate-200 px-6 py-3 flex-shrink-0">
+    <div class="bg-slate-50 border-b border-slate-200 px-6 py-3 flex-shrink-0">
         <div class="flex flex-wrap items-center gap-3">
             <input wire:model.live.debounce.300ms="search" type="search"
                    placeholder="Patient name, order #, accession…"
