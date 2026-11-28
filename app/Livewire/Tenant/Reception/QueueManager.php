@@ -49,10 +49,12 @@ class QueueManager extends Component
 
         app(QueueService::class)->transition($entry, $toStatus, auth()->guard('tenant')->id());
 
-        app(AuditService::class)->log(
-            'queue.advance',
-            "Queue #{$entry->queue_number} advanced to {$toStatus}",
-            ['queue_entry_id' => $entryId, 'to_status' => $toStatus]
+        app(AuditService::class)->logTenant(
+            action:       'queue.advance',
+            resourceType: 'queue_entry',
+            resourceId:   $entryId,
+            newValues:    ['to_status' => $toStatus],
+            description:  "Queue #{$entry->queue_number} advanced to {$toStatus}",
         );
 
         session()->flash('success', "Queue #{$entry->queue_number} updated.");

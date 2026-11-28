@@ -159,7 +159,7 @@ class IntegrationSettings extends Component
 
         $cfg->save();
 
-        app(AuditService::class)->log('settings.integration.saved', 'Lab LIS integration settings updated', ['type' => 'lab_lis']);
+        app(AuditService::class)->logTenant(action: 'settings.integration.saved', description: 'Lab LIS integration settings updated', newValues: ['type' => 'lab_lis']);
         $this->successMessage = 'Lab LIS settings saved.';
     }
 
@@ -200,7 +200,7 @@ class IntegrationSettings extends Component
 
         $cfg->save();
 
-        app(AuditService::class)->log('settings.integration.saved', 'Imaging RIS integration settings updated', ['type' => 'imaging_ris']);
+        app(AuditService::class)->logTenant(action: 'settings.integration.saved', description: 'Imaging RIS integration settings updated', newValues: ['type' => 'imaging_ris']);
         $this->successMessage = 'Imaging RIS settings saved.';
     }
 
@@ -234,7 +234,7 @@ class IntegrationSettings extends Component
 
         $cfg->save();
 
-        app(AuditService::class)->log('settings.integration.saved', 'Imaging PACS integration settings updated', ['type' => 'imaging_pacs']);
+        app(AuditService::class)->logTenant(action: 'settings.integration.saved', description: 'Imaging PACS integration settings updated', newValues: ['type' => 'imaging_pacs']);
         $this->successMessage = 'Imaging PACS settings saved.';
     }
 

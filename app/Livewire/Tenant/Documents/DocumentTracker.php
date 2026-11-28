@@ -38,10 +38,12 @@ class DocumentTracker extends Component
         $entry = DocumentInboundLog::on('tenant')->findOrFail($id);
         $entry->markReviewed(Auth::guard('tenant')->id());
 
-        app(AuditService::class)->log(
-            'document.tracker.reviewed',
-            "Inbound document log #{$id} marked reviewed",
-            ['log_id' => $id, 'type' => $entry->type]
+        app(AuditService::class)->logTenant(
+            action:       'document.tracker.reviewed',
+            resourceType: 'document_inbound_log',
+            resourceId:   $id,
+            newValues:    ['type' => $entry->type],
+            description:  "Inbound document log #{$id} marked reviewed",
         );
 
         $this->successMessage = 'Marked as reviewed.';

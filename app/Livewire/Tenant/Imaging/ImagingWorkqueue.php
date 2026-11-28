@@ -66,10 +66,12 @@ class ImagingWorkqueue extends Component
                 'reviewed_at' => now(),
             ]);
 
-        app(AuditService::class)->log(
-            'imaging.report.reviewed',
-            "Imaging order #{$order->order_number} marked reviewed",
-            ['order_id' => $order->id, 'patient_id' => $order->patient_id]
+        app(AuditService::class)->logTenant(
+            action:       'imaging.report.reviewed',
+            resourceType: 'imaging_order',
+            resourceId:   $order->id,
+            newValues:    ['patient_id' => $order->patient_id],
+            description:  "Imaging order #{$order->order_number} marked reviewed",
         );
 
         $this->reviewingOrderId = null;

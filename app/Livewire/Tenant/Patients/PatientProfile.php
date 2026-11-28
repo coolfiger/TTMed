@@ -394,10 +394,12 @@ class PatientProfile extends Component
             'report_datetime'  => now(),
         ]);
 
-        app(AuditService::class)->log(
-            'imaging.uploaded',
-            "Imaging ({$this->imagingModality} - {$this->imagingBodyPart}) uploaded for patient #{$this->patient->patient_number}",
-            ['patient_id' => $this->patient->id, 'order_id' => $order->id]
+        app(AuditService::class)->logTenant(
+            action:       'imaging.uploaded',
+            resourceType: 'imaging_order',
+            resourceId:   $order->id,
+            newValues:    ['patient_id' => $this->patient->id],
+            description:  "Imaging ({$this->imagingModality} - {$this->imagingBodyPart}) uploaded for patient #{$this->patient->patient_number}",
         );
 
         $this->reset(['imagingFile', 'imagingBodyPart', 'imagingStudyDate', 'imagingRadiologist', 'imagingFindings', 'imagingImpression', 'showImagingUpload']);
