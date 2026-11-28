@@ -5,11 +5,13 @@ namespace App\Livewire\Tenant\Nursing;
 use App\Models\Tenant\Encounter;
 use App\Models\Tenant\NursingAssessment;
 use App\Models\Tenant\NursingProcedure;
+use App\Models\Tenant\ObservationOrder;
 use App\Models\Tenant\PatientAllergy;
 use App\Models\Tenant\PatientMedication;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\VitalSign;
 use App\Services\NursingService;
+use App\Services\QueueService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -80,6 +82,16 @@ class NurseDashboard extends Component
     public string $procedureSite      = '';
 
     // -------------------------------------------------------------------------
+    // Observation entry form (shown when patient is in_observation)
+    // -------------------------------------------------------------------------
+    public string $obsNotes       = '';
+    public string $obsBpSystolic  = '';
+    public string $obsBpDiastolic = '';
+    public string $obsPulse       = '';
+    public string $obsTemp        = '';
+    public string $obsSpo2        = '';
+
+    // -------------------------------------------------------------------------
     // UI state
     // -------------------------------------------------------------------------
     public string $activeTab          = 'vitals';
@@ -140,7 +152,8 @@ class NurseDashboard extends Component
         $this->queue = QueueEntry::on('tenant')
             ->with('patient')
             ->forBranchToday($this->branchId)
-            ->whereIn('status', ['waiting', 'with_nurse'])
+            ->whereIn('status', ['waiting', 'with_nurse', 'in_observation'])
+            ->orderByRaw("FIELD(status, 'in_observation', 'with_nurse', 'waiting')")
             ->orderBy('queue_number')
             ->get()
             ->map(fn ($e) => [
@@ -188,7 +201,7 @@ class NurseDashboard extends Component
         $this->activeEncounterId = $entry->encounter_id;
 
         $this->resetForms();
-        $this->activeTab = 'vitals';
+        $this->activeTab = $entry->status === QueueEntry::STATUS_IN_OBSERVATION ? 'observation' : 'vitals';
 
         if ($this->activeEncounterId) {
             // Pre-load most recent vitals so the nurse sees what was already saved
@@ -562,13 +575,135 @@ class NurseDashboard extends Component
     }
 
     // -------------------------------------------------------------------------
+    // Observation
+    // -------------------------------------------------------------------------
+
+    public function saveObservationEntry(): void
+    {
+        $this->checkPermission('nursing.assess');
+
+        if (!$this->activeEncounterId) {
+            $this->errorMessage = 'No encounter linked.';
+            return;
+        }
+
+        $this->validate([
+            'obsBpSystolic'  => 'nullable|integer|min:50|max:300',
+            'obsBpDiastolic' => 'nullable|integer|min:20|max:200',
+            'obsPulse'       => 'nullable|integer|min:20|max:300',
+            'obsTemp'        => 'nullable|numeric|min:30|max:45',
+            'obsSpo2'        => 'nullable|integer|min:50|max:100',
+        ]);
+
+        $order = ObservationOrder::on('tenant')
+            ->where('encounter_id', $this->activeEncounterId)
+            ->where('status', ObservationOrder::STATUS_ACTIVE)
+            ->first();
+
+        if (!$order) {
+            $this->errorMessage = 'No active observation order found.';
+            return;
+        }
+
+        app(QueueService::class)->addObservationEntry(
+            order:       $order,
+            userId:      Auth::guard('tenant')->id(),
+            notes:       $this->obsNotes ?: null,
+            bpSystolic:  $this->obsBpSystolic ? (int) $this->obsBpSystolic : null,
+            bpDiastolic: $this->obsBpDiastolic ? (int) $this->obsBpDiastolic : null,
+            pulse:       $this->obsPulse ? (int) $this->obsPulse : null,
+            tempCelsius: $this->obsTemp ? (float) $this->obsTemp : null,
+            spo2:        $this->obsSpo2 ? (int) $this->obsSpo2 : null,
+        );
+
+        $this->obsNotes       = '';
+        $this->obsBpSystolic  = '';
+        $this->obsBpDiastolic = '';
+        $this->obsPulse       = '';
+        $this->obsTemp        = '';
+        $this->obsSpo2        = '';
+        $this->successMessage = 'Observation entry recorded.';
+    }
+
+    public function markReadyForDoctorReview(): void
+    {
+        $this->checkPermission('nursing.assess');
+
+        if (!$this->activeEntryId) {
+            $this->errorMessage = 'No patient selected.';
+            return;
+        }
+
+        $entry = QueueEntry::on('tenant')
+            ->where('branch_id', $this->branchId)
+            ->findOrFail($this->activeEntryId);
+
+        try {
+            app(QueueService::class)->markReadyForObservationReview(
+                $entry,
+                Auth::guard('tenant')->id(),
+            );
+
+            $this->successMessage    = 'Doctor has been notified — patient flagged for review.';
+            $this->activeEntryId     = null;
+            $this->activeEncounterId = null;
+            $this->activePatientId   = null;
+            $this->activePatientName = '';
+            $this->resetForms();
+            $this->loadQueue();
+        } catch (\InvalidArgumentException $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Rendering
     // -------------------------------------------------------------------------
 
     public function render()
     {
-        return view('livewire.tenant.nursing.nurse-dashboard')
-            ->layout('layouts.app-workspace');
+        $activeObservation = null;
+        $activeEntryStatus = null;
+
+        if ($this->activeEntryId) {
+            $entry = QueueEntry::on('tenant')
+                ->where('branch_id', $this->branchId)
+                ->find($this->activeEntryId);
+            $activeEntryStatus = $entry?->status;
+
+            if ($activeEntryStatus === QueueEntry::STATUS_IN_OBSERVATION && $this->activeEncounterId) {
+                $order = ObservationOrder::on('tenant')
+                    ->where('encounter_id', $this->activeEncounterId)
+                    ->where('status', ObservationOrder::STATUS_ACTIVE)
+                    ->with('entries.recordedBy')
+                    ->first();
+
+                if ($order) {
+                    $activeObservation = [
+                        'id'              => $order->id,
+                        'reason'          => $order->reason,
+                        'treatment_notes' => $order->treatment_notes,
+                        'room_name'       => $order->room_name,
+                        'started_at'      => $order->started_at?->format('H:i'),
+                        'duration_min'    => $order->durationMinutes(),
+                        'entries'         => $order->entries->map(fn ($e) => [
+                            'bp'          => $e->bpFormatted(),
+                            'pulse'       => $e->pulse,
+                            'temp'        => $e->temp_celsius,
+                            'spo2'        => $e->spo2,
+                            'notes'       => $e->notes,
+                            'time'        => $e->occurred_at?->format('H:i'),
+                            'recorded_by' => $e->recordedBy?->name ?? '—',
+                        ])->toArray(),
+                    ];
+                }
+            }
+        }
+
+        return view('livewire.tenant.nursing.nurse-dashboard', [
+            'activeEntryStatus' => $activeEntryStatus,
+            'activeObservation' => $activeObservation,
+        ])->layout('layouts.app-workspace');
     }
 
     // -------------------------------------------------------------------------
@@ -604,6 +739,12 @@ class NurseDashboard extends Component
         $this->newMedName          = '';
         $this->newMedDosage        = '';
         $this->newMedFrequency     = '';
+        $this->obsNotes            = '';
+        $this->obsBpSystolic       = '';
+        $this->obsBpDiastolic      = '';
+        $this->obsPulse            = '';
+        $this->obsTemp             = '';
+        $this->obsSpo2             = '';
     }
 
     private function resetVitalsForm(): void

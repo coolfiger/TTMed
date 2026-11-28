@@ -40,9 +40,41 @@
         <div class="flex-1 overflow-y-auto">
 
             {{-- Active / in-consultation patients (with_doctor) --}}
-            @php $activePatients = collect($queue)->where('status', 'with_doctor'); @endphp
-            @if($activePatients->count() > 0)
+            @php
+                $activePatients      = collect($queue)->where('status', 'with_doctor');
+                $obsReviewPatients   = collect($queue)->where('status', 'observation_review');
+                $inObsPatients       = collect($queue)->where('status', 'in_observation');
+                $waitingPatients     = collect($queue)->where('status', 'awaiting_doctor');
+            @endphp
+
+            @if($obsReviewPatients->count() > 0)
                 <div class="px-3 pt-3 pb-1">
+                    <p class="text-xs font-semibold text-violet-700 uppercase tracking-wide">
+                        Obs. Review · {{ $obsReviewPatients->count() }}
+                    </p>
+                </div>
+                @foreach($obsReviewPatients as $entry)
+                    <button wire:click="selectPatient({{ $entry['id'] }})"
+                            class="w-full text-left px-3 py-2.5 transition
+                                   {{ $activeEntryId === $entry['id']
+                                       ? 'bg-violet-50 border-l-4 border-violet-600'
+                                       : 'hover:bg-slate-50 border-l-4 border-violet-400' }}">
+                        <div class="flex items-start justify-between gap-1.5">
+                            <div class="min-w-0">
+                                <p class="text-xs font-mono text-slate-400">#{{ $entry['queue_number'] }}</p>
+                                <p class="text-sm font-medium text-slate-800 truncate">{{ $entry['patient_name'] }}</p>
+                                <p class="text-xs text-violet-600 font-medium mt-0.5">Ready for review</p>
+                            </div>
+                            @if($activeEntryId === $entry['id'])
+                                <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold flex-shrink-0 mt-0.5">On screen</span>
+                            @endif
+                        </div>
+                    </button>
+                @endforeach
+            @endif
+
+            @if($activePatients->count() > 0)
+                <div class="px-3 pt-3 pb-1 {{ $obsReviewPatients->count() > 0 ? 'mt-2 border-t border-slate-100' : '' }}">
                     <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
                         In Consultation · {{ $activePatients->count() }}
                     </p>
@@ -72,10 +104,32 @@
                 @endforeach
             @endif
 
+            @if($inObsPatients->count() > 0)
+                <div class="px-3 pt-3 pb-1 {{ ($activePatients->count() + $obsReviewPatients->count()) > 0 ? 'mt-2 border-t border-slate-100' : '' }}">
+                    <p class="text-xs font-semibold text-teal-700 uppercase tracking-wide">
+                        In Observation · {{ $inObsPatients->count() }}
+                    </p>
+                </div>
+                @foreach($inObsPatients as $entry)
+                    <button wire:click="selectPatient({{ $entry['id'] }})"
+                            class="w-full text-left px-3 py-2.5 transition
+                                   {{ $activeEntryId === $entry['id']
+                                       ? 'bg-teal-50 border-l-4 border-teal-600'
+                                       : 'hover:bg-slate-50 border-l-4 border-teal-300' }}">
+                        <div class="flex items-start justify-between gap-1.5">
+                            <div class="min-w-0">
+                                <p class="text-xs font-mono text-slate-400">#{{ $entry['queue_number'] }}</p>
+                                <p class="text-sm font-medium text-slate-800 truncate">{{ $entry['patient_name'] }}</p>
+                                <p class="text-xs text-teal-600 font-medium mt-0.5">With nurse</p>
+                            </div>
+                        </div>
+                    </button>
+                @endforeach
+            @endif
+
             {{-- Awaiting doctor patients --}}
-            @php $waitingPatients = collect($queue)->where('status', 'awaiting_doctor'); @endphp
             @if($waitingPatients->count() > 0)
-                <div class="px-3 pt-3 pb-1 {{ $activePatients->count() > 0 ? 'mt-2 border-t border-slate-100' : '' }}">
+                <div class="px-3 pt-3 pb-1 {{ ($activePatients->count() + $obsReviewPatients->count() + $inObsPatients->count()) > 0 ? 'mt-2 border-t border-slate-100' : '' }}">
                     <p class="text-xs font-semibold text-orange-600 uppercase tracking-wide">
                         Awaiting · {{ $waitingPatients->count() }}
                     </p>
@@ -137,8 +191,14 @@
                 <div class="flex items-center gap-1.5 min-w-0">
                     <p class="text-sm font-semibold text-slate-800 truncate">{{ $activePatientName }}</p>
                     <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-semibold
-                        {{ $activeEntryStatus === 'with_doctor' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700' }}">
-                        {{ $activeEntryStatus === 'with_doctor' ? 'In Consultation' : 'Awaiting' }}
+                        @if($activeEntryStatus === 'with_doctor') bg-emerald-100 text-emerald-700
+                        @elseif($activeEntryStatus === 'in_observation') bg-teal-100 text-teal-700
+                        @elseif($activeEntryStatus === 'observation_review') bg-violet-100 text-violet-700
+                        @else bg-orange-100 text-orange-700 @endif">
+                        @if($activeEntryStatus === 'with_doctor') In Consultation
+                        @elseif($activeEntryStatus === 'in_observation') In Observation
+                        @elseif($activeEntryStatus === 'observation_review') Obs. Ready for Review
+                        @else Awaiting @endif
                     </span>
                     @if(count($allergies) > 0)
                         <span class="flex-shrink-0 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full"
@@ -177,11 +237,19 @@
                         </div>
                     @elseif($noteIsFinalized)
                         <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-semibold">Finalized</span>
+                        <button wire:click="openObservationModal"
+                                class="text-teal-600 hover:text-teal-800 border border-teal-300 hover:border-teal-500 text-sm font-semibold px-3 py-1.5 rounded-lg transition">
+                            → Observation
+                        </button>
                         <button wire:click="openBillingSelector"
                                 class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition">
                             Complete &amp; Send
                         </button>
                     @else
+                        <button wire:click="openObservationModal"
+                                class="text-teal-600 hover:text-teal-800 border border-teal-300 hover:border-teal-500 text-sm font-semibold px-3 py-1.5 rounded-lg transition">
+                            → Observation
+                        </button>
                         <button wire:click="saveNote"
                                 class="text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500 text-sm font-semibold px-3 py-1.5 rounded-lg transition">
                             Save
@@ -205,6 +273,19 @@
                             </span>
                         </div>
                     @endif
+
+                @elseif($activeEntryStatus === 'observation_review')
+                    {{-- Doctor reviewing observation patient --}}
+                    <button wire:click="continueObservation"
+                            wire:confirm="Return patient to observation (nurse continues care)?"
+                            class="text-teal-600 hover:text-teal-800 border border-teal-300 hover:border-teal-500 text-sm font-semibold px-3 py-1.5 rounded-lg transition">
+                        Return to Obs.
+                    </button>
+                    <button wire:click="dismissObservation"
+                            wire:confirm="Observation complete — send patient for checkout?"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition">
+                        Complete Obs. &amp; Send
+                    </button>
                 @endif
             </div>
         </div>
@@ -223,8 +304,8 @@
             </div>
         @endif
 
-        {{-- ── Call-in gate ── --}}
-        @if($activeEntryStatus !== 'with_doctor')
+        {{-- ── Call-in gate / observation gate ── --}}
+        @if($activeEntryStatus === 'awaiting_doctor')
         <div class="flex-1 flex flex-col items-center justify-center px-8 text-center">
             <div class="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mb-4">
                 <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,7 +320,41 @@
                 Call In {{ $activePatientName }}
             </button>
         </div>
-        @elseif($wizardStep)
+
+        @elseif($activeEntryStatus === 'in_observation')
+        {{-- Patient is in observation — waiting for nurse to flag ready --}}
+        <div class="flex-1 flex flex-col items-center justify-center px-8 text-center">
+            <div class="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+            </div>
+            <p class="text-base font-semibold text-slate-800 mb-1">{{ $activePatientName }} is in observation</p>
+            <p class="text-sm text-slate-500 mb-2">The nurse will update vitals and flag this patient when ready for your review.</p>
+            @if($activeObservation)
+                <div class="mt-4 max-w-sm w-full bg-teal-50 border border-teal-200 rounded-xl p-4 text-left">
+                    <p class="text-xs font-semibold text-teal-700 uppercase tracking-wide mb-2">Observation Details</p>
+                    <p class="text-sm text-slate-700"><span class="text-slate-500 text-xs">Reason:</span> {{ $activeObservation['reason'] }}</p>
+                    @if($activeObservation['room_name'])
+                        <p class="text-sm text-slate-700 mt-1"><span class="text-slate-500 text-xs">Room:</span> {{ $activeObservation['room_name'] }}</p>
+                    @endif
+                    <p class="text-sm text-slate-700 mt-1"><span class="text-slate-500 text-xs">Started:</span> {{ $activeObservation['started_at'] }} · {{ $activeObservation['duration_min'] }} min</p>
+                    @if(count($activeObservation['entries']) > 0)
+                        <div class="mt-3 space-y-1">
+                            @foreach(array_slice(array_reverse($activeObservation['entries']), 0, 3) as $oe)
+                                <div class="text-xs text-slate-600 flex gap-3">
+                                    <span class="text-slate-400 w-10 flex-shrink-0">{{ $oe['time'] }}</span>
+                                    <span>BP {{ $oe['bp'] }} · P {{ $oe['pulse'] ?? '—' }} · SpO₂ {{ $oe['spo2'] ? $oe['spo2'].'%' : '—' }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endif
+        </div>
+
+        @elseif($activeEntryStatus === 'with_doctor' && $wizardStep)
 
         {{-- ══════════════════════════════════════════════════════
              Inline post-consultation wizard (replaces consultation form)
@@ -537,6 +652,43 @@
             @if($noteIsFinalized)
                 <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-800">
                     This consultation note has been finalized and is read-only.
+                </div>
+            @endif
+
+            {{-- Observation review banner --}}
+            @if($activeEntryStatus === 'observation_review' && $activeObservation)
+                <div class="rounded-xl border border-violet-200 bg-violet-50 p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-sm font-bold text-violet-800">Observation Summary</p>
+                            <p class="text-xs text-violet-600 mt-0.5">
+                                {{ $activeObservation['room_name'] ? 'Room: '.$activeObservation['room_name'].' · ' : '' }}
+                                Started {{ $activeObservation['started_at'] }} · {{ $activeObservation['duration_min'] }} min
+                            </p>
+                        </div>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-violet-200 text-violet-800 font-semibold">Ready for review</span>
+                    </div>
+                    <p class="text-xs text-slate-700 mb-3"><span class="font-semibold text-slate-600">Reason:</span> {{ $activeObservation['reason'] }}</p>
+                    @if($activeObservation['treatment_notes'])
+                        <p class="text-xs text-slate-700 mb-3"><span class="font-semibold text-slate-600">Instructions given:</span> {{ $activeObservation['treatment_notes'] }}</p>
+                    @endif
+                    @if(count($activeObservation['entries']) > 0)
+                        <p class="text-xs font-semibold text-slate-600 mb-2">Nurse entries</p>
+                        <div class="space-y-1.5">
+                            @foreach($activeObservation['entries'] as $oe)
+                                <div class="flex gap-3 text-xs bg-white rounded-lg px-3 py-2 border border-violet-100">
+                                    <span class="text-slate-400 w-10 flex-shrink-0">{{ $oe['time'] }}</span>
+                                    <span class="text-slate-600">BP {{ $oe['bp'] }}</span>
+                                    <span class="text-slate-600">P {{ $oe['pulse'] ?? '—' }}</span>
+                                    <span class="text-slate-600">SpO₂ {{ $oe['spo2'] ? $oe['spo2'].'%' : '—' }}</span>
+                                    @if($oe['temp']) <span class="text-slate-600">{{ $oe['temp'] }}°C</span> @endif
+                                    @if($oe['notes']) <span class="text-slate-500 italic ml-1">{{ $oe['notes'] }}</span> @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-slate-400 italic">No nurse entries recorded.</p>
+                    @endif
                 </div>
             @endif
 
@@ -1690,6 +1842,63 @@
     </div>
 
     @endif {{-- end activeEntryId --}}
+
+{{-- ══════════════════════════════════════════════════════
+     Dispatch to Observation modal
+══════════════════════════════════════════════════════ --}}
+@if($showObservationModal)
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     x-data
+     x-on:keydown.escape.window="$wire.cancelObservationModal()">
+    <div class="absolute inset-0 bg-black/40" wire:click="cancelObservationModal"></div>
+    <div class="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div class="flex items-start justify-between mb-5">
+            <div>
+                <h2 class="text-base font-bold text-slate-800">Dispatch to Observation</h2>
+                <p class="text-sm text-slate-500 mt-0.5">{{ $activePatientName }}</p>
+            </div>
+            <button wire:click="cancelObservationModal" class="text-slate-400 hover:text-slate-700 transition text-lg leading-none mt-0.5">✕</button>
+        </div>
+
+        @if($errorMessage)
+            <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{{ $errorMessage }}</div>
+        @endif
+
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs font-semibold text-slate-700 block mb-1.5">Reason for observation <span class="text-red-500">*</span></label>
+                <textarea wire:model="obsReason" rows="2"
+                          placeholder="e.g. Dehydration — IV fluids required, monitoring for response…"
+                          class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-slate-700 block mb-1.5">Treatment notes <span class="text-slate-400 font-normal">(optional)</span></label>
+                <textarea wire:model="obsTreatmentNotes" rows="2"
+                          placeholder="e.g. 1L Normal saline IV over 2hrs, check vitals every 30min…"
+                          class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-slate-700 block mb-1.5">Room / bay <span class="text-slate-400 font-normal">(optional)</span></label>
+                <input type="text" wire:model="obsRoomName" placeholder="e.g. Obs Bay 1"
+                       class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none">
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button wire:click="cancelObservationModal"
+                    class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+                Cancel
+            </button>
+            <button wire:click="confirmDispatchToObservation"
+                    wire:loading.attr="disabled"
+                    wire:loading.class="opacity-50 cursor-not-allowed"
+                    class="flex-1 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold transition shadow-sm">
+                Dispatch to Observation
+            </button>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- ══════════════════════════════════════════════════════
      Imaging comparison modal (full-screen overlay)

@@ -44,7 +44,10 @@
                                     @endif
                                 </div>
                                 <p class="text-sm font-semibold {{ $activeEntryId === $entry['id'] ? 'text-blue-800' : 'text-slate-800' }} truncate">{{ $entry['patient_name'] }}</p>
-                                <span class="text-xs {{ $entry['status'] === 'with_nurse' ? 'text-violet-600' : 'text-amber-600' }}">{{ $entry['status_label'] }}</span>
+                                <span class="text-xs
+                                    @if($entry['status'] === 'with_nurse') text-violet-600
+                                    @elseif($entry['status'] === 'in_observation') text-teal-600
+                                    @else text-amber-600 @endif">{{ $entry['status_label'] }}</span>
                             </button>
                             @if($entry['status'] === 'waiting')
                                 <button wire:click="callInPatient({{ $entry['id'] }})"
@@ -87,38 +90,173 @@
                 <div class="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-xs text-slate-500">Assessing</p>
+                            <p class="text-xs text-slate-500">
+                                @if($activeEntryStatus === 'in_observation') In Observation @else Assessing @endif
+                            </p>
                             <p class="text-lg font-bold text-slate-800">{{ $activePatientName }}</p>
                         </div>
-                        <button wire:click="completeAndSendToDoctor"
-                                wire:confirm="Mark nursing complete and send this patient to the doctor?"
-                                wire:loading.attr="disabled"
-                                class="btn btn-success">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                            <span wire:loading.remove wire:target="completeAndSendToDoctor">Send to Doctor</span>
-                            <span wire:loading wire:target="completeAndSendToDoctor">Sending...</span>
-                        </button>
+                        @if($activeEntryStatus === 'in_observation')
+                            <button wire:click="markReadyForDoctorReview"
+                                    wire:confirm="Flag this patient as ready for the doctor's review?"
+                                    wire:loading.attr="disabled"
+                                    class="btn btn-success bg-violet-600 hover:bg-violet-700 border-violet-700">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span wire:loading.remove wire:target="markReadyForDoctorReview">Ready for Doctor</span>
+                                <span wire:loading wire:target="markReadyForDoctorReview">Flagging...</span>
+                            </button>
+                        @else
+                            <button wire:click="completeAndSendToDoctor"
+                                    wire:confirm="Mark nursing complete and send this patient to the doctor?"
+                                    wire:loading.attr="disabled"
+                                    class="btn btn-success">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                <span wire:loading.remove wire:target="completeAndSendToDoctor">Send to Doctor</span>
+                                <span wire:loading wire:target="completeAndSendToDoctor">Sending...</span>
+                            </button>
+                        @endif
                     </div>
 
                     {{-- Step tabs --}}
                     <div class="flex gap-1 mt-4">
-                        @foreach(['vitals' => '1. Vitals', 'assessment' => '2. Assessment', 'procedures' => '3. Procedures'] as $tab => $label)
-                            <button wire:click="setTab('{{ $tab }}')"
+                        @if($activeEntryStatus === 'in_observation')
+                            <button wire:click="setTab('observation')"
                                     class="px-4 py-2 text-sm font-medium rounded-lg transition
-                                        {{ $activeTab === $tab
+                                        {{ $activeTab === 'observation'
+                                            ? 'bg-teal-600 text-white shadow-sm'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                                Observation
+                            </button>
+                            <button wire:click="setTab('vitals')"
+                                    class="px-4 py-2 text-sm font-medium rounded-lg transition
+                                        {{ $activeTab === 'vitals'
                                             ? 'bg-blue-600 text-white shadow-sm'
                                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                                {{ $label }}
+                                Vitals
                             </button>
-                        @endforeach
+                        @else
+                            @foreach(['vitals' => '1. Vitals', 'assessment' => '2. Assessment', 'procedures' => '3. Procedures'] as $tab => $label)
+                                <button wire:click="setTab('{{ $tab }}')"
+                                        class="px-4 py-2 text-sm font-medium rounded-lg transition
+                                            {{ $activeTab === $tab
+                                                ? 'bg-blue-600 text-white shadow-sm'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                                    {{ $label }}
+                                </button>
+                            @endforeach
+                        @endif
                     </div>
                 </div>
 
                 {{-- Step content --}}
                 <div class="flex-1 overflow-y-auto">
 
+                    {{-- ══════ OBSERVATION ══════ --}}
+                    @if($activeTab === 'observation')
+                        <div class="p-6 space-y-5">
+
+                            {{-- Observation order info --}}
+                            @if($activeObservation)
+                                <div class="rounded-xl bg-teal-50 border border-teal-200 p-4">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <p class="text-sm font-bold text-teal-800">Observation Order</p>
+                                        <span class="text-xs text-teal-600">Started {{ $activeObservation['started_at'] }} · {{ $activeObservation['duration_min'] }} min</span>
+                                    </div>
+                                    @if($activeObservation['room_name'])
+                                        <p class="text-xs text-teal-700 mb-1">Room: <strong>{{ $activeObservation['room_name'] }}</strong></p>
+                                    @endif
+                                    <p class="text-xs text-slate-700"><span class="font-semibold text-slate-600">Reason:</span> {{ $activeObservation['reason'] }}</p>
+                                    @if($activeObservation['treatment_notes'])
+                                        <p class="text-xs text-slate-700 mt-1"><span class="font-semibold text-slate-600">Instructions:</span> {{ $activeObservation['treatment_notes'] }}</p>
+                                    @endif
+                                </div>
+                            @endif
+
+                            {{-- New entry form --}}
+                            <div class="rounded-xl bg-white border border-slate-200 p-4">
+                                <p class="text-sm font-semibold text-slate-700 mb-4">Record Observation Entry</p>
+                                <div class="grid grid-cols-3 gap-3 mb-3">
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-600 block mb-1">BP Systolic</label>
+                                        <input type="number" wire:model="obsBpSystolic" placeholder="120" min="50" max="300"
+                                               class="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-600 block mb-1">BP Diastolic</label>
+                                        <input type="number" wire:model="obsBpDiastolic" placeholder="80" min="20" max="200"
+                                               class="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-600 block mb-1">Pulse</label>
+                                        <input type="number" wire:model="obsPulse" placeholder="72" min="20" max="300"
+                                               class="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-600 block mb-1">Temp (°C)</label>
+                                        <input type="number" wire:model="obsTemp" step="0.1" placeholder="37.0" min="30" max="45"
+                                               class="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-600 block mb-1">SpO₂ (%)</label>
+                                        <input type="number" wire:model="obsSpo2" placeholder="98" min="50" max="100"
+                                               class="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none">
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="text-xs font-semibold text-slate-600 block mb-1">Notes</label>
+                                    <textarea wire:model="obsNotes" rows="2"
+                                              placeholder="e.g. IV running well, patient more comfortable, still nauseated…"
+                                              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none resize-none"></textarea>
+                                </div>
+                                <button wire:click="saveObservationEntry"
+                                        wire:loading.attr="disabled"
+                                        class="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold transition">
+                                    Record Entry
+                                </button>
+                            </div>
+
+                            {{-- Previous entries --}}
+                            @if($activeObservation && count($activeObservation['entries']) > 0)
+                                <div class="rounded-xl bg-white border border-slate-200 overflow-hidden">
+                                    <div class="px-4 py-3 border-b border-slate-100">
+                                        <p class="text-sm font-semibold text-slate-700">Previous Entries</p>
+                                    </div>
+                                    <div class="divide-y divide-slate-100">
+                                        @foreach(array_reverse($activeObservation['entries']) as $oe)
+                                            <div class="px-4 py-3">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="text-xs font-semibold text-slate-500">{{ $oe['time'] }} · {{ $oe['recorded_by'] }}</span>
+                                                </div>
+                                                <div class="flex flex-wrap gap-3 text-xs text-slate-700">
+                                                    <span>BP <strong>{{ $oe['bp'] }}</strong></span>
+                                                    @if($oe['pulse']) <span>P <strong>{{ $oe['pulse'] }}</strong></span> @endif
+                                                    @if($oe['temp']) <span>Temp <strong>{{ $oe['temp'] }}°C</strong></span> @endif
+                                                    @if($oe['spo2']) <span>SpO₂ <strong>{{ $oe['spo2'] }}%</strong></span> @endif
+                                                </div>
+                                                @if($oe['notes'])
+                                                    <p class="text-xs text-slate-500 mt-1 italic">{{ $oe['notes'] }}</p>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Flag for review --}}
+                            <div class="rounded-xl bg-violet-50 border border-violet-200 p-4 text-center">
+                                <p class="text-sm text-violet-800 font-semibold mb-1">Ready for the doctor?</p>
+                                <p class="text-xs text-violet-600 mb-3">When vitals are stable and treatment administered, flag this patient for the doctor's review.</p>
+                                <button wire:click="markReadyForDoctorReview"
+                                        wire:confirm="Flag this patient as ready for the doctor's review?"
+                                        class="px-5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition">
+                                    Flag for Doctor Review
+                                </button>
+                            </div>
+                        </div>
+
                     {{-- ══════ VITALS ══════ --}}
-                    @if($activeTab === 'vitals')
+                    @elseif($activeTab === 'vitals')
                         <form wire:submit="saveVitals" class="p-6 space-y-5">
 
                             {{-- Section: Blood Pressure & Pulse --}}

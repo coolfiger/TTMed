@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Events\QueueUpdated;
 use App\Models\Tenant\DoctorAvailability;
 use App\Models\Tenant\Encounter;
+use App\Models\Tenant\ObservationEntry;
+use App\Models\Tenant\ObservationOrder;
 use App\Models\Tenant\Patient;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\QueueEvent;
@@ -167,6 +169,97 @@ class QueueService
         ]);
 
         return $availability;
+    }
+
+    // ── Observation ──────────────────────────────────────────────────────
+
+    public function dispatchToObservation(
+        QueueEntry $entry,
+        int        $userId,
+        string     $reason,
+        ?string    $treatmentNotes = null,
+        ?string    $roomName       = null,
+    ): ObservationOrder {
+        if (!$entry->canTransitionTo(QueueEntry::STATUS_IN_OBSERVATION)) {
+            throw new \InvalidArgumentException(
+                "Cannot dispatch to observation from status [{$entry->status}]."
+            );
+        }
+
+        return DB::connection('tenant')->transaction(function () use ($entry, $userId, $reason, $treatmentNotes, $roomName) {
+            $order = ObservationOrder::on('tenant')->create([
+                'encounter_id'    => $entry->encounter_id,
+                'patient_id'      => $entry->patient_id,
+                'branch_id'       => $entry->branch_id,
+                'ordered_by'      => $userId,
+                'reason'          => $reason,
+                'treatment_notes' => $treatmentNotes,
+                'room_name'       => $roomName,
+                'status'          => ObservationOrder::STATUS_ACTIVE,
+                'started_at'      => now(),
+            ]);
+
+            $oldStatus = $entry->status;
+            $entry->status    = QueueEntry::STATUS_IN_OBSERVATION;
+            $entry->called_at = now();
+            $entry->save();
+
+            $this->recordEvent($entry, 'dispatched_to_observation', $oldStatus, QueueEntry::STATUS_IN_OBSERVATION, $userId, $reason);
+            $this->broadcast($entry->branch_id, 'entry_updated', QueueUpdated::entryPayload($entry->load('patient')));
+
+            return $order;
+        });
+    }
+
+    public function addObservationEntry(
+        ObservationOrder $order,
+        int              $userId,
+        ?string          $notes       = null,
+        ?int             $bpSystolic  = null,
+        ?int             $bpDiastolic = null,
+        ?int             $pulse       = null,
+        ?float           $tempCelsius = null,
+        ?int             $spo2        = null,
+    ): ObservationEntry {
+        return ObservationEntry::on('tenant')->create([
+            'observation_order_id' => $order->id,
+            'encounter_id'         => $order->encounter_id,
+            'patient_id'           => $order->patient_id,
+            'recorded_by'          => $userId,
+            'notes'                => $notes,
+            'bp_systolic'          => $bpSystolic,
+            'bp_diastolic'         => $bpDiastolic,
+            'pulse'                => $pulse,
+            'temp_celsius'         => $tempCelsius,
+            'spo2'                 => $spo2,
+            'occurred_at'          => now(),
+        ]);
+    }
+
+    public function markReadyForObservationReview(QueueEntry $order_entry, int $userId, ?string $notes = null): QueueEntry
+    {
+        if (!$order_entry->canTransitionTo(QueueEntry::STATUS_OBSERVATION_REVIEW)) {
+            throw new \InvalidArgumentException(
+                "Cannot mark for review from status [{$order_entry->status}]."
+            );
+        }
+
+        $old = $order_entry->status;
+        $order_entry->status = QueueEntry::STATUS_OBSERVATION_REVIEW;
+        $order_entry->save();
+
+        $this->recordEvent($order_entry, 'observation_ready_for_review', $old, QueueEntry::STATUS_OBSERVATION_REVIEW, $userId, $notes);
+        $this->broadcast($order_entry->branch_id, 'entry_updated', QueueUpdated::entryPayload($order_entry->load('patient')));
+
+        return $order_entry;
+    }
+
+    public function completeObservation(ObservationOrder $order, int $userId): void
+    {
+        $order->status       = ObservationOrder::STATUS_COMPLETED;
+        $order->completed_at = now();
+        $order->completed_by = $userId;
+        $order->save();
     }
 
     private function recordEvent(

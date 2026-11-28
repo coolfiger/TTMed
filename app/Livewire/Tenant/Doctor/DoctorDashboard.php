@@ -19,6 +19,7 @@ use App\Models\Tenant\PatientDocument;
 use App\Models\Tenant\PatientFamilyHistory;
 use App\Models\Tenant\PatientMedication;
 use App\Models\Tenant\Prescription;
+use App\Models\Tenant\ObservationOrder;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\Referral;
 use App\Models\Tenant\Service;
@@ -28,6 +29,7 @@ use App\Services\BillingService;
 use App\Services\ConsultationService;
 use App\Services\NursingService;
 use App\Services\PrescriptionService;
+use App\Services\QueueService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -131,6 +133,14 @@ class DoctorDashboard extends Component
     public ?string $wizardStep = null;
 
     // -------------------------------------------------------------------------
+    // Observation dispatch
+    // -------------------------------------------------------------------------
+    public bool   $showObservationModal = false;
+    public string $obsReason            = '';
+    public string $obsTreatmentNotes    = '';
+    public string $obsRoomName          = '';
+
+    // -------------------------------------------------------------------------
     // UI state
     // -------------------------------------------------------------------------
     // Doctor procedures
@@ -171,8 +181,8 @@ class DoctorDashboard extends Component
         $this->queue = QueueEntry::on('tenant')
             ->with('patient')
             ->forBranchToday($this->branchId)
-            ->whereIn('status', ['awaiting_doctor', 'with_doctor'])
-            ->orderByRaw("FIELD(status, 'with_doctor', 'awaiting_doctor')")
+            ->whereIn('status', ['awaiting_doctor', 'with_doctor', 'in_observation', 'observation_review'])
+            ->orderByRaw("FIELD(status, 'observation_review', 'with_doctor', 'awaiting_doctor', 'in_observation')")
             ->orderBy('is_priority', 'desc')
             ->orderBy('queue_number')
             ->get()
@@ -181,6 +191,7 @@ class DoctorDashboard extends Component
                 'queue_number' => $e->queue_number,
                 'patient_name' => $e->patient?->full_name ?? '—',
                 'status'       => $e->status,
+                'status_label' => $e->status_label,
                 'is_priority'  => $e->is_priority,
             ])
             ->toArray();
@@ -1190,6 +1201,119 @@ class DoctorDashboard extends Component
     }
 
     // -------------------------------------------------------------------------
+    // Observation
+    // -------------------------------------------------------------------------
+
+    public function openObservationModal(): void
+    {
+        $this->checkPermission('encounters.view');
+
+        if (!$this->activeEntryId || $this->activeEntryStatus !== QueueEntry::STATUS_WITH_DOCTOR) {
+            $this->errorMessage = 'Patient must be with doctor to dispatch to observation.';
+            return;
+        }
+
+        $this->obsReason         = '';
+        $this->obsTreatmentNotes = '';
+        $this->obsRoomName       = '';
+        $this->showObservationModal = true;
+    }
+
+    public function confirmDispatchToObservation(): void
+    {
+        $this->checkPermission('encounters.view');
+
+        $this->validate([
+            'obsReason' => 'required|string|max:500',
+        ]);
+
+        $entry = QueueEntry::on('tenant')
+            ->where('branch_id', $this->branchId)
+            ->findOrFail($this->activeEntryId);
+
+        try {
+            app(QueueService::class)->dispatchToObservation(
+                entry:          $entry,
+                userId:         Auth::guard('tenant')->id(),
+                reason:         $this->obsReason,
+                treatmentNotes: $this->obsTreatmentNotes ?: null,
+                roomName:       $this->obsRoomName ?: null,
+            );
+
+            $this->showObservationModal = false;
+            $this->activeEntryStatus    = QueueEntry::STATUS_IN_OBSERVATION;
+            $this->successMessage       = 'Patient dispatched to observation.';
+            $this->loadQueue();
+        } catch (\InvalidArgumentException $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function cancelObservationModal(): void
+    {
+        $this->showObservationModal = false;
+        $this->obsReason            = '';
+        $this->obsTreatmentNotes    = '';
+        $this->obsRoomName          = '';
+    }
+
+    public function continueObservation(): void
+    {
+        $this->checkPermission('encounters.view');
+
+        $entry = QueueEntry::on('tenant')
+            ->where('branch_id', $this->branchId)
+            ->findOrFail($this->activeEntryId);
+
+        if (!$entry->canTransitionTo(QueueEntry::STATUS_IN_OBSERVATION)) {
+            $this->errorMessage = 'Cannot return patient to observation.';
+            return;
+        }
+
+        try {
+            app(QueueService::class)->transition($entry, QueueEntry::STATUS_IN_OBSERVATION, Auth::guard('tenant')->id());
+            $this->activeEntryStatus = QueueEntry::STATUS_IN_OBSERVATION;
+            $this->successMessage    = 'Patient returned to observation.';
+            $this->loadQueue();
+        } catch (\InvalidArgumentException $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function dismissObservation(): void
+    {
+        $this->checkPermission('encounters.view');
+
+        $entry = QueueEntry::on('tenant')
+            ->where('branch_id', $this->branchId)
+            ->findOrFail($this->activeEntryId);
+
+        if (!$entry->canTransitionTo(QueueEntry::STATUS_AWAITING_CHECKOUT)) {
+            $this->errorMessage = 'Cannot complete observation from this status.';
+            return;
+        }
+
+        // Mark the active observation order as completed
+        $order = ObservationOrder::on('tenant')
+            ->where('encounter_id', $this->activeEncounterId)
+            ->where('status', ObservationOrder::STATUS_ACTIVE)
+            ->first();
+
+        if ($order) {
+            app(QueueService::class)->completeObservation($order, Auth::guard('tenant')->id());
+        }
+
+        try {
+            app(QueueService::class)->transition($entry, QueueEntry::STATUS_AWAITING_CHECKOUT, Auth::guard('tenant')->id());
+            $this->activeEntryStatus = QueueEntry::STATUS_AWAITING_CHECKOUT;
+            $this->successMessage    = 'Observation complete — patient sent for checkout.';
+            $this->loadQueue();
+        } catch (\InvalidArgumentException $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Rendering
     // -------------------------------------------------------------------------
 
@@ -1206,6 +1330,7 @@ class DoctorDashboard extends Component
         $doctorProcedures  = [];
         $encounterDocuments = [];
         $familyHistories   = [];
+        $activeObservation  = null;
 
         if ($this->activeEncounterId && $this->activePatientId) {
             $vitals = VitalSign::on('tenant')
@@ -1329,6 +1454,34 @@ class DoctorDashboard extends Component
                     'notes'              => $h->notes,
                 ])
                 ->toArray();
+
+            // Active observation order for this encounter
+            $obsOrder = ObservationOrder::on('tenant')
+                ->where('encounter_id', $this->activeEncounterId)
+                ->where('status', ObservationOrder::STATUS_ACTIVE)
+                ->with('entries.recordedBy')
+                ->first();
+
+            if ($obsOrder) {
+                $activeObservation = [
+                    'id'              => $obsOrder->id,
+                    'reason'          => $obsOrder->reason,
+                    'treatment_notes' => $obsOrder->treatment_notes,
+                    'room_name'       => $obsOrder->room_name,
+                    'started_at'      => $obsOrder->started_at?->format('H:i'),
+                    'duration_min'    => $obsOrder->durationMinutes(),
+                    'entries'         => $obsOrder->entries->map(fn ($e) => [
+                        'id'          => $e->id,
+                        'bp'          => $e->bpFormatted(),
+                        'pulse'       => $e->pulse,
+                        'temp'        => $e->temp_celsius,
+                        'spo2'        => $e->spo2,
+                        'notes'       => $e->notes,
+                        'time'        => $e->occurred_at?->format('H:i'),
+                        'recorded_by' => $e->recordedBy?->name ?? '—',
+                    ])->toArray(),
+                ];
+            }
         }
 
         $savedFollowUp = $this->activeEncounterId
@@ -1355,6 +1508,7 @@ class DoctorDashboard extends Component
             'familyHistories'    => $familyHistories,
             'savedFollowUp'      => $savedFollowUp,
             'bloodGlucoseUnit'   => $bloodGlucoseUnit,
+            'activeObservation'  => $activeObservation,
         ])->layout('layouts.app-workspace');
     }
 
@@ -1390,6 +1544,10 @@ class DoctorDashboard extends Component
         $this->showDiagnosisForm          = false;
         $this->showReferralForm           = false;
         $this->showDoctorProcedureForm    = false;
+        $this->showObservationModal       = false;
+        $this->obsReason                  = '';
+        $this->obsTreatmentNotes          = '';
+        $this->obsRoomName                = '';
         $this->resetDiagnosisForm();
         $this->resetReferralForm();
         $this->resetDoctorProcedureForm();

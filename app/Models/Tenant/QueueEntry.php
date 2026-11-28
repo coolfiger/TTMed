@@ -31,24 +31,28 @@ class QueueEntry extends Model
         'called_at'   => 'datetime',
     ];
 
-    const STATUS_WAITING           = 'waiting';
-    const STATUS_WITH_NURSE        = 'with_nurse';
-    const STATUS_AWAITING_DOCTOR   = 'awaiting_doctor';
-    const STATUS_WITH_DOCTOR       = 'with_doctor';
-    const STATUS_AWAITING_CHECKOUT = 'awaiting_checkout';
-    const STATUS_COMPLETED         = 'completed';
-    const STATUS_CANCELLED         = 'cancelled';
-    const STATUS_NO_SHOW           = 'no_show';
+    const STATUS_WAITING              = 'waiting';
+    const STATUS_WITH_NURSE           = 'with_nurse';
+    const STATUS_AWAITING_DOCTOR      = 'awaiting_doctor';
+    const STATUS_WITH_DOCTOR          = 'with_doctor';
+    const STATUS_IN_OBSERVATION       = 'in_observation';
+    const STATUS_OBSERVATION_REVIEW   = 'observation_review';
+    const STATUS_AWAITING_CHECKOUT    = 'awaiting_checkout';
+    const STATUS_COMPLETED            = 'completed';
+    const STATUS_CANCELLED            = 'cancelled';
+    const STATUS_NO_SHOW              = 'no_show';
 
     const VALID_TRANSITIONS = [
-        'waiting'            => ['with_nurse', 'awaiting_doctor', 'cancelled', 'no_show'],
-        'with_nurse'         => ['awaiting_doctor', 'cancelled'],
-        'awaiting_doctor'    => ['with_doctor', 'cancelled', 'no_show'],
-        'with_doctor'        => ['awaiting_checkout', 'cancelled'],
-        'awaiting_checkout'  => ['completed', 'cancelled'],
-        'completed'          => [],
-        'cancelled'          => [],
-        'no_show'            => [],
+        'waiting'              => ['with_nurse', 'awaiting_doctor', 'cancelled', 'no_show'],
+        'with_nurse'           => ['awaiting_doctor', 'cancelled'],
+        'awaiting_doctor'      => ['with_doctor', 'cancelled', 'no_show'],
+        'with_doctor'          => ['in_observation', 'awaiting_checkout', 'cancelled'],
+        'in_observation'       => ['observation_review', 'awaiting_checkout', 'cancelled'],
+        'observation_review'   => ['in_observation', 'with_doctor', 'awaiting_checkout', 'cancelled'],
+        'awaiting_checkout'    => ['completed', 'cancelled'],
+        'completed'            => [],
+        'cancelled'            => [],
+        'no_show'              => [],
     ];
 
     public function canTransitionTo(string $newStatus): bool
@@ -89,30 +93,34 @@ class QueueEntry extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            'waiting'            => 'Waiting',
-            'with_nurse'         => 'With Nurse',
-            'awaiting_doctor'    => 'Awaiting Doctor',
-            'with_doctor'        => 'With Doctor',
-            'awaiting_checkout'  => 'Awaiting Checkout',
-            'completed'          => 'Completed',
-            'cancelled'          => 'Cancelled',
-            'no_show'            => 'No Show',
-            default           => ucfirst($this->status),
+            'waiting'              => 'Waiting',
+            'with_nurse'           => 'With Nurse',
+            'awaiting_doctor'      => 'Awaiting Doctor',
+            'with_doctor'          => 'With Doctor',
+            'in_observation'       => 'In Observation',
+            'observation_review'   => 'Obs. Review',
+            'awaiting_checkout'    => 'Awaiting Checkout',
+            'completed'            => 'Completed',
+            'cancelled'            => 'Cancelled',
+            'no_show'              => 'No Show',
+            default                => ucfirst(str_replace('_', ' ', $this->status)),
         };
     }
 
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            'waiting'            => 'yellow',
-            'with_nurse'         => 'blue',
-            'awaiting_doctor'    => 'orange',
-            'with_doctor'        => 'green',
-            'awaiting_checkout'  => 'purple',
-            'completed'          => 'gray',
-            'cancelled'          => 'red',
-            'no_show'            => 'red',
-            default           => 'gray',
+            'waiting'              => 'yellow',
+            'with_nurse'           => 'blue',
+            'awaiting_doctor'      => 'orange',
+            'with_doctor'          => 'green',
+            'in_observation'       => 'teal',
+            'observation_review'   => 'violet',
+            'awaiting_checkout'    => 'purple',
+            'completed'            => 'gray',
+            'cancelled'            => 'red',
+            'no_show'              => 'red',
+            default                => 'gray',
         };
     }
 
