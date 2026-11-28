@@ -19,6 +19,7 @@ use App\Livewire\Tenant\Settings\CentreSettings;
 use App\Livewire\Tenant\Settings\IntegrationSettings;
 use App\Livewire\Tenant\Settings\TemplateManager;
 use App\Livewire\Tenant\Settings\ObservationRoomManager;
+use App\Livewire\Tenant\Settings\VaccineSettings;
 use App\Livewire\Tenant\Imaging\ImagingWorkqueue;
 use App\Livewire\Tenant\Documents\DocumentTracker;
 use App\Http\Controllers\Tenant\BrandingLogoController;
@@ -181,6 +182,7 @@ Route::middleware(['resolve.tenant', 'tenant.active'])->group(function () {
             Route::get('/settings/integrations',       IntegrationSettings::class)->name('tenant.settings.integrations');
             Route::get('/settings/templates',          TemplateManager::class)->name('tenant.settings.templates');
             Route::get('/settings/observation-rooms',  ObservationRoomManager::class)->name('tenant.settings.observation-rooms');
+            Route::get('/settings/vaccines',            VaccineSettings::class)->name('tenant.settings.vaccines');
         });
 
         // Staff management

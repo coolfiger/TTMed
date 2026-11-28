@@ -27,6 +27,7 @@ class User extends Authenticatable
         'is_active',
         'must_change_password',
         'mfa_enabled',
+        'vaccine_module_enabled',
     ];
 
     protected $hidden = [
@@ -36,9 +37,10 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'is_active'           => 'boolean',
-        'must_change_password' => 'boolean',
-        'mfa_enabled'         => 'boolean',
+        'is_active'              => 'boolean',
+        'must_change_password'  => 'boolean',
+        'mfa_enabled'           => 'boolean',
+        'vaccine_module_enabled' => 'boolean',
         'last_login_at'       => 'datetime',
         'password_changed_at' => 'datetime',
         'locked_until'        => 'datetime',

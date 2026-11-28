@@ -163,6 +163,12 @@
                                 Obs. Rooms
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('tenant.settings.vaccines') }}"
+                               class="flex rounded-md px-3 py-1.5 text-sm {{ request()->routeIs('tenant.settings.vaccines') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Vaccines
+                            </a>
+                        </li>
                         @endif
                     </ul>
                 </li>

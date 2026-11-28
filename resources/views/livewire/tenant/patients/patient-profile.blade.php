@@ -326,12 +326,15 @@
         {{-- Tab nav + alerts --}}
         <div class="bg-white border-b border-slate-200 px-5 flex-shrink-0">
             <div class="flex items-center gap-1 overflow-x-auto">
-                @foreach([
-                    ['overview',  'Overview'],
-                    ['medical',   'Medical'],
-                    ['imaging',   'Imaging & Docs'],
-                    ['history',   'Visit History'],
-                ] as [$key, $label])
+                @foreach(array_merge(
+                    [
+                        ['overview',  'Overview'],
+                        ['medical',   'Medical'],
+                        ['imaging',   'Imaging & Docs'],
+                        ['history',   'Visit History'],
+                    ],
+                    $vaccineModuleEnabled ? [['vaccines', 'Vaccines']] : []
+                ) as [$key, $label])
                     <button wire:click="$set('activeTab', '{{ $key }}')"
                             class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition
                                    {{ $activeTab === $key
@@ -1042,6 +1045,18 @@
                     </div>
                     @endforelse
 
+                </div>
+            @endif
+
+            {{-- ── VACCINES TAB ── --}}
+            @if($activeTab === 'vaccines' && $vaccineModuleEnabled)
+                <div class="max-w-5xl">
+                    @livewire('tenant.patients.patient-vaccines', [
+                        'patientId'   => $patient->id,
+                        'branchId'    => (int) $this->queueBranchId ?: $patient->branch_id,
+                        'dob'         => $patient->date_of_birth?->toDateString(),
+                        'encounterId' => null,
+                    ], key('vaccines-'.$patient->id))
                 </div>
             @endif
 

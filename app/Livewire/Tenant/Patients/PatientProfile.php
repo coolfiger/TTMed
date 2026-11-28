@@ -523,8 +523,12 @@ class PatientProfile extends Component
         $doctors   = Doctor::on('tenant')->with('staffProfile')->get();
         $insurers  = InsuranceProvider::on('tenant')->where('is_active', true)->orderBy('name')->get();
 
+        $currentUser           = Auth::guard('tenant')->user();
+        $vaccineModuleEnabled  = (bool) $currentUser?->vaccine_module_enabled;
+
         return view('livewire.tenant.patients.patient-profile', compact(
-            'encounters', 'imagingOrders', 'documents', 'branches', 'doctors', 'insurers'
+            'encounters', 'imagingOrders', 'documents', 'branches', 'doctors', 'insurers',
+            'vaccineModuleEnabled'
         ))->layout('layouts.app-workspace');
     }
 
