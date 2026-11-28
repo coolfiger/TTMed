@@ -1878,9 +1878,18 @@
                           class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none resize-none"></textarea>
             </div>
             <div>
-                <label class="text-xs font-semibold text-slate-700 block mb-1.5">Room / bay <span class="text-slate-400 font-normal">(optional)</span></label>
-                <input type="text" wire:model="obsRoomName" placeholder="e.g. Obs Bay 1"
-                       class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none">
+                <label class="text-xs font-semibold text-slate-700 block mb-1.5">Room <span class="text-slate-400 font-normal">(optional)</span></label>
+                @if(count($obsAvailableRooms) > 0)
+                    <select wire:model="obsRoomId"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none bg-white">
+                        <option value="">— No room assigned —</option>
+                        @foreach($obsAvailableRooms as $room)
+                            <option value="{{ $room['id'] }}">{{ $room['name'] }}{{ $room['notes'] ? ' — '.$room['notes'] : '' }}</option>
+                        @endforeach
+                    </select>
+                @else
+                    <p class="text-sm text-slate-400 italic px-1">No vacant rooms configured for this branch.</p>
+                @endif
             </div>
         </div>
 

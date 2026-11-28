@@ -157,6 +157,12 @@
                                 Integrations
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('tenant.settings.observation-rooms') }}"
+                               class="flex rounded-md px-3 py-1.5 text-sm {{ request()->routeIs('tenant.settings.observation-rooms') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                Obs. Rooms
+                            </a>
+                        </li>
                         @endif
                     </ul>
                 </li>

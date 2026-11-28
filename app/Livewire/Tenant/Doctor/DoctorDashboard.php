@@ -20,6 +20,7 @@ use App\Models\Tenant\PatientFamilyHistory;
 use App\Models\Tenant\PatientMedication;
 use App\Models\Tenant\Prescription;
 use App\Models\Tenant\ObservationOrder;
+use App\Models\Tenant\ObservationRoom;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\Referral;
 use App\Models\Tenant\Service;
@@ -138,7 +139,8 @@ class DoctorDashboard extends Component
     public bool   $showObservationModal = false;
     public string $obsReason            = '';
     public string $obsTreatmentNotes    = '';
-    public string $obsRoomName          = '';
+    public ?int   $obsRoomId            = null;
+    public array  $obsAvailableRooms    = [];
 
     // -------------------------------------------------------------------------
     // UI state
@@ -1215,7 +1217,15 @@ class DoctorDashboard extends Component
 
         $this->obsReason         = '';
         $this->obsTreatmentNotes = '';
-        $this->obsRoomName       = '';
+        $this->obsRoomId         = null;
+        $this->obsAvailableRooms = ObservationRoom::on('tenant')
+            ->where('branch_id', $this->branchId)
+            ->where('is_active', true)
+            ->where('status', ObservationRoom::STATUS_VACANT)
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'notes' => $r->notes])
+            ->toArray();
         $this->showObservationModal = true;
     }
 
@@ -1237,7 +1247,7 @@ class DoctorDashboard extends Component
                 userId:         Auth::guard('tenant')->id(),
                 reason:         $this->obsReason,
                 treatmentNotes: $this->obsTreatmentNotes ?: null,
-                roomName:       $this->obsRoomName ?: null,
+                roomId:         $this->obsRoomId ?: null,
             );
 
             $this->showObservationModal = false;
@@ -1254,7 +1264,8 @@ class DoctorDashboard extends Component
         $this->showObservationModal = false;
         $this->obsReason            = '';
         $this->obsTreatmentNotes    = '';
-        $this->obsRoomName          = '';
+        $this->obsRoomId            = null;
+        $this->obsAvailableRooms    = [];
     }
 
     public function continueObservation(): void
@@ -1547,7 +1558,8 @@ class DoctorDashboard extends Component
         $this->showObservationModal       = false;
         $this->obsReason                  = '';
         $this->obsTreatmentNotes          = '';
-        $this->obsRoomName                = '';
+        $this->obsRoomId                  = null;
+        $this->obsAvailableRooms          = [];
         $this->resetDiagnosisForm();
         $this->resetReferralForm();
         $this->resetDoctorProcedureForm();

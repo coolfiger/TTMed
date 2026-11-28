@@ -7,6 +7,7 @@ use App\Models\Tenant\DoctorAvailability;
 use App\Models\Tenant\Encounter;
 use App\Models\Tenant\ObservationEntry;
 use App\Models\Tenant\ObservationOrder;
+use App\Models\Tenant\ObservationRoom;
 use App\Models\Tenant\Patient;
 use App\Models\Tenant\QueueEntry;
 use App\Models\Tenant\QueueEvent;
@@ -178,7 +179,7 @@ class QueueService
         int        $userId,
         string     $reason,
         ?string    $treatmentNotes = null,
-        ?string    $roomName       = null,
+        ?int       $roomId         = null,
     ): ObservationOrder {
         if (!$entry->canTransitionTo(QueueEntry::STATUS_IN_OBSERVATION)) {
             throw new \InvalidArgumentException(
@@ -186,18 +187,44 @@ class QueueService
             );
         }
 
-        return DB::connection('tenant')->transaction(function () use ($entry, $userId, $reason, $treatmentNotes, $roomName) {
+        if ($roomId) {
+            $room = ObservationRoom::on('tenant')
+                ->where('branch_id', $entry->branch_id)
+                ->where('id', $roomId)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$room) {
+                throw new \InvalidArgumentException('Selected room not found.');
+            }
+
+            if ($room->status === ObservationRoom::STATUS_OCCUPIED) {
+                throw new \InvalidArgumentException("Room \"{$room->name}\" is already occupied.");
+            }
+        }
+
+        return DB::connection('tenant')->transaction(function () use ($entry, $userId, $reason, $treatmentNotes, $roomId) {
+            $room = $roomId
+                ? ObservationRoom::on('tenant')->find($roomId)
+                : null;
+
             $order = ObservationOrder::on('tenant')->create([
                 'encounter_id'    => $entry->encounter_id,
                 'patient_id'      => $entry->patient_id,
                 'branch_id'       => $entry->branch_id,
+                'room_id'         => $roomId,
                 'ordered_by'      => $userId,
                 'reason'          => $reason,
                 'treatment_notes' => $treatmentNotes,
-                'room_name'       => $roomName,
+                'room_name'       => $room?->name,
                 'status'          => ObservationOrder::STATUS_ACTIVE,
                 'started_at'      => now(),
             ]);
+
+            if ($room) {
+                $room->status = ObservationRoom::STATUS_OCCUPIED;
+                $room->save();
+            }
 
             $oldStatus = $entry->status;
             $entry->status    = QueueEntry::STATUS_IN_OBSERVATION;
@@ -248,6 +275,9 @@ class QueueService
         $order_entry->status = QueueEntry::STATUS_OBSERVATION_REVIEW;
         $order_entry->save();
 
+        // Free the room when patient leaves for doctor review
+        $this->freeRoomForEncounter($order_entry->encounter_id);
+
         $this->recordEvent($order_entry, 'observation_ready_for_review', $old, QueueEntry::STATUS_OBSERVATION_REVIEW, $userId, $notes);
         $this->broadcast($order_entry->branch_id, 'entry_updated', QueueUpdated::entryPayload($order_entry->load('patient')));
 
@@ -260,6 +290,29 @@ class QueueService
         $order->completed_at = now();
         $order->completed_by = $userId;
         $order->save();
+
+        $this->freeRoom($order);
+    }
+
+    private function freeRoomForEncounter(int $encounterId): void
+    {
+        $order = ObservationOrder::on('tenant')
+            ->where('encounter_id', $encounterId)
+            ->where('status', ObservationOrder::STATUS_ACTIVE)
+            ->first();
+
+        if ($order) {
+            $this->freeRoom($order);
+        }
+    }
+
+    private function freeRoom(ObservationOrder $order): void
+    {
+        if ($order->room_id) {
+            ObservationRoom::on('tenant')
+                ->where('id', $order->room_id)
+                ->update(['status' => ObservationRoom::STATUS_VACANT]);
+        }
     }
 
     private function recordEvent(

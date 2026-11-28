@@ -14,6 +14,7 @@ class ObservationOrder extends Model
         'encounter_id',
         'patient_id',
         'branch_id',
+        'room_id',
         'ordered_by',
         'reason',
         'treatment_notes',
@@ -46,6 +47,11 @@ class ObservationOrder extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(ObservationRoom::class, 'room_id');
     }
 
     public function orderedBy(): BelongsTo
