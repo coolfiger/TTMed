@@ -105,10 +105,12 @@
                     <li>
                         <a href="{{ route($item['route']) }}"
                            class="flex items-center gap-2.5 rounded-md py-1.5 text-sm font-medium transition-colors
-                                  {{ $active ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800' }}"
-                           :class="collapsed ? 'justify-center px-0' : 'px-2.5'"
+                                  {{ $active
+                                      ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 pl-2'
+                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 border-l-2 border-transparent' }}"
+                           :class="collapsed ? 'justify-center px-0' : ({{ $active ? 'true' : 'false' }} ? 'px-2' : 'px-2.5')"
                            :title="collapsed ? '{{ $item['label'] }}' : ''">
-                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $item['icon'] !!}</svg>
+                            <svg class="w-4 h-4 flex-shrink-0 {{ $active ? 'text-blue-600' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $item['icon'] !!}</svg>
                             <span x-show="!collapsed" class="truncate">{{ $item['label'] }}</span>
                         </a>
                     </li>
@@ -124,10 +126,12 @@
                 <li x-data="{ open: {{ $inAccounts ? 'true' : 'false' }} }">
                     <button @click="collapsed ? (collapsed = false) : (open = !open)"
                             class="w-full flex items-center gap-2.5 rounded-md py-1.5 text-sm font-medium transition-colors
-                                   {{ $inAccounts ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800' }}"
-                            :class="collapsed ? 'justify-center px-0' : 'px-2.5'"
+                                   {{ $inAccounts
+                                       ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 pl-2'
+                                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 border-l-2 border-transparent' }}"
+                            :class="collapsed ? 'justify-center px-0' : ({{ $inAccounts ? 'true' : 'false' }} ? 'px-2' : 'px-2.5')"
                             :title="collapsed ? 'Accounts' : ''">
-                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 flex-shrink-0 {{ $inAccounts ? 'text-blue-600' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                         </svg>
                         <span x-show="!collapsed" class="flex-1 text-left">Accounts</span>
@@ -137,25 +141,28 @@
                     </button>
                     <ul x-show="open && !collapsed" x-cloak class="mt-0.5 ml-6 border-l border-slate-200 pl-2 space-y-0.5">
                         @if($user?->hasPermission('billing.view'))
+                        @php $subActive = request()->routeIs('tenant.billing.index'); @endphp
                         <li>
                             <a href="{{ route('tenant.billing.index') }}"
-                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.billing.index') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                               class="flex rounded-md px-2.5 py-1 text-sm {{ $subActive ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-blue-500 pl-2' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
                                 Billing
                             </a>
                         </li>
                         @endif
                         @if($user?->hasPermission('payments.view'))
+                        @php $subActive = request()->routeIs('tenant.payments.*'); @endphp
                         <li>
                             <a href="{{ route('tenant.payments.index') }}"
-                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.payments.*') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                               class="flex rounded-md px-2.5 py-1 text-sm {{ $subActive ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-blue-500 pl-2' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
                                 Payments
                             </a>
                         </li>
                         @endif
                         @if($user?->hasPermission('shifts.view'))
+                        @php $subActive = request()->routeIs('tenant.billing.shifts'); @endphp
                         <li>
                             <a href="{{ route('tenant.billing.shifts') }}"
-                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.billing.shifts') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                               class="flex rounded-md px-2.5 py-1 text-sm {{ $subActive ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-blue-500 pl-2' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
                                 Cash Mgmt
                             </a>
                         </li>
@@ -175,10 +182,12 @@
                 <li x-data="{ open: {{ $inSettings ? 'true' : 'false' }} }">
                     <button @click="collapsed ? (collapsed = false) : (open = !open)"
                             class="w-full flex items-center gap-2.5 rounded-md py-1.5 text-sm font-medium transition-colors
-                                   {{ $inSettings ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800' }}"
-                            :class="collapsed ? 'justify-center px-0' : 'px-2.5'"
+                                   {{ $inSettings
+                                       ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 pl-2'
+                                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 border-l-2 border-transparent' }}"
+                            :class="collapsed ? 'justify-center px-0' : ({{ $inSettings ? 'true' : 'false' }} ? 'px-2' : 'px-2.5')"
                             :title="collapsed ? 'Settings' : ''">
-                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 flex-shrink-0 {{ $inSettings ? 'text-blue-600' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                         <span x-show="!collapsed" class="flex-1 text-left">Settings</span>
@@ -193,10 +202,13 @@
                             ['tenant.users.index'           => 'Users'],
                             ['tenant.branches.index'        => 'Branches'],
                         ] as $sub)
-                            @php [$sr, $sl] = [array_key_first($sub), $sub[array_key_first($sub)]]; @endphp
+                            @php
+                                [$sr, $sl] = [array_key_first($sub), $sub[array_key_first($sub)]];
+                                $subActive = request()->routeIs($sr) || request()->routeIs($sr . '.*');
+                            @endphp
                             <li>
                                 <a href="{{ route($sr) }}"
-                                   class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs($sr) || request()->routeIs($sr . '.*') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                                   class="flex rounded-md px-2.5 py-1 text-sm {{ $subActive ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-blue-500 pl-2' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
                                     {{ $sl }}
                                 </a>
                             </li>
@@ -204,7 +216,7 @@
                         @if($user?->hasPermission('services.view'))
                         <li>
                             <a href="{{ route('tenant.services.index') }}"
-                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.services.*') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.services.*') ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-blue-500 pl-2' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
                                 Services
                             </a>
                         </li>
@@ -212,7 +224,7 @@
                         @if($user?->hasPermission('settings.manage'))
                         <li>
                             <a href="{{ route('tenant.settings.integrations') }}"
-                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.settings.integrations') ? 'text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
+                               class="flex rounded-md px-2.5 py-1 text-sm {{ request()->routeIs('tenant.settings.integrations') ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-blue-500 pl-2' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">
                                 Integrations
                             </a>
                         </li>
